@@ -7,6 +7,17 @@
 
 #define RAM_SIZE    0x800
 
+#define PFLAG_C     0x01
+#define PFLAG_Z     0x02
+#define PFLAG_I     0x04
+#define PFLAG_D     0x08
+#define PFLAG_B     0x10
+#define PFLAG_1     0x20
+#define PFLAG_V     0x40
+#define PFLAG_N     0x80
+
+#define PFLAG_MASK  (~(PFLAG_B | PFLAG_1))
+
 typedef struct {
     uint16_t    a;
     uint8_t     x;

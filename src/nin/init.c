@@ -4,7 +4,8 @@
 
 static void initCPU(NinState* state)
 {
-
+    state->cpu.p = PFLAG_I;
+    state->cpu.pc = ninMemoryRead16(state, 0xfffc);
 }
 
 static void loadRom(NinState* state, FILE* rom)
@@ -28,6 +29,8 @@ NinState* ninCreateState(FILE* rom)
     state->ram = zalloc(RAM_SIZE);
     loadRom(state, rom);
     initCPU(state);
+
+    return state;
 }
 
 void ninDestroyState(NinState* state)

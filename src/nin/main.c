@@ -1,7 +1,16 @@
+#include <nin/nin.h>
+
 int main(int argc, char** argv)
 {
-    (void)argc;
-    (void)argv;
+    FILE* rom;
+    NinState* state;
 
+    if (argc != 2)
+        return 1;
+
+    rom = fopen(argv[1], "rb");
+    state = ninCreateState(rom);
+    fclose(rom);
+    ninDestroyState(state);
     return 0;
 }
