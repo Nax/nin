@@ -44,4 +44,6 @@ uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
 void        ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
 
+void        ninRunCycles(NinState* state, size_t cycles);
+
 #endif

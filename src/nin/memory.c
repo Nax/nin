@@ -11,8 +11,8 @@ uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
 {
     if (addr < 0x2000)
         return state->ram[addr & 0x7ff];
-    else if (addr >= 0xc000)
-        return state->prgRom[addr & 0x3fff];
+    else if (addr >= 0x8000)
+        return state->prgRom[addr & 0x7fff];
     return badIO(state, addr, 0);
 }
 

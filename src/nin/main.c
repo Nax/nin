@@ -11,6 +11,8 @@ int main(int argc, char** argv)
     rom = fopen(argv[1], "rb");
     state = ninCreateState(rom);
     fclose(rom);
+    for (;;)
+        ninRunCycles(state, 0x1000);
     ninDestroyState(state);
     return 0;
 }
