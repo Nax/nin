@@ -19,10 +19,10 @@
 #define PFLAG_MASK  (~(PFLAG_B | PFLAG_1))
 
 typedef struct {
-    uint16_t    a;
+    uint16_t    pc;
+    uint8_t     a;
     uint8_t     x;
     uint8_t     y;
-    uint16_t    pc;
     uint8_t     s;
     uint8_t     p;
 } NinCPU;
