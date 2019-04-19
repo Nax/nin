@@ -27,6 +27,7 @@ NinState* ninCreateState(FILE* rom)
 
     state = zalloc(sizeof(*state));
     state->ram = zalloc(RAM_SIZE);
+    state->vram = zalloc(VRAM_SIZE);
     loadRom(state, rom);
     initCPU(state);
 

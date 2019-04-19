@@ -11,6 +11,8 @@ uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
 {
     if (addr < 0x2000)
         return state->ram[addr & 0x7ff];
+    else if (addr < 0x4000)
+        return ninPpuRegRead(state, addr);
     else if (addr >= 0x8000)
         return state->prgRom[addr & 0x7fff];
     return badIO(state, addr, 0);
@@ -31,6 +33,8 @@ void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
 {
     if (addr < 0x2000)
         state->ram[addr & 0x7ff] = value;
+    else if (addr < 0x4000)
+        ninPpuRegWrite(state, addr, value);
     else
         badIO(state, addr, 1);
 }
