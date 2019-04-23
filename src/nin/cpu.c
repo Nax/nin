@@ -106,6 +106,49 @@ void ninRunCycles(NinState* state, size_t cycles)
             case UOP_ADDR_ABS_Y_NOREAD:
                 addr = uop->data + state->cpu.regs[REG_Y];
                 break;
+            case UOP_ADDR_ZERO:
+                addr = uop->data;
+                tmp = ninMemoryRead8(state, addr);
+                break;
+            case UOP_ADDR_ZERO_NOREAD:
+                addr = uop->data;
+                break;
+            case UOP_ADDR_ZERO_X:
+                addr = (uop->data + state->cpu.regs[REG_X]) & 0xff;
+                tmp = ninMemoryRead8(state, addr);
+                break;
+            case UOP_ADDR_ZERO_X_NOREAD:
+                addr = (uop->data + state->cpu.regs[REG_X]) & 0xff;
+                break;
+            case UOP_ADDR_ZERO_Y:
+                addr = (uop->data + state->cpu.regs[REG_Y]) & 0xff;
+                tmp = ninMemoryRead8(state, addr);
+                break;
+            case UOP_ADDR_ZERO_Y_NOREAD:
+                addr = (uop->data + state->cpu.regs[REG_Y]) & 0xff;
+                break;
+            case UOP_ADDR_ZERO_X_INDIRECT:
+                tmp = (uop->data + state->cpu.regs[REG_X]) & 0xff;
+                addr = ninMemoryRead8(state, tmp);
+                addr |= (ninMemoryRead8(state, (tmp + 1) & 0xff)) << 8;
+                tmp = ninMemoryRead8(state, addr);
+                break;
+            case UOP_ADDR_ZERO_X_INDIRECT_NOREAD:
+                tmp = (uop->data + state->cpu.regs[REG_X]) & 0xff;
+                addr = ninMemoryRead8(state, tmp);
+                addr |= (ninMemoryRead8(state, (tmp + 1) & 0xff)) << 8;
+                break;
+            case UOP_ADDR_ZERO_Y_INDIRECT:
+                addr = ninMemoryRead8(state, uop->data);
+                addr |= (ninMemoryRead8(state, (uop->data + 1) & 0xff)) << 8;
+                addr += state->cpu.regs[REG_Y];
+                tmp = ninMemoryRead8(state, addr);
+                break;
+            case UOP_ADDR_ZERO_Y_INDIRECT_NOREAD:
+                addr = ninMemoryRead8(state, uop->data);
+                addr |= (ninMemoryRead8(state, (uop->data + 1) & 0xff)) << 8;
+                addr += state->cpu.regs[REG_Y];
+                break;
             case UOP_P_SET:
                 state->cpu.p |= uop->data;
                 break;
