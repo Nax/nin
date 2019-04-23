@@ -227,5 +227,11 @@ void ninRunCycles(NinState* state, size_t cycles)
             }
         }
         state->cpu.pc = pc;
+        if (state->nmi)
+        {
+            state->nmi = 0;
+            printf("--- NMI! ---\n");
+            getchar();
+        }
     }
 }

@@ -12,7 +12,7 @@ int main(int argc, char** argv)
     state = ninCreateState(rom);
     fclose(rom);
     for (;;)
-        ninRunCycles(state, 0x1000);
+        ninRunFrame(state);
     ninDestroyState(state);
     return 0;
 }

@@ -14,9 +14,11 @@ uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         break;
     case 0x01:
         break;
-    case 0x02:
+    case 0x02: // PPUSTATUS
         mask = 0xff;
-        value = 0x80;
+        if (state->ppu.nmi & NMI_OCCURED)
+            value |= 0x80;
+        ninUnsetFlagNMI(state, NMI_OCCURED);
         break;
     case 0x03:
         break;
@@ -44,7 +46,11 @@ void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
 
     switch (reg & 0x07)
     {
-    case 0x00:
+    case 0x00: // PPUCTRL
+        if (value & 0x80)
+            ninSetFlagNMI(state, NMI_OUTPUT);
+        else
+            ninUnsetFlagNMI(state, NMI_OUTPUT);
         break;
     case 0x01:
         break;
@@ -68,4 +74,20 @@ void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         state->ppu.addr++;
         break;
     }
+}
+
+void ninSetFlagNMI(NinState* state, uint8_t flag)
+{
+    uint8_t prev;
+
+    prev = state->ppu.nmi;
+    state->ppu.nmi |= flag;
+
+    if ((prev != state->ppu.nmi) && (state->ppu.nmi == (NMI_OCCURED | NMI_OUTPUT)))
+        state->nmi = 1;
+}
+
+void ninUnsetFlagNMI(NinState* state, uint8_t flag)
+{
+    state->ppu.nmi &= ~flag;
 }

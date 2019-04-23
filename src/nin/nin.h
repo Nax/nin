@@ -28,6 +28,9 @@
 #define REG_Y   0x02
 #define REG_S   0x03
 
+#define NMI_OCCURED 0x01
+#define NMI_OUTPUT  0x02
+
 typedef struct {
     uint8_t     op;
     uint8_t     len;
@@ -55,6 +58,7 @@ typedef struct {
 typedef struct {
     uint16_t    addr;
     uint8_t     latch;
+    uint8_t     nmi;
     unsigned    addrHalfFlag:1;
     unsigned    dataHalfFlag:1;
 } NinPPU;
@@ -69,6 +73,7 @@ typedef struct {
     uint8_t*        chrRom;
     uint32_t        prgRomSize;
     uint32_t        chrRomSize;
+    unsigned        nmi:1;
 } NinState;
 
 NinState*   ninCreateState(FILE* rom);
@@ -82,7 +87,10 @@ void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
 uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 
+void        ninRunFrame(NinState* state);
 void        ninRunCycles(NinState* state, size_t cycles);
+void        ninSetFlagNMI(NinState* state, uint8_t flag);
+void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
 
 uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
 void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
