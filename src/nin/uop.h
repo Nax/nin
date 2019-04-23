@@ -22,6 +22,10 @@
 
 #define UOP_BRANCH_SET      0x30
 #define UOP_BRANCH_UNSET    0x31
+#define UOP_JMP             0x32
+#define UOP_JMP_INDIRECT    0x33
+#define UOP_JSR             0x34
+#define UOP_RTS             0x35
 
 #define UOP_ORA         0x40
 #define UOP_AND         0x41

@@ -223,6 +223,23 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             ninEmitTraceUop(trace, UOP_BRANCH_SET, 2, PFLAG_Z | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
             goto end;
 
+            /* Jumps */
+        case 0x4c:
+            ninEmitTraceUop(trace, UOP_JMP, 3, ninMemoryRead16(state, pc));
+            pc += 2;
+            goto end;
+        case 0x6c:
+            ninEmitTraceUop(trace, UOP_JMP_INDIRECT, 3, ninMemoryRead16(state, pc));
+            pc += 2;
+            goto end;
+        case 0x20:
+            ninEmitTraceUop(trace, UOP_JSR, 3, ninMemoryRead16(state, pc));
+            pc += 2;
+            goto end;
+        case 0x60:
+            ninEmitTraceUop(trace, UOP_RTS, 1, 0);
+            goto end;
+
             /* ALU */
         case 0x01: case 0x05: case 0x09: case 0x0d: case 0x11: case 0x15: case 0x19: case 0x1d:
             ninEmitTraceUop(trace, UOP_ORA, len + 1, 0);

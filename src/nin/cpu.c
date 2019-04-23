@@ -30,6 +30,35 @@ static void compare(NinState* state, uint8_t a, uint8_t b)
         state->cpu.p |= PFLAG_C;
 }
 
+static void stackPush8(NinState* state, uint8_t value)
+{
+    ninMemoryWrite8(state, 0x100 | state->cpu.regs[REG_S], value);
+    state->cpu.regs[REG_S]--;
+}
+
+static uint8_t stackPop8(NinState* state)
+{
+    state->cpu.regs[REG_S]++;
+    return ninMemoryRead8(state, 0x100 | state->cpu.regs[REG_S]);
+}
+
+static void stackPush16(NinState* state, uint16_t value)
+{
+    stackPush8(state, value & 0xff);
+    stackPush8(state, value >> 8);
+}
+
+static uint16_t stackPop16(NinState* state)
+{
+    uint8_t hi;
+    uint8_t lo;
+
+    hi = stackPop8(state);
+    lo = stackPop8(state);
+
+    return lo | ((uint16_t)hi << 8);
+}
+
 void ninRunCycles(NinState* state, size_t cycles)
 {
     uint16_t pc;
@@ -117,6 +146,21 @@ void ninRunCycles(NinState* state, size_t cycles)
                 break;
             case UOP_BRANCH_UNSET:
                 if (!(state->cpu.p & uop->data)) pc += (int8_t)((uint8_t)(uop->data >> 8));
+                break;
+            case UOP_JMP:
+                pc = uop->data;
+                break;
+            case UOP_JMP_INDIRECT:
+                addr = ninMemoryRead8(state, uop->data);
+                addr |= ((ninMemoryRead8(state, ((uop->data + 1) & 0xff) | (uop->data & 0xff00))) << 8);
+                pc = addr;
+                break;
+            case UOP_JSR:
+                stackPush16(state, pc - 1);
+                pc = uop->data;
+                break;
+            case UOP_RTS:
+                pc = stackPop16(state) + 1;
                 break;
             case UOP_ORA:
                 tmp |= state->cpu.regs[REG_A];
