@@ -232,6 +232,10 @@ void ninRunCycles(NinState* state, size_t cycles)
             state->nmi = 0;
             printf("--- NMI! ---\n");
             getchar();
+            stackPush16(state, pc);
+            stackPush8(state, state->cpu.p);
+            pc = ninMemoryRead16(state, 0xfffa);
+            state->cpu.pc = pc;
         }
     }
 }
