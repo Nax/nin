@@ -1,0 +1,212 @@
+#include <nin/nin.h>
+#include "uop.h"
+
+static void ninEmitTraceUop(NinTrace* trace, uint8_t op, uint8_t len, uint16_t data)
+{
+    NinUop* uop;
+
+    printf("uop: 0x%02x\n", op);
+
+    uop = trace->uops + trace->length;
+    trace->length++;
+    uop->op = op;
+    uop->len = len;
+    uop->data = data;
+}
+
+static NinTrace* ninAllocTrace(NinState* state, uint16_t addr)
+{
+    NinTrace* trace;
+    uint16_t index;
+
+    index = state->traceCache->cursor;
+    trace = state->traceCache->traces + index;
+    state->traceCache->cursor = (index + 1) % TRACE_CACHE_SIZE;
+
+    if (trace->length > 0)
+        state->traceCache->index[trace->pc] = TRACE_NONE;
+    trace->length = 0;
+    trace->pc = addr;
+    state->traceCache->index[addr] = index;
+
+    return trace;
+}
+
+static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
+{
+    NinTrace* trace;
+    uint8_t op;
+    uint8_t len;
+    uint16_t prevLen;
+
+    trace = ninAllocTrace(state, pc);
+    prevLen = 0;
+
+    while (trace->length < (TRACE_MAX_UOPS - 4))
+    {
+        len = 0;
+        op = ninMemoryRead8(state, pc++);
+
+        /* Decode the addressing mode */
+        switch (op)
+        {
+        case 0x09: case 0x29: case 0x49: case 0x69: case 0x89: case 0xa9: case 0xc9: case 0xe9:
+        case 0x0b: case 0x2b: case 0x4b: case 0x6b: case 0x8b: case 0xab: case 0xcb: case 0xeb:
+        case 0x80: case 0xa0: case 0xc0: case 0xe0:
+        case 0x82: case 0xa2: case 0xc2: case 0xe2:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_IMM, 0, ninMemoryRead8(state, pc++));
+            break;
+        case 0x0d: case 0x2d: case 0x4d: case 0x6d: case 0xad: case 0xcd: case 0xed:
+        case 0x0e: case 0x2e: case 0x4e: case 0x6e: case 0xae: case 0xce: case 0xee:
+        case 0x0f: case 0x2f: case 0x4f: case 0x6f: case 0xaf: case 0xcf: case 0xef:
+        case 0x0c: case 0x2c: case 0xac: case 0xcc: case 0xec:
+            len = 2;
+            ninEmitTraceUop(trace, UOP_ADDR_ABS, 0, ninMemoryRead16(state, pc));
+            pc += 2;
+            break;
+        case 0x8c: case 0x8d: case 0x8e: case 0x8f:
+            len = 2;
+            ninEmitTraceUop(trace, UOP_ADDR_ABS_NOREAD, 0, ninMemoryRead16(state, pc));
+            pc += 2;
+            break;
+        }
+
+        /* Decode the body */
+        switch (op)
+        {
+            /* Flags */
+        case 0x18:
+            ninEmitTraceUop(trace, UOP_P_UNSET, 1, PFLAG_C);
+            break;
+        case 0x58:
+            ninEmitTraceUop(trace, UOP_P_UNSET, 1, PFLAG_I);
+            break;
+        case 0xb8:
+            ninEmitTraceUop(trace, UOP_P_UNSET, 1, PFLAG_V);
+            break;
+        case 0xd8:
+            ninEmitTraceUop(trace, UOP_P_UNSET, 1, PFLAG_D);
+            break;
+        case 0x38:
+            ninEmitTraceUop(trace, UOP_P_SET, 1, PFLAG_C);
+            break;
+        case 0x78:
+            ninEmitTraceUop(trace, UOP_P_SET, 1, PFLAG_I);
+            break;
+        case 0xf8:
+            ninEmitTraceUop(trace, UOP_P_SET, 1, PFLAG_D);
+            break;
+
+            /* Transfer */
+        case 0xaa:
+            ninEmitTraceUop(trace, UOP_TAX, 1, 0);
+            break;
+        case 0xa8:
+            ninEmitTraceUop(trace, UOP_TAY, 1, 0);
+            break;
+        case 0xba:
+            ninEmitTraceUop(trace, UOP_TSX, 1, 0);
+            break;
+        case 0x8a:
+            ninEmitTraceUop(trace, UOP_TXA, 1, 0);
+            break;
+        case 0x9a:
+            ninEmitTraceUop(trace, UOP_TXS, 1, 0);
+            break;
+        case 0x98:
+            ninEmitTraceUop(trace, UOP_TYA, 1, 0);
+            break;
+
+            /* Load */
+        case 0xa2: case 0xa6: case 0xae: case 0xb6: case 0xbe:
+            ninEmitTraceUop(trace, UOP_LDX, len + 1, 0);
+            break;
+        case 0xa0: case 0xa4: case 0xac: case 0xb4: case 0xbc:
+            ninEmitTraceUop(trace, UOP_LDY, len + 1, 0);
+            break;
+
+            /* Branch */
+        case 0x10:
+            ninEmitTraceUop(trace, UOP_BRANCH_UNSET, 2, PFLAG_N | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
+            goto end;
+        case 0x50:
+            ninEmitTraceUop(trace, UOP_BRANCH_UNSET, 2, PFLAG_V | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
+            goto end;
+        case 0x90:
+            ninEmitTraceUop(trace, UOP_BRANCH_UNSET, 2, PFLAG_C | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
+            goto end;
+        case 0xd0:
+            ninEmitTraceUop(trace, UOP_BRANCH_UNSET, 2, PFLAG_Z | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
+            goto end;
+        case 0x30:
+            ninEmitTraceUop(trace, UOP_BRANCH_SET, 2, PFLAG_N | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
+            goto end;
+        case 0x70:
+            ninEmitTraceUop(trace, UOP_BRANCH_SET, 2, PFLAG_V | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
+            goto end;
+        case 0xb0:
+            ninEmitTraceUop(trace, UOP_BRANCH_SET, 2, PFLAG_C | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
+            goto end;
+        case 0xf0:
+            ninEmitTraceUop(trace, UOP_BRANCH_SET, 2, PFLAG_Z | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
+            goto end;
+
+            /* ALU */
+        case 0x01: case 0x05: case 0x09: case 0x0d: case 0x11: case 0x15: case 0x19: case 0x1d:
+            ninEmitTraceUop(trace, UOP_ORA, len + 1, 0);
+            break;
+        case 0x21: case 0x25: case 0x29: case 0x2d: case 0x31: case 0x35: case 0x39: case 0x3d:
+            ninEmitTraceUop(trace, UOP_AND, len + 1, 0);
+            break;
+        case 0x41: case 0x45: case 0x49: case 0x4d: case 0x51: case 0x55: case 0x59: case 0x5d:
+            ninEmitTraceUop(trace, UOP_EOR, len + 1, 0);
+            break;
+        case 0x61: case 0x65: case 0x69: case 0x6d: case 0x71: case 0x75: case 0x79: case 0x7d:
+            ninEmitTraceUop(trace, UOP_ADC, len + 1, 0);
+            break;
+        case 0x81: case 0x85: case 0x89: case 0x8d: case 0x91: case 0x95: case 0x99: case 0x9d:
+            ninEmitTraceUop(trace, UOP_STA, len + 1, 0);
+            break;
+        case 0xa1: case 0xa5: case 0xa9: case 0xad: case 0xb1: case 0xb5: case 0xb9: case 0xbd:
+            ninEmitTraceUop(trace, UOP_LDA, len + 1, 0);
+            break;
+        case 0xc1: case 0xc5: case 0xc9: case 0xcd: case 0xd1: case 0xd5: case 0xd9: case 0xdd:
+            ninEmitTraceUop(trace, UOP_CMP, len + 1, 0);
+            break;
+        case 0xe1: case 0xe5: case 0xe9: case 0xed: case 0xf1: case 0xf5: case 0xf9: case 0xfd:
+            ninEmitTraceUop(trace, UOP_ADC, len + 1, 0xff);
+            break;
+        }
+
+        /* Debug */
+        if (trace->length == prevLen)
+        {
+            printf("Opcode 0x%02x generated no uop, trace error?\n", op);
+            getchar();
+        }
+        prevLen = trace->length;
+    }
+
+end:
+    printf("Generated new trace at 0x%04x (length: %d)\n", trace->pc, trace->length);
+    return trace;
+}
+
+NinTrace* ninGetTrace(NinState* state, uint16_t addr)
+{
+    uint16_t index;
+    NinTrace* trace;
+
+    index = state->traceCache->index[addr];
+    if (index != TRACE_NONE)
+    {
+        trace = state->traceCache->traces + index;
+    }
+    else
+    {
+        trace = ninBuildTrace(state, addr);
+    }
+
+    return trace;
+}

@@ -19,6 +19,28 @@
 
 #define PFLAG_MASK  (~(PFLAG_B | PFLAG_1))
 
+#define TRACE_MAX_UOPS      64
+#define TRACE_CACHE_SIZE    512
+#define TRACE_NONE          0xFFFF
+
+typedef struct {
+    uint8_t     op;
+    uint8_t     len;
+    uint16_t    data;
+} NinUop;
+
+typedef struct {
+    uint16_t    pc;
+    uint16_t    length;
+    NinUop      uops[TRACE_MAX_UOPS];
+} NinTrace;
+
+typedef struct {
+    uint16_t    index[0x10000];
+    NinTrace    traces[TRACE_CACHE_SIZE];
+    uint16_t    cursor;
+} NinTraceCache;
+
 typedef struct {
     uint16_t    pc;
     uint8_t     a;
@@ -36,14 +58,15 @@ typedef struct {
 } NinPPU;
 
 typedef struct {
-    NinCPU      cpu;
-    NinPPU      ppu;
-    uint8_t*    ram;
-    uint8_t*    vram;
-    uint8_t*    prgRom;
-    uint8_t*    chrRom;
-    uint32_t    prgRomSize;
-    uint32_t    chrRomSize;
+    NinCPU          cpu;
+    NinPPU          ppu;
+    NinTraceCache*  traceCache;
+    uint8_t*        ram;
+    uint8_t*        vram;
+    uint8_t*        prgRom;
+    uint8_t*        chrRom;
+    uint32_t        prgRomSize;
+    uint32_t        chrRomSize;
 } NinState;
 
 NinState*   ninCreateState(FILE* rom);
@@ -61,5 +84,7 @@ void        ninRunCycles(NinState* state, size_t cycles);
 
 uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
 void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
+
+NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
 
 #endif
