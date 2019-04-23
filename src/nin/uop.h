@@ -32,4 +32,13 @@
 #define UOP_EOR         0x42
 #define UOP_ADC         0x43
 
+#define UOP_ASL         0x50
+#define UOP_ASL_REG     0x51
+#define UOP_ROL         0x52
+#define UOP_ROL_REG     0x53
+#define UOP_LSR         0x54
+#define UOP_LSR_REG     0x55
+#define UOP_ROR         0x56
+#define UOP_ROR_REG     0x57
+
 #endif

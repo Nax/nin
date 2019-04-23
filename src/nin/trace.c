@@ -223,7 +223,7 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             ninEmitTraceUop(trace, UOP_BRANCH_SET, 2, PFLAG_Z | ((uint16_t)ninMemoryRead8(state, pc++) << 8));
             goto end;
 
-            /* Jumps */
+            /* Jump */
         case 0x4c:
             ninEmitTraceUop(trace, UOP_JMP, 3, ninMemoryRead16(state, pc));
             pc += 2;
@@ -255,6 +255,32 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             break;
         case 0xe1: case 0xe5: case 0xe9: case 0xed: case 0xf1: case 0xf5: case 0xf9: case 0xfd:
             ninEmitTraceUop(trace, UOP_ADC, len + 1, 0xff);
+            break;
+
+            /* Shift */
+        case 0x06: case 0x0e: case 0x16: case 0x1e:
+            ninEmitTraceUop(trace, UOP_ASL, len + 1, 0);
+            break;
+        case 0x0a:
+            ninEmitTraceUop(trace, UOP_ASL_REG, 1, 0);
+            break;
+        case 0x26: case 0x2e: case 0x36: case 0x3e:
+            ninEmitTraceUop(trace, UOP_ROL, len + 1, 0);
+            break;
+        case 0x2a:
+            ninEmitTraceUop(trace, UOP_ROL_REG, 1, 0);
+            break;
+        case 0x46: case 0x4e: case 0x56: case 0x5e:
+            ninEmitTraceUop(trace, UOP_LSR, len + 1, 0);
+            break;
+        case 0x4a:
+            ninEmitTraceUop(trace, UOP_LSR_REG, 1, 0);
+            break;
+        case 0x66: case 0x6e: case 0x76: case 0x7e:
+            ninEmitTraceUop(trace, UOP_ROR, len + 1, 0);
+            break;
+        case 0x6a:
+            ninEmitTraceUop(trace, UOP_ROR_REG, 1, 0);
             break;
         }
 
