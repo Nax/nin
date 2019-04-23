@@ -96,6 +96,68 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             ninEmitTraceUop(trace, UOP_ADDR_ABS_Y_NOREAD, 0, ninMemoryRead16(state, pc));
             pc += 2;
             break;
+        case 0x04: case 0x24: case 0x44: case 0x64: case 0xa4: case 0xc4: case 0xe4:
+        case 0x05: case 0x25: case 0x45: case 0x65: case 0xa5: case 0xc5: case 0xe5:
+        case 0x06: case 0x26: case 0x46: case 0x66: case 0xa6: case 0xc6: case 0xe6:
+        case 0x07: case 0x27: case 0x47: case 0x67: case 0xa7: case 0xc7: case 0xe7:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0x84: case 0x85: case 0x86: case 0x87:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_NOREAD, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0x14: case 0x34: case 0x54: case 0x74: case 0xb4: case 0xd4: case 0xf4:
+        case 0x15: case 0x35: case 0x55: case 0x75: case 0xb5: case 0xd5: case 0xf5:
+        case 0x16: case 0x36: case 0x56: case 0x76: case 0xd6: case 0xf6:
+        case 0x17: case 0x37: case 0x57: case 0x77: case 0xd7: case 0xf7:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_X, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0x94: case 0x95:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_X_NOREAD, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0xb6:
+        case 0xb7:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_Y, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0x96:
+        case 0x97:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_Y_NOREAD, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0x01: case 0x21: case 0x41: case 0x61: case 0xa1: case 0xc1: case 0xe1:
+        case 0x03: case 0x23: case 0x43: case 0x63: case 0xa3: case 0xc3: case 0xe3:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_X_INDIRECT, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0x81:
+        case 0x83:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_X_INDIRECT_NOREAD, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0x11: case 0x31: case 0x51: case 0x71: case 0xb1: case 0xd1: case 0xf1:
+        case 0x13: case 0x33: case 0x53: case 0x73: case 0xb3: case 0xd3: case 0xf3:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_Y_INDIRECT, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
+        case 0x91:
+        case 0x93:
+            len = 1;
+            ninEmitTraceUop(trace, UOP_ADDR_ZERO_Y_INDIRECT_NOREAD, 0, ninMemoryRead8(state, pc));
+            pc += 1;
+            break;
         }
 
         /* Decode the body */
