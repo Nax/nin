@@ -70,6 +70,32 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             ninEmitTraceUop(trace, UOP_ADDR_ABS_NOREAD, 0, ninMemoryRead16(state, pc));
             pc += 2;
             break;
+        case 0x1c: case 0x3c: case 0x5c: case 0x7c: case 0x9c: case 0xbc: case 0xdc: case 0xfc:
+        case 0x1d: case 0x3d: case 0x5d: case 0x7d: case 0xbd: case 0xdd: case 0xfd:
+        case 0x1e: case 0x3e: case 0x5e: case 0x7e: case 0xde: case 0xfe:
+        case 0x1f: case 0x3f: case 0x5f: case 0x7f: case 0xdf: case 0xff:
+            len = 2;
+            ninEmitTraceUop(trace, UOP_ADDR_ABS_X, 0, ninMemoryRead16(state, pc));
+            pc += 2;
+            break;
+        case 0x9d:
+            len = 2;
+            ninEmitTraceUop(trace, UOP_ADDR_ABS_X_NOREAD, 0, ninMemoryRead16(state, pc));
+            pc += 2;
+            break;
+        case 0x19: case 0x39: case 0x59: case 0x79: case 0xb9: case 0xd9: case 0xf9:
+        case 0x1b: case 0x3b: case 0x5b: case 0x7b: case 0x9b: case 0xbb: case 0xdb: case 0xfb:
+        case 0x9e: case 0xbe:
+        case 0x9f: case 0xbf:
+            len = 2;
+            ninEmitTraceUop(trace, UOP_ADDR_ABS_Y, 0, ninMemoryRead16(state, pc));
+            pc += 2;
+            break;
+        case 0x99:
+            len = 2;
+            ninEmitTraceUop(trace, UOP_ADDR_ABS_Y_NOREAD, 0, ninMemoryRead16(state, pc));
+            pc += 2;
+            break;
         }
 
         /* Decode the body */
@@ -98,32 +124,77 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             ninEmitTraceUop(trace, UOP_P_SET, 1, PFLAG_D);
             break;
 
-            /* Transfer */
+            /* Move */
         case 0xaa:
-            ninEmitTraceUop(trace, UOP_TAX, 1, 0);
+            ninEmitTraceUop(trace, UOP_MOV, 1, REG_A | (REG_X << 2));
             break;
         case 0xa8:
-            ninEmitTraceUop(trace, UOP_TAY, 1, 0);
+            ninEmitTraceUop(trace, UOP_MOV, 1, REG_A | (REG_Y << 2));
             break;
         case 0xba:
-            ninEmitTraceUop(trace, UOP_TSX, 1, 0);
+            ninEmitTraceUop(trace, UOP_MOV_NOFLAG, 1, REG_S | (REG_X << 2));
             break;
         case 0x8a:
-            ninEmitTraceUop(trace, UOP_TXA, 1, 0);
+            ninEmitTraceUop(trace, UOP_MOV, 1, REG_X | (REG_A << 2));
             break;
         case 0x9a:
-            ninEmitTraceUop(trace, UOP_TXS, 1, 0);
+            ninEmitTraceUop(trace, UOP_MOV, 1, REG_X | (REG_S << 2));
             break;
         case 0x98:
-            ninEmitTraceUop(trace, UOP_TYA, 1, 0);
+            ninEmitTraceUop(trace, UOP_MOV, 1, REG_Y | (REG_A << 2));
             break;
 
             /* Load */
+        case 0xa1: case 0xa5: case 0xa9: case 0xad: case 0xb1: case 0xb5: case 0xb9: case 0xbd:
+            ninEmitTraceUop(trace, UOP_LOAD, len + 1, REG_A); // LDA
+            break;
         case 0xa2: case 0xa6: case 0xae: case 0xb6: case 0xbe:
-            ninEmitTraceUop(trace, UOP_LDX, len + 1, 0);
+            ninEmitTraceUop(trace, UOP_LOAD, len + 1, REG_X); // LDX
             break;
         case 0xa0: case 0xa4: case 0xac: case 0xb4: case 0xbc:
-            ninEmitTraceUop(trace, UOP_LDY, len + 1, 0);
+            ninEmitTraceUop(trace, UOP_LOAD, len + 1, REG_Y); // LDY
+            break;
+
+            /* Store */
+        case 0x81: case 0x85: case 0x89: case 0x8d: case 0x91: case 0x95: case 0x99: case 0x9d:
+            ninEmitTraceUop(trace, UOP_STORE, len + 1, REG_A);
+            break;
+        case 0x86: case 0x8e: case 0x96:
+            ninEmitTraceUop(trace, UOP_STORE, len + 1, REG_X);
+            break;
+        case 0x84: case 0x8c: case 0x94:
+            ninEmitTraceUop(trace, UOP_STORE, len + 1, REG_Y);
+            break;
+
+            /* Compare */
+        case 0xc1: case 0xc5: case 0xc9: case 0xcd: case 0xd1: case 0xd5: case 0xd9: case 0xdd:
+            ninEmitTraceUop(trace, UOP_CMP, len + 1, REG_A);
+            break;
+        case 0xe0: case 0xe4: case 0xec:
+            ninEmitTraceUop(trace, UOP_CMP, len + 1, REG_X);
+            break;
+        case 0xc0: case 0xc4: case 0xcc:
+            ninEmitTraceUop(trace, UOP_CMP, len + 1, REG_Y);
+            break;
+
+            /* Add */
+        case 0xe6: case 0xee: case 0xf6: case 0xfe:
+            ninEmitTraceUop(trace, UOP_ADD_MEM, len + 1, 0x01);
+            break;
+        case 0xc6: case 0xce: case 0xd6: case 0xde:
+            ninEmitTraceUop(trace, UOP_ADD_MEM, len + 1, 0xff);
+            break;
+        case 0xe8:
+            ninEmitTraceUop(trace, UOP_ADD_REG, 1, 0x01 | (REG_X << 8));
+            break;
+        case 0xc8:
+            ninEmitTraceUop(trace, UOP_ADD_REG, 1, 0x01 | (REG_Y << 8));
+            break;
+        case 0xca:
+            ninEmitTraceUop(trace, UOP_ADD_REG, 1, 0xff | (REG_X << 8));
+            break;
+        case 0x88:
+            ninEmitTraceUop(trace, UOP_ADD_REG, 1, 0xff | (REG_Y << 8));
             break;
 
             /* Branch */
@@ -164,15 +235,6 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             break;
         case 0x61: case 0x65: case 0x69: case 0x6d: case 0x71: case 0x75: case 0x79: case 0x7d:
             ninEmitTraceUop(trace, UOP_ADC, len + 1, 0);
-            break;
-        case 0x81: case 0x85: case 0x89: case 0x8d: case 0x91: case 0x95: case 0x99: case 0x9d:
-            ninEmitTraceUop(trace, UOP_STA, len + 1, 0);
-            break;
-        case 0xa1: case 0xa5: case 0xa9: case 0xad: case 0xb1: case 0xb5: case 0xb9: case 0xbd:
-            ninEmitTraceUop(trace, UOP_LDA, len + 1, 0);
-            break;
-        case 0xc1: case 0xc5: case 0xc9: case 0xcd: case 0xd1: case 0xd5: case 0xd9: case 0xdd:
-            ninEmitTraceUop(trace, UOP_CMP, len + 1, 0);
             break;
         case 0xe1: case 0xe5: case 0xe9: case 0xed: case 0xf1: case 0xf5: case 0xf9: case 0xfd:
             ninEmitTraceUop(trace, UOP_ADC, len + 1, 0xff);

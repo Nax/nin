@@ -23,6 +23,11 @@
 #define TRACE_CACHE_SIZE    512
 #define TRACE_NONE          0xFFFF
 
+#define REG_A   0x00
+#define REG_X   0x01
+#define REG_Y   0x02
+#define REG_S   0x03
+
 typedef struct {
     uint8_t     op;
     uint8_t     len;
@@ -43,10 +48,7 @@ typedef struct {
 
 typedef struct {
     uint16_t    pc;
-    uint8_t     a;
-    uint8_t     x;
-    uint8_t     y;
-    uint8_t     s;
+    uint8_t     regs[4];
     uint8_t     p;
 } NinCPU;
 
