@@ -62,8 +62,11 @@ typedef struct {
 
 typedef struct {
     uint16_t    addr;
+    uint16_t    newAddr;
+    uint8_t     readBuf;
     uint8_t     latch;
     uint8_t     nmi;
+    uint8_t     controller;
     unsigned    addrHalfFlag:1;
     unsigned    dataHalfFlag:1;
 } NinPPU;

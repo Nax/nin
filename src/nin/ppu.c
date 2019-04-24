@@ -15,10 +15,11 @@ uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
     case 0x01:
         break;
     case 0x02: // PPUSTATUS
-        mask = 0xff;
+        mask = 0xe0;
         if (state->ppu.nmi & NMI_OCCURED)
             value |= 0x80;
         ninUnsetFlagNMI(state, NMI_OCCURED);
+        state->ppu.addrHalfFlag = 0;
         break;
     case 0x03:
         break;
@@ -30,7 +31,13 @@ uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         break;
     case 0x07: // PPUDATA
         mask = 0xff;
-        value = ninVMemoryRead8(state, state->ppu.addr);
+        if ((state->ppu.addr & 0x3f00) == 0x3f00)
+            value = ninVMemoryRead8(state, state->ppu.addr);
+        else
+        {
+            value = state->ppu.readBuf;
+            state->ppu.readBuf = ninVMemoryRead8(state, state->ppu.addr);
+        }
         state->ppu.addr++;
         break;
     }
@@ -51,6 +58,7 @@ void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
             ninSetFlagNMI(state, NMI_OUTPUT);
         else
             ninUnsetFlagNMI(state, NMI_OUTPUT);
+        state->ppu.controller = value;
         break;
     case 0x01:
         break;
@@ -64,14 +72,14 @@ void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         break;
     case 0x06: // PPUADDR
         if (!state->ppu.addrHalfFlag)
-            state->ppu.addr = (value << 8) | (state->ppu.addr & 0xff);
+            state->ppu.newAddr = value << 8;
         else
-            state->ppu.addr = value | (state->ppu.addr & 0xff00);
+            state->ppu.addr = value | state->ppu.newAddr;
         state->ppu.addrHalfFlag ^= 1;
         break;
     case 0x07: //PPUDATA
         ninVMemoryWrite8(state, state->ppu.addr, value);
-        state->ppu.addr++;
+        state->ppu.addr += (state->ppu.controller & 0x04) ? 32 : 1;
         break;
     }
 }
@@ -140,9 +148,9 @@ void ninPpuRenderFrame(NinState* state)
     {
         for (int x = 0; x < 32; ++x)
         {
-            entry = ninVMemoryRead8(state, 0x2000 | (y * 32 + x));
+            entry = ninVMemoryRead8(state, 0x2000 | (0x400 * (state->ppu.controller & 0x03)) | (y * 32 + x));
             for (int i = 0; i < 16; ++i)
-                pattern[i] = ninVMemoryRead8(state, 0x1000 | (entry << 4) | i);
+                pattern[i] = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0) | (entry << 4) | i);
             for (int py = 0; py < 8; ++py)
             {
                 for (int px = 0; px < 8; ++px)

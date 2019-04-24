@@ -258,6 +258,12 @@ void ninRunCycles(NinState* state, size_t cycles)
                 state->cpu.p = stackPop8(state) & PFLAG_MASK;
                 pc = stackPop16(state);
                 break;
+            case UOP_BRK:
+                pc++;
+                stackPush16(state, pc);
+                stackPush8(state, state->cpu.p);
+                pc = ninMemoryRead16(state, 0xfffa);
+                break;
             case UOP_ORA:
                 tmp |= state->cpu.regs[REG_A];
                 state->cpu.regs[REG_A] = tmp;
@@ -351,6 +357,8 @@ void ninRunCycles(NinState* state, size_t cycles)
                 break;
             case UOP_POPP:
                 state->cpu.p = stackPop8(state) & PFLAG_MASK;
+                break;
+            case UOP_NOP:
                 break;
             }
         }

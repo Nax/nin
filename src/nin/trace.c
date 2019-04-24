@@ -360,6 +360,9 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
         case 0x40:
             uop->op = UOP_RTI;
             goto end;
+        case 0x00:
+            uop->op = UOP_BRK;
+            goto end;
 
             /* ALU */
         case 0x01: case 0x05: case 0x09: case 0x0d: case 0x11: case 0x15: case 0x19: case 0x1d:
@@ -418,6 +421,11 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             break;
         case 0x28:
             uop->op = UOP_POPP;
+            break;
+
+            /* NOP */
+        case 0xea:
+            uop->op = UOP_NOP;
             break;
 
         default:
