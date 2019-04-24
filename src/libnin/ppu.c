@@ -73,7 +73,16 @@ void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         break;
     case 0x04:
         break;
-    case 0x05:
+    case 0x05: // PPUSCROLL
+        if (!state->ppu.addrHalfFlag)
+            state->ppu.newAddr = value << 8;
+        else
+        {
+            state->ppu.scrollY = value;
+            state->ppu.scrollX = state->ppu.newAddr;
+        }
+        state->ppu.addrHalfFlag ^= 1;
+        break;
         break;
     case 0x06: // PPUADDR
         if (!state->ppu.addrHalfFlag)

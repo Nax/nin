@@ -67,6 +67,8 @@ typedef struct {
     uint8_t     latch;
     uint8_t     nmi;
     uint8_t     controller;
+    uint8_t     scrollX;
+    uint8_t     scrollY;
     unsigned    addrHalfFlag:1;
     unsigned    dataHalfFlag:1;
 } NinPPU;
