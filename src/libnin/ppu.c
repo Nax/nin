@@ -75,7 +75,7 @@ void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         break;
     case 0x05: // PPUSCROLL
         if (!state->ppu.addrHalfFlag)
-            state->ppu.newAddr = value << 8;
+            state->ppu.newAddr = value;
         else
         {
             state->ppu.scrollY = value;
@@ -183,6 +183,8 @@ void _renderSprite(NinState* state, int sprite)
 
 void ninPpuRenderFrame(NinState* state)
 {
+    uint8_t scrollX;
+    uint8_t scrollY;
     uint32_t value;
     uint8_t entry;
     uint8_t pattern[16];
@@ -190,11 +192,24 @@ void ninPpuRenderFrame(NinState* state)
     size_t screenY;
     size_t off;
 
+    scrollX = state->ppu.scrollX / 8;
+    scrollY = state->ppu.scrollY / 8;
+    uint16_t nameIndex;
+    uint16_t nameX;
+    uint16_t nameY;
+    uint8_t hiNameX;
+    uint8_t loNameX;
+
+    printf("scroll: %d / %d\n", scrollX, scrollY);
     for (int y = 0; y < 30; ++y)
     {
         for (int x = 0; x < 32; ++x)
         {
-            entry = ninVMemoryRead8(state, 0x2000 | (0x400 * (state->ppu.controller & 0x03)) | (y * 32 + x));
+            nameX = x + scrollX;
+            hiNameX = nameX / 32;
+            loNameX = nameX % 32;
+            nameIndex = (0x400 * ((state->ppu.controller & 0x03) + hiNameX)) | (y * 32 + loNameX);
+            entry = ninVMemoryRead8(state, 0x2000 | (nameIndex & 0xfff));
             for (int i = 0; i < 16; ++i)
                 pattern[i] = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0) | (entry << 4) | i);
             for (int py = 0; py < 8; ++py)
