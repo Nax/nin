@@ -91,3 +91,74 @@ void ninUnsetFlagNMI(NinState* state, uint8_t flag)
 {
     state->ppu.nmi &= ~flag;
 }
+
+static void _dumpFrame(NinState* state)
+{
+    static int counter;
+    char buffer[512];
+    FILE* file;
+    uint16_t tmp16;
+    uint32_t tmp32;
+
+    snprintf(buffer, 512, "frame_%05d.bmp", counter++);
+    file = fopen(buffer, "wb");
+    fwrite("BM", 2, 1, file);
+    tmp32 = 14 + 40 + BITMAP_X * BITMAP_Y * 3; fwrite(&tmp32, 4, 1, file);
+    tmp32 = 0; fwrite(&tmp32, 4, 1, file);
+    tmp32 = 54; fwrite(&tmp32, 4, 1, file);
+    tmp32 = 40; fwrite(&tmp32, 4, 1, file);
+    tmp32 = BITMAP_X; fwrite(&tmp32, 4, 1, file);
+    tmp32 = -BITMAP_Y; fwrite(&tmp32, 4, 1, file);
+    tmp16 = 1; fwrite(&tmp16, 2, 1, file);
+    tmp16 = 24; fwrite(&tmp16, 2, 1, file);
+    tmp32 = 0; fwrite(&tmp32, 4, 1, file);
+    tmp32 = BITMAP_X * BITMAP_Y * 3; fwrite(&tmp32, 4, 1, file);
+    tmp32 = 2048; fwrite(&tmp32, 4, 1, file);
+    tmp32 = 2048; fwrite(&tmp32, 4, 1, file);
+    tmp32 = 0; fwrite(&tmp32, 4, 1, file);
+    tmp32 = 0; fwrite(&tmp32, 4, 1, file);
+
+    for (size_t i = 0; i < BITMAP_X * BITMAP_Y; ++i)
+        fwrite(state->bitmap + i, 3, 1, file);
+
+    fclose(file);
+
+    printf("\n\n\nFRAME RENDERED\n\n\n");
+    //getchar();
+}
+
+void ninPpuRenderFrame(NinState* state)
+{
+    uint32_t value;
+    uint8_t entry;
+    uint8_t pattern[16];
+    size_t screenX;
+    size_t screenY;
+    size_t off;
+
+    for (int y = 0; y < 30; ++y)
+    {
+        for (int x = 0; x < 32; ++x)
+        {
+            entry = ninVMemoryRead8(state, 0x2000 | (y * 32 + x));
+            for (int i = 0; i < 16; ++i)
+                pattern[i] = ninVMemoryRead8(state, 0x1000 | (entry << 4) | i);
+            for (int py = 0; py < 8; ++py)
+            {
+                for (int px = 0; px < 8; ++px)
+                {
+                    value = 0x00000000;
+                    screenX = x * 8 + px;
+                    screenY = y * 8 + py;
+                    off = screenY * BITMAP_X + screenX;
+                    if (pattern[py] & (1 << (7 - px)))
+                        value |= 0x404040;
+                    if (pattern[py + 8] & (1 << (7 - px)))
+                        value |= 0x808080;
+                    state->bitmap[off] = value;
+                }
+            }
+        }
+    }
+    _dumpFrame(state);
+}

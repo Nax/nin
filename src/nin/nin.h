@@ -31,6 +31,9 @@
 #define NMI_OCCURED 0x01
 #define NMI_OUTPUT  0x02
 
+#define BITMAP_X    256
+#define BITMAP_Y    240
+
 typedef struct {
     uint8_t     mode;
     uint8_t     op;
@@ -66,6 +69,7 @@ typedef struct {
 } NinPPU;
 
 typedef struct {
+    uint32_t*       bitmap;
     NinCPU          cpu;
     NinPPU          ppu;
     NinTraceCache*  traceCache;
@@ -98,5 +102,6 @@ uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
 void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
 NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
+void        ninPpuRenderFrame(NinState* state);
 
 #endif
