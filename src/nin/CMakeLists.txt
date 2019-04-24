@@ -1,4 +1,8 @@
-file(GLOB_RECURSE SOURCES "*.c" "*.h")
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+
+find_package(Qt5Widgets CONFIG REQUIRED)
+
+file(GLOB_RECURSE SOURCES "*.cpp")
 add_executable(nin ${SOURCES})
-target_include_directories(nin PRIVATE "${CMAKE_SOURCE_DIR}/src")
-install(TARGETS nin RUNTIME DESTINATION "bin")
+target_link_libraries(nin libnin Qt5::Widgets)

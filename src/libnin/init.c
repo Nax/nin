@@ -1,4 +1,4 @@
-#include <nin/nin.h>
+#include <libnin/libnin.h>
 
 #define zalloc(n)   (calloc(1, n))
 

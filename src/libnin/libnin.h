@@ -1,9 +1,9 @@
-#ifndef NIN_H
-#define NIN_H
+#ifndef LIBNIN_H
+#define LIBNIN_H
+
+#include <nin/nin.h>
 
 #include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
 
 #define RAM_SIZE    0x800
 #define VRAM_SIZE   0x800
@@ -71,7 +71,7 @@ typedef struct {
     unsigned    dataHalfFlag:1;
 } NinPPU;
 
-typedef struct {
+struct NinState_ {
     uint32_t*       bitmap;
     NinCPU          cpu;
     NinPPU          ppu;
@@ -83,10 +83,7 @@ typedef struct {
     uint32_t        prgRomSize;
     uint32_t        chrRomSize;
     unsigned        nmi:1;
-} NinState;
-
-NinState*   ninCreateState(FILE* rom);
-void        ninDestroyState(NinState* state);
+};
 
 uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
 uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
@@ -96,7 +93,6 @@ void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
 uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 
-void        ninRunFrame(NinState* state);
 void        ninRunCycles(NinState* state, size_t cycles);
 void        ninSetFlagNMI(NinState* state, uint8_t flag);
 void        ninUnsetFlagNMI(NinState* state, uint8_t flag);

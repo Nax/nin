@@ -1,4 +1,4 @@
-#include <nin/nin.h>
+#include <libnin/libnin.h>
 
 static uint16_t badIO(NinState* state, uint16_t addr, int write)
 {

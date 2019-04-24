@@ -1,4 +1,4 @@
-#include <nin/nin.h>
+#include <libnin/libnin.h>
 
 uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
 {
@@ -168,5 +168,5 @@ void ninPpuRenderFrame(NinState* state)
             }
         }
     }
-    _dumpFrame(state);
+    //_dumpFrame(state);
 }

@@ -1,4 +1,4 @@
-#include <nin/nin.h>
+#include <libnin/libnin.h>
 
 int main(int argc, char** argv)
 {

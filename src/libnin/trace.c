@@ -1,4 +1,4 @@
-#include <nin/nin.h>
+#include <libnin/libnin.h>
 #include "uop.h"
 
 static NinTrace* ninAllocTrace(NinState* state, uint16_t addr)

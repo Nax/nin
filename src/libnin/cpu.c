@@ -1,4 +1,4 @@
-#include <nin/nin.h>
+#include <libnin/libnin.h>
 #include "uop.h"
 
 static void flagZ(NinState* state, uint8_t value)
