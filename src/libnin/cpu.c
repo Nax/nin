@@ -105,7 +105,6 @@ void ninRunCycles(NinState* state, size_t cycles)
         trace = ninGetTrace(state, pc);
         for (size_t i = 0; i < trace->length; ++i)
         {
-            printf("PC: 0x%04x\n", pc);
             uop = trace->uops + i;
             pc += uop->len;
 

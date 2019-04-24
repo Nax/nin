@@ -43,3 +43,8 @@ void ninDestroyState(NinState* state)
     free(state->ram);
     free(state);
 }
+
+const uint32_t* ninGetScreenBuffer(NinState* state)
+{
+    return state->bitmap;
+}
