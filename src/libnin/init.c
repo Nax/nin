@@ -32,6 +32,7 @@ NinState* ninCreateState(FILE* rom)
         state->traceCache->index[i] = TRACE_NONE;
     state->ram = zalloc(RAM_SIZE);
     state->vram = zalloc(VRAM_SIZE);
+    state->oam = zalloc(256);
     loadRom(state, rom);
     initCPU(state);
 

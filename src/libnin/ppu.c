@@ -1,3 +1,4 @@
+#include <math.h>
 #include <libnin/libnin.h>
 
 uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
@@ -139,6 +140,38 @@ static void _dumpFrame(NinState* state)
     //getchar();
 }
 
+void _renderSprite(NinState* state, int sprite)
+{
+    uint8_t y;
+    uint8_t index;
+    uint8_t attr;
+    uint8_t x;
+    size_t off;
+
+    int w;
+    int h;
+
+    y =     state->oam[sprite * 4 + 0];
+    index = state->oam[sprite * 4 + 1];
+    attr =  state->oam[sprite * 4 + 2];
+    x =     state->oam[sprite * 4 + 3];
+
+    w = 256 - x;
+    h = 239 - y;
+
+    if (w > 8) w = 8;
+    if (h > 8) h = 8;
+
+    for (int j = 0; j < h; ++j)
+    {
+        for (int i = 0; i < w; ++i)
+        {
+            off = (j + y + 1) * BITMAP_X + (x + i);
+            state->bitmap[off] |= 0x00ff0000;
+        }
+    }
+}
+
 void ninPpuRenderFrame(NinState* state)
 {
     uint32_t value;
@@ -172,5 +205,7 @@ void ninPpuRenderFrame(NinState* state)
             }
         }
     }
+    for (int i = 0; i < 64; ++i)
+        _renderSprite(state, i);
     //_dumpFrame(state);
 }

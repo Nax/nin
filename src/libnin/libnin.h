@@ -80,6 +80,7 @@ struct NinState_ {
     NinTraceCache*  traceCache;
     uint8_t*        ram;
     uint8_t*        vram;
+    uint8_t*        oam;
     uint8_t*        prgRom;
     uint8_t*        chrRom;
     uint32_t        prgRomSize;

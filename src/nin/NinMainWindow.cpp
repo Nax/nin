@@ -54,6 +54,7 @@ void NinMainWindow::keyPressEvent(QKeyEvent* event)
         _emu.handleInput(NIN_BUTTON_B, 1);
         break;
     case Qt::Key_Enter:
+    case Qt::Key_Return:
         _emu.handleInput(NIN_BUTTON_START, 1);
         break;
     case Qt::Key_Space:
@@ -85,6 +86,7 @@ void NinMainWindow::keyReleaseEvent(QKeyEvent* event)
         _emu.handleInput(NIN_BUTTON_B, 0);
         break;
     case Qt::Key_Enter:
+    case Qt::Key_Return:
         _emu.handleInput(NIN_BUTTON_START, 0);
         break;
     case Qt::Key_Space:

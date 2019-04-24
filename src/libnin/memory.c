@@ -30,8 +30,21 @@ static uint8_t ioRead(NinState* state, uint8_t port)
 
 static void ioWrite(NinState* state, uint8_t port, uint8_t value)
 {
+    uint16_t addr;
+    uint8_t tmp;
+
     switch (port)
     {
+    case 0x14:
+        addr = value << 8;
+        //printf("DMA!! 0x%04x\n", addr);
+        //getchar();
+        for (uint16_t i = 0; i < 256; ++i)
+        {
+            tmp = ninMemoryRead8(state, addr | i);
+            state->oam[i] = tmp;
+        }
+        break;
     case 0x16:
         if (value & 0x01)
             state->controllerLatch = 0;
