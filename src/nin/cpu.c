@@ -44,8 +44,8 @@ static uint8_t stackPop8(NinState* state)
 
 static void stackPush16(NinState* state, uint16_t value)
 {
-    stackPush8(state, value & 0xff);
     stackPush8(state, value >> 8);
+    stackPush8(state, value & 0xff);
 }
 
 static uint16_t stackPop16(NinState* state)
@@ -53,8 +53,8 @@ static uint16_t stackPop16(NinState* state)
     uint8_t hi;
     uint8_t lo;
 
-    hi = stackPop8(state);
     lo = stackPop8(state);
+    hi = stackPop8(state);
 
     return lo | ((uint16_t)hi << 8);
 }
@@ -70,6 +70,23 @@ static void _carry(NinState* state, uint8_t value)
         state->cpu.p |= PFLAG_C;
     else
         state->cpu.p &= ~PFLAG_C;
+}
+
+static uint8_t _adc(NinState* state, uint8_t a, uint8_t b)
+{
+    uint16_t sum;
+    uint8_t carryIn;
+    uint8_t carryOut;
+    uint8_t tmp;
+
+    carryIn = state->cpu.p & 0x01;
+    sum = ((uint16_t)a) + b + carryIn;
+    carryOut = sum >> 8;
+    tmp = sum & 0xff;
+    state->cpu.p &= ~(PFLAG_C | PFLAG_V);
+    state->cpu.p |= carryOut;
+    state->cpu.p |= (carryOut ^ carryIn) << 6;
+    return tmp;
 }
 
 void ninRunCycles(NinState* state, size_t cycles)
@@ -237,6 +254,10 @@ void ninRunCycles(NinState* state, size_t cycles)
             case UOP_RTS:
                 pc = stackPop16(state) + 1;
                 break;
+            case UOP_RTI:
+                state->cpu.p = stackPop8(state) & PFLAG_MASK;
+                pc = stackPop16(state);
+                break;
             case UOP_ORA:
                 tmp |= state->cpu.regs[REG_A];
                 state->cpu.regs[REG_A] = tmp;
@@ -249,6 +270,11 @@ void ninRunCycles(NinState* state, size_t cycles)
                 break;
             case UOP_EOR:
                 tmp ^= state->cpu.regs[REG_A];
+                state->cpu.regs[REG_A] = tmp;
+                flagNZ(state, tmp);
+                break;
+            case UOP_ADC:
+                tmp = _adc(state, state->cpu.regs[REG_A], tmp ^ uop->data);
                 state->cpu.regs[REG_A] = tmp;
                 flagNZ(state, tmp);
                 break;
@@ -311,6 +337,20 @@ void ninRunCycles(NinState* state, size_t cycles)
                 tmp |= (c << 7);
                 flagNZ(state, tmp);
                 state->cpu.regs[REG_A] = tmp;
+                break;
+            case UOP_PUSHA:
+                stackPush8(state, state->cpu.regs[REG_A]);
+                break;
+            case UOP_PUSHP:
+                stackPush8(state, state->cpu.p);
+                break;
+            case UOP_POPA:
+                tmp = stackPop8(state);
+                state->cpu.regs[REG_A] = tmp;
+                flagNZ(state, tmp);
+                break;
+            case UOP_POPP:
+                state->cpu.p = stackPop8(state) & PFLAG_MASK;
                 break;
             }
         }

@@ -37,6 +37,7 @@
 #define UOP_JMP             0x32
 #define UOP_JSR             0x33
 #define UOP_RTS             0x34
+#define UOP_RTI             0x35
 
 #define UOP_ORA         0x40
 #define UOP_AND         0x41
@@ -51,5 +52,10 @@
 #define UOP_LSR_REG     0x55
 #define UOP_ROR         0x56
 #define UOP_ROR_REG     0x57
+
+#define UOP_PUSHA       0x60
+#define UOP_PUSHP       0x61
+#define UOP_POPA        0x62
+#define UOP_POPP        0x63
 
 #endif
