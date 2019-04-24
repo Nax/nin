@@ -12,11 +12,13 @@ class NinEmulator : public QObject
 public:
     NinEmulator(const char* path);
     void start();
+    void handleInput(uint8_t key, int pressed);
 
 private slots:
     void update();
 
 private:
+    uint8_t         _input;
     QTimer*         _timer;
     NinState*       _state;
     NinMainWindow*  _window;

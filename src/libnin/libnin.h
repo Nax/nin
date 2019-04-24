@@ -72,6 +72,8 @@ typedef struct {
 } NinPPU;
 
 struct NinState_ {
+    uint8_t         controller;
+    uint8_t         controllerLatch;
     uint32_t*       bitmap;
     NinCPU          cpu;
     NinPPU          ppu;

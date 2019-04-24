@@ -14,6 +14,8 @@ public:
 
     virtual void initializeGL() override;
     virtual void paintGL() override;
+    virtual void keyPressEvent(QKeyEvent* event) override;
+    virtual void keyReleaseEvent(QKeyEvent* event) override;
 
     void update(const char* texture);
 

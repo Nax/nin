@@ -13,6 +13,8 @@ NinEmulator::NinEmulator(const char* path)
 
     _window = new NinMainWindow(*this);
     _window->show();
+
+    _input = 0;
 }
 
 void NinEmulator::start()
@@ -21,8 +23,19 @@ void NinEmulator::start()
     _timer->start(16);
 }
 
+void NinEmulator::handleInput(uint8_t key, int pressed)
+{
+    if (pressed)
+        _input |= key;
+    else
+        _input &= ~key;
+
+    printf("Input: 0x%02x\n", _input);
+}
+
 void NinEmulator::update()
 {
+    ninSetInput(_state, _input);
     ninRunFrame(_state);
     _window->update((const char*)ninGetScreenBuffer(_state));
 }

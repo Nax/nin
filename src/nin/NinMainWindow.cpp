@@ -1,3 +1,4 @@
+#include <QKeyEvent>
 #include "NinMainWindow.h"
 #include "NinEmulator.h"
 
@@ -40,6 +41,68 @@ void NinMainWindow::paintGL()
     glTexCoord2f(1.f, 1.f);
     glVertex2f(1.f, -1.f);
     glEnd();
+}
+
+void NinMainWindow::keyPressEvent(QKeyEvent* event)
+{
+    switch (event->key())
+    {
+    case Qt::Key_Z:
+        _emu.handleInput(NIN_BUTTON_A, 1);
+        break;
+    case Qt::Key_X:
+        _emu.handleInput(NIN_BUTTON_B, 1);
+        break;
+    case Qt::Key_Enter:
+        _emu.handleInput(NIN_BUTTON_START, 1);
+        break;
+    case Qt::Key_Space:
+        _emu.handleInput(NIN_BUTTON_SELECT, 1);
+        break;
+    case Qt::Key_Left:
+        _emu.handleInput(NIN_BUTTON_LEFT, 1);
+        break;
+    case Qt::Key_Right:
+        _emu.handleInput(NIN_BUTTON_RIGHT, 1);
+        break;
+    case Qt::Key_Up:
+        _emu.handleInput(NIN_BUTTON_UP, 1);
+        break;
+    case Qt::Key_Down:
+        _emu.handleInput(NIN_BUTTON_DOWN, 1);
+        break;
+    }
+}
+
+void NinMainWindow::keyReleaseEvent(QKeyEvent* event)
+{
+    switch (event->key())
+    {
+    case Qt::Key_Z:
+        _emu.handleInput(NIN_BUTTON_A, 0);
+        break;
+    case Qt::Key_X:
+        _emu.handleInput(NIN_BUTTON_B, 0);
+        break;
+    case Qt::Key_Enter:
+        _emu.handleInput(NIN_BUTTON_START, 0);
+        break;
+    case Qt::Key_Space:
+        _emu.handleInput(NIN_BUTTON_SELECT, 0);
+        break;
+    case Qt::Key_Left:
+        _emu.handleInput(NIN_BUTTON_LEFT, 0);
+        break;
+    case Qt::Key_Right:
+        _emu.handleInput(NIN_BUTTON_RIGHT, 0);
+        break;
+    case Qt::Key_Up:
+        _emu.handleInput(NIN_BUTTON_UP, 0);
+        break;
+    case Qt::Key_Down:
+        _emu.handleInput(NIN_BUTTON_DOWN, 0);
+        break;
+    }
 }
 
 void NinMainWindow::update(const char* texture)

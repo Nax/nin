@@ -48,3 +48,8 @@ const uint32_t* ninGetScreenBuffer(NinState* state)
 {
     return state->bitmap;
 }
+
+void ninSetInput(NinState* state, uint8_t input)
+{
+    state->controller = input;
+}

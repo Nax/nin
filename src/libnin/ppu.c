@@ -2,6 +2,7 @@
 
 uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
 {
+    static int sp0hack = 0;
     uint8_t value;
     uint8_t mask;
 
@@ -19,6 +20,9 @@ uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         if (state->ppu.nmi & NMI_OCCURED)
             value |= 0x80;
         ninUnsetFlagNMI(state, NMI_OCCURED);
+        if (sp0hack)
+            value |= 0x40;
+        sp0hack ^= 1;
         state->ppu.addrHalfFlag = 0;
         break;
     case 0x03:
