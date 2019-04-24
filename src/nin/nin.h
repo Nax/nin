@@ -32,9 +32,11 @@
 #define NMI_OUTPUT  0x02
 
 typedef struct {
+    uint8_t     mode;
     uint8_t     op;
     uint8_t     len;
-    uint16_t    data;
+    uint8_t     data;
+    uint16_t    addr;
 } NinUop;
 
 typedef struct {
