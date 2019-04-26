@@ -257,6 +257,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     };
 
     uint8_t tmp;
+    uint8_t palette;
     uint16_t tileNum;
     uint8_t colorIndex;
     int newFrame;
@@ -301,7 +302,11 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                 rt.shiftPatternLo <<= 1;
                 rt.shiftPatternHi <<= 1;
 
-                colorIndex = ninVMemoryRead8(state, 0x3F00 | ((rt.latchAttr & 0x03) << 2) | tmp) & 0x3f;
+                palette = rt.latchAttr & 0x3;
+                if (tmp == 0)
+                    colorIndex = ninVMemoryRead8(state, 0x3F00);
+                else
+                    colorIndex = ninVMemoryRead8(state, 0x3F00 | (palette << 2) | tmp) & 0x3f;
 
                 state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
             }
