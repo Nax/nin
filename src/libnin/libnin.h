@@ -72,8 +72,8 @@ typedef struct {
     uint8_t     latchTileHi;
     uint16_t    shiftPatternLo;
     uint16_t    shiftPatternHi;
-    uint8_t     shiftPaletteHi;
-    uint8_t     shiftPaletteLo;
+    uint16_t    shiftPaletteHi;
+    uint16_t    shiftPaletteLo;
 } NinRuntimePPU;
 
 typedef struct {

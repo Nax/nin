@@ -349,20 +349,28 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
             case 0:
                 rt.shiftPatternLo <<= 8;
                 rt.shiftPatternHi <<= 8;
+                rt.shiftPaletteLo <<= 8;
+                rt.shiftPaletteHi <<= 8;
                 rt.shiftPatternLo |= rt.latchTileLo;
                 rt.shiftPatternHi |= rt.latchTileHi;
+                rt.shiftPaletteLo |= (rt.latchAttr & 0x01) ? 0xff : 0x00;
+                rt.shiftPaletteHi |= (rt.latchAttr & 0x02) ? 0xff : 0x00;
                 //printf("v (name): 0x%04x | %d | %d\n", rt.v, rt.cycle, rt.scanline);
                 rt.latchName = ninVMemoryRead8(state, 0x2000 | (rt.v & 0xfff));
-                rt.v = _incX(rt.v);
                 break;
             case 2:
                 rt.latchAttr = ninVMemoryRead8(state, 0x23c0 | (rt.v & 0x0C00) | ((rt.v >> 4) & 0x38) | ((rt.v >> 2) & 0x07));
+                if (rt.v & 0x02)
+                    rt.latchAttr >>= 2;
+                if ((rt.v >> 5) & 0x02)
+                    rt.latchAttr >>= 4;
                 break;
             case 4:
                 rt.latchTileLo = ninVMemoryRead8(state, 0x1000 | rt.latchName << 4 | ((rt.v >> 12) & 0x07));
                 break;
             case 6:
                 rt.latchTileHi = ninVMemoryRead8(state, 0x1000 | rt.latchName << 4 | 0x08 | ((rt.v >> 12) & 0x07));
+                rt.v = _incX(rt.v);
                 break;
             }
         }
@@ -390,8 +398,8 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                 tmp = (rt.shiftPatternLo >> shift) & 0x01;
                 tmp |= (((rt.shiftPatternHi >> shift) & 0x01) << 1);
 
-                palette = rt.latchAttr & 0x3;
-                if (v & )
+                palette = (rt.shiftPaletteLo >> shift) & 0x01;
+                palette |= (((rt.shiftPaletteHi >> shift) & 0x01) << 1);
                 if (tmp == 0)
                     colorIndex = ninVMemoryRead8(state, 0x3F00);
                 else
