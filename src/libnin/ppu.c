@@ -320,6 +320,8 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     uint8_t palette;
     uint16_t tileNum;
     uint8_t colorIndex;
+    uint8_t n;
+    uint8_t i;
     int newFrame;
     NinRuntimePPU rt;
 
@@ -390,6 +392,34 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
         if (rt.scanline < 240)
         {
+            /* Sprite evaluation */
+            if (rt.cycle == 1)
+            {
+                for (i = 0; i < 64; ++i)
+                    rt.oam2[i] = 0xff;
+                n = 0;
+                for (i = 0; i < 64; ++i)
+                {
+                    if (rt.scanline >= state->oam[i * 4] && rt.scanline < state->oam[i * 4] + 8)
+                    {
+                        rt.oam2[n * 4 + 0] = state->oam[i * 4 + 0];
+                        rt.oam2[n * 4 + 1] = state->oam[i * 4 + 1];
+                        rt.oam2[n * 4 + 2] = state->oam[i * 4 + 2];
+                        rt.oam2[n * 4 + 3] = state->oam[i * 4 + 3];
+
+                        n++;
+
+                        if (n == 8)
+                            break;
+                    }
+                }
+            }
+            else if (rt.cycle == 257)
+            {
+                for (i = 0; i < 64; ++i)
+                    rt.oam3[i] = rt.oam2[i];
+            }
+
             /* Visible scanlines */
             if (rt.cycle >= 1 && rt.cycle <= 256)
             {
@@ -407,6 +437,12 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
                 state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
                 //state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kTempPalette[tmp];
+
+                for (i = 0; i < 8; ++i)
+                {
+                    if ((rt.cycle - 1) >= rt.oam3[i * 4 + 3] && (rt.cycle - 1) < rt.oam3[i * 4 + 3] + 8 && rt.oam3[i * 4] != 0xff)
+                        state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = 0xffff0000;
+                }
             }
         }
         else if (rt.scanline == 240 && rt.cycle == 0)

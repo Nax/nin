@@ -74,6 +74,8 @@ typedef struct {
     uint16_t    shiftPatternHi;
     uint16_t    shiftPaletteHi;
     uint16_t    shiftPaletteLo;
+    uint8_t     oam2[64];
+    uint8_t     oam3[64];
 } NinRuntimePPU;
 
 typedef struct {
