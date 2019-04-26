@@ -236,6 +236,29 @@ void ninPpuRenderFrame(NinState* state)
 
 int ninPpuRunCycles(NinState* state, uint16_t cycles)
 {
+    /* A R G B */
+    static const uint32_t kPalette[] = {
+        0xff7c7c7c, 0xfffc0000, 0xffbc0000, 0xffbc2844,
+        0xff840094, 0xff2000a8, 0xff0010a8, 0xff001488,
+        0xff003050, 0xff007800, 0xff006800, 0xff005800,
+        0xff584000, 0xff000000, 0xff000000, 0xff000000,
+        0xffbcbcbc, 0xfff87800, 0xfff85800, 0xfffc4468,
+        0xffcc00d8, 0xff5800e4, 0xff0038f8, 0xff105ce4,
+        0xff007cac, 0xff00b800, 0xff00a800, 0xff44a800,
+        0xff888800, 0xff000000, 0xff000000, 0xff000000,
+        0xfff8f8f8, 0xfffcbc3c, 0xfffc8868, 0xfff87898,
+        0xfff878f8, 0xff9858f8, 0xff5878f8, 0xff44a0fc,
+        0xff00b8f8, 0xff18f8b8, 0xff54d858, 0xff98f858,
+        0xffd8e800, 0xff787878, 0xff000000, 0xff000000,
+        0xfffcfcfc, 0xfffce4a4, 0xfff8b8b8, 0xfff8b8d8,
+        0xfff8b8f8, 0xffc0a4f8, 0xffb0d0f0, 0xffa8e0fc,
+        0xff78d8f8, 0xff78f8d8, 0xffb8f8b8, 0xffd8f8b8,
+        0xfffcfc00, 0xfff8d8f8, 0xff000000, 0xff000000,
+    };
+
+    uint8_t tmp;
+    uint16_t tileNum;
+    uint8_t colorIndex;
     int newFrame;
     NinRuntimePPU rt;
 
@@ -244,7 +267,66 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
     while (cycles--)
     {
+        /*
+         * Scanlines are numbered from 0 to 261 (inclusive), 261 being
+         * the dummy pre-render one.
+         */
+        if (rt.scanline < 240)
+        {
+            /* Visible scanlines */
+            if (rt.cycle >= 1 && rt.cycle <= 256)
+            {
+                tileNum = ((rt.cycle - 1) / 8) + (rt.scanline / 8) * 32 + 2;
 
+                switch ((rt.cycle - 1) % 8)
+                {
+                case 0:
+                    rt.shiftPatternLo |= rt.latchTileLo;
+                    rt.shiftPatternHi |= rt.latchTileHi;
+                    rt.latchName = ninVMemoryRead8(state, 0x2000 | tileNum);
+                    break;
+                case 2:
+                    rt.latchAttr = ninVMemoryRead8(state, 0x23c0 | (((rt.scanline / 32) * 8) + (rt.cycle - 1) / 32));
+                    break;
+                case 4:
+                    rt.latchTileLo = ninVMemoryRead8(state, 0x1000 | rt.latchName << 4 | (rt.scanline & 0x7));
+                    break;
+                case 6:
+                    rt.latchTileHi = ninVMemoryRead8(state, 0x1000 | rt.latchName << 4 | 0x08 | (rt.scanline & 0x7));
+                    break;
+                }
+
+                tmp = (rt.shiftPatternLo & 0x80) >> 7;
+                tmp |= ((rt.shiftPatternHi & 0x80) >> 6);
+                rt.shiftPatternLo <<= 1;
+                rt.shiftPatternHi <<= 1;
+
+                colorIndex = ninVMemoryRead8(state, 0x3F00 | ((rt.latchAttr & 0x03) << 2) | tmp) & 0x3f;
+
+                state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
+            }
+        }
+        else if (rt.scanline == 240 && rt.cycle == 0)
+        {
+            ninSetFlagNMI(state, NMI_OCCURED);
+        }
+        else if (rt.scanline == 261 && rt.cycle == 0)
+        {
+            ninUnsetFlagNMI(state, NMI_OCCURED);
+        }
+
+        /* Increment the cycle counter */
+        rt.cycle++;
+        if (rt.cycle == 341)
+        {
+            rt.cycle = 0;
+            rt.scanline++;
+            if (rt.scanline == 262)
+            {
+                rt.scanline = 0;
+                newFrame = 1;
+            }
+        }
     }
 
     state->ppu.rt = rt;

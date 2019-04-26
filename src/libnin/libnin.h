@@ -61,8 +61,14 @@ typedef struct {
 } NinCPU;
 
 typedef struct {
-    int16_t     scanline;
+    uint16_t    scanline;
     uint16_t    cycle;
+    uint8_t     latchName;
+    uint8_t     latchAttr;
+    uint8_t     latchTileLo;
+    uint8_t     latchTileHi;
+    uint16_t    shiftPatternLo;
+    uint16_t    shiftPatternHi;
 } NinRuntimePPU;
 
 typedef struct {
@@ -88,6 +94,7 @@ struct NinState_ {
     NinTraceCache*  traceCache;
     uint8_t*        ram;
     uint8_t*        vram;
+    uint8_t*        palettes;
     uint8_t*        oam;
     uint8_t*        prgRom;
     uint8_t*        chrRom;
