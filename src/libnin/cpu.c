@@ -382,7 +382,7 @@ void ninRunFrame(NinState* state)
             }
             state->cpu.pc = pc;
 
-            printf("CYC: %d\n", cycles);
+            //printf("CYC: %d\n", cycles);
 
             if (ninPpuRunCycles(state, cycles * 3)) goto end;
 

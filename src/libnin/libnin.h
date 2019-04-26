@@ -61,6 +61,9 @@ typedef struct {
 } NinCPU;
 
 typedef struct {
+    uint16_t    t;
+    uint16_t    v;
+    uint8_t     x;
     uint16_t    scanline;
     uint16_t    cycle;
     uint8_t     latchName;
@@ -69,6 +72,8 @@ typedef struct {
     uint8_t     latchTileHi;
     uint16_t    shiftPatternLo;
     uint16_t    shiftPatternHi;
+    uint8_t     shiftPaletteHi;
+    uint8_t     shiftPaletteLo;
 } NinRuntimePPU;
 
 typedef struct {
