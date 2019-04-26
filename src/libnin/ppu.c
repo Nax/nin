@@ -233,3 +233,20 @@ void ninPpuRenderFrame(NinState* state)
         _renderSprite(state, i);
     //_dumpFrame(state);
 }
+
+int ninPpuRunCycles(NinState* state, uint16_t cycles)
+{
+    int newFrame;
+    NinRuntimePPU rt;
+
+    newFrame = 0;
+    rt = state->ppu.rt;
+
+    while (cycles--)
+    {
+
+    }
+
+    state->ppu.rt = rt;
+    return newFrame;
+}

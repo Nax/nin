@@ -61,16 +61,22 @@ typedef struct {
 } NinCPU;
 
 typedef struct {
-    uint16_t    addr;
-    uint16_t    newAddr;
-    uint8_t     readBuf;
-    uint8_t     latch;
-    uint8_t     nmi;
-    uint8_t     controller;
-    uint8_t     scrollX;
-    uint8_t     scrollY;
-    unsigned    addrHalfFlag:1;
-    unsigned    dataHalfFlag:1;
+    int16_t     scanline;
+    uint16_t    cycle;
+} NinRuntimePPU;
+
+typedef struct {
+    NinRuntimePPU   rt;
+    uint16_t        addr;
+    uint16_t        newAddr;
+    uint8_t         readBuf;
+    uint8_t         latch;
+    uint8_t         nmi;
+    uint8_t         controller;
+    uint8_t         scrollX;
+    uint8_t         scrollY;
+    unsigned        addrHalfFlag:1;
+    unsigned        dataHalfFlag:1;
 } NinPPU;
 
 struct NinState_ {
@@ -107,5 +113,6 @@ void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
 NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
 void        ninPpuRenderFrame(NinState* state);
+int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 
 #endif
