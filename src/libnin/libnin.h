@@ -75,7 +75,10 @@ typedef struct {
     uint16_t    shiftPaletteHi;
     uint16_t    shiftPaletteLo;
     uint8_t     oam2[64];
-    uint8_t     oam3[64];
+    uint8_t     latchSpriteBitmapLo[8];
+    uint8_t     latchSpriteBitmapHi[8];
+    uint8_t     latchSpriteBitmapAttr[8];
+    uint8_t     latchSpriteBitmapX[8];
 } NinRuntimePPU;
 
 typedef struct {

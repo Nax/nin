@@ -130,126 +130,6 @@ void ninUnsetFlagNMI(NinState* state, uint8_t flag)
     state->ppu.nmi &= ~flag;
 }
 
-static void _dumpFrame(NinState* state)
-{
-    static int counter;
-    char buffer[512];
-    FILE* file;
-    uint16_t tmp16;
-    uint32_t tmp32;
-
-    snprintf(buffer, 512, "frame_%05d.bmp", counter++);
-    file = fopen(buffer, "wb");
-    fwrite("BM", 2, 1, file);
-    tmp32 = 14 + 40 + BITMAP_X * BITMAP_Y * 3; fwrite(&tmp32, 4, 1, file);
-    tmp32 = 0; fwrite(&tmp32, 4, 1, file);
-    tmp32 = 54; fwrite(&tmp32, 4, 1, file);
-    tmp32 = 40; fwrite(&tmp32, 4, 1, file);
-    tmp32 = BITMAP_X; fwrite(&tmp32, 4, 1, file);
-    tmp32 = -BITMAP_Y; fwrite(&tmp32, 4, 1, file);
-    tmp16 = 1; fwrite(&tmp16, 2, 1, file);
-    tmp16 = 24; fwrite(&tmp16, 2, 1, file);
-    tmp32 = 0; fwrite(&tmp32, 4, 1, file);
-    tmp32 = BITMAP_X * BITMAP_Y * 3; fwrite(&tmp32, 4, 1, file);
-    tmp32 = 2048; fwrite(&tmp32, 4, 1, file);
-    tmp32 = 2048; fwrite(&tmp32, 4, 1, file);
-    tmp32 = 0; fwrite(&tmp32, 4, 1, file);
-    tmp32 = 0; fwrite(&tmp32, 4, 1, file);
-
-    for (size_t i = 0; i < BITMAP_X * BITMAP_Y; ++i)
-        fwrite(state->bitmap + i, 3, 1, file);
-
-    fclose(file);
-
-    printf("\n\n\nFRAME RENDERED\n\n\n");
-    //getchar();
-}
-
-void _renderSprite(NinState* state, int sprite)
-{
-    uint8_t y;
-    uint8_t index;
-    uint8_t attr;
-    uint8_t x;
-    size_t off;
-
-    int w;
-    int h;
-
-    y =     state->oam[sprite * 4 + 0];
-    index = state->oam[sprite * 4 + 1];
-    attr =  state->oam[sprite * 4 + 2];
-    x =     state->oam[sprite * 4 + 3];
-
-    w = 256 - x;
-    h = 239 - y;
-
-    if (w > 8) w = 8;
-    if (h > 8) h = 8;
-
-    for (int j = 0; j < h; ++j)
-    {
-        for (int i = 0; i < w; ++i)
-        {
-            off = (j + y + 1) * BITMAP_X + (x + i);
-            state->bitmap[off] |= 0x00ff0000;
-        }
-    }
-}
-
-void ninPpuRenderFrame(NinState* state)
-{
-    uint8_t scrollX;
-    uint8_t scrollY;
-    uint32_t value;
-    uint8_t entry;
-    uint8_t pattern[16];
-    size_t screenX;
-    size_t screenY;
-    size_t off;
-
-    scrollX = state->ppu.scrollX / 8;
-    scrollY = state->ppu.scrollY / 8;
-    uint16_t nameIndex;
-    uint16_t nameX;
-    uint16_t nameY;
-    uint8_t hiNameX;
-    uint8_t loNameX;
-
-    printf("scroll: %d / %d\n", scrollX, scrollY);
-    for (int y = 0; y < 30; ++y)
-    {
-        for (int x = 0; x < 32; ++x)
-        {
-            nameX = x + scrollX;
-            hiNameX = nameX / 32;
-            loNameX = nameX % 32;
-            nameIndex = (0x400 * ((state->ppu.controller & 0x03) + hiNameX)) | (y * 32 + loNameX);
-            entry = ninVMemoryRead8(state, 0x2000 | (nameIndex & 0xfff));
-            for (int i = 0; i < 16; ++i)
-                pattern[i] = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0) | (entry << 4) | i);
-            for (int py = 0; py < 8; ++py)
-            {
-                for (int px = 0; px < 8; ++px)
-                {
-                    value = 0x00000000;
-                    screenX = x * 8 + px;
-                    screenY = y * 8 + py;
-                    off = screenY * BITMAP_X + screenX;
-                    if (pattern[py] & (1 << (7 - px)))
-                        value |= 0x404040;
-                    if (pattern[py + 8] & (1 << (7 - px)))
-                        value |= 0x808080;
-                    state->bitmap[off] = value;
-                }
-            }
-        }
-    }
-    for (int i = 0; i < 64; ++i)
-        _renderSprite(state, i);
-    //_dumpFrame(state);
-}
-
 static uint16_t _incX(uint16_t v)
 {
     if ((v & 0x001f) == 31)
@@ -283,6 +163,23 @@ static uint16_t _incY(uint16_t v)
             y++;
         v = (v & ~0x03E0) | (y << 5);
     }
+
+    return v;
+}
+
+static uint8_t bitswap8(uint8_t b)
+{
+    uint8_t v;
+
+    v = 0;
+    v |= (b & 0x80) >> 7;
+    v |= (b & 0x40) >> 5;
+    v |= (b & 0x20) >> 3;
+    v |= (b & 0x10) >> 1;
+    v |= (b & 0x08) << 1;
+    v |= (b & 0x04) << 3;
+    v |= (b & 0x02) << 5;
+    v |= (b & 0x01) << 7;
 
     return v;
 }
@@ -416,8 +313,22 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
             }
             else if (rt.cycle == 257)
             {
-                for (i = 0; i < 64; ++i)
-                    rt.oam3[i] = rt.oam2[i];
+                for (i = 0; i < 8; ++i)
+                {
+                    rt.latchSpriteBitmapAttr[i] = rt.oam2[i * 4 + 2];
+                    rt.latchSpriteBitmapX[i] = rt.oam2[i * 4 + 3];
+                    tmp = (rt.scanline - rt.oam2[i * 4 + 0]) & 0x07;
+                    if (rt.latchSpriteBitmapAttr[i] & 0x80)
+                        tmp = 7 - tmp;
+                    rt.latchSpriteBitmapLo[i] = ninVMemoryRead8(state, ((state->ppu.controller & 0x04) ? 0x1000 : 0x0000) | (rt.oam2[i * 4 + 1] << 4) | tmp);
+                    rt.latchSpriteBitmapHi[i] = ninVMemoryRead8(state, ((state->ppu.controller & 0x04) ? 0x1000 : 0x0000) | (rt.oam2[i * 4 + 1] << 4) | 0x08 | tmp);
+
+                    if (rt.latchSpriteBitmapAttr[i] & 0x40)
+                    {
+                        rt.latchSpriteBitmapLo[i] = bitswap8(rt.latchSpriteBitmapLo[i]);
+                        rt.latchSpriteBitmapHi[i] = bitswap8(rt.latchSpriteBitmapHi[i]);
+                    }
+                }
             }
 
             /* Visible scanlines */
@@ -440,8 +351,18 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
                 for (i = 0; i < 8; ++i)
                 {
-                    if ((rt.cycle - 1) >= rt.oam3[i * 4 + 3] && (rt.cycle - 1) < rt.oam3[i * 4 + 3] + 8 && rt.oam3[i * 4] != 0xff)
-                        state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = 0xffff0000;
+                    if ((rt.cycle - 1) >= rt.latchSpriteBitmapX[i] && (rt.cycle - 1) < rt.latchSpriteBitmapX[i] + 8)
+                    {
+                        shift = 7 - ((rt.cycle - 1) - rt.latchSpriteBitmapX[i]);
+                        tmp = (rt.latchSpriteBitmapLo[i] >> shift) & 0x01;
+                        tmp |= (((rt.latchSpriteBitmapHi[i] >> shift) & 0x01) << 1);
+
+                        if (tmp)
+                        {
+                            state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kTempPalette[tmp];
+                            break;
+                        }
+                    }
                 }
             }
         }
