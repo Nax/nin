@@ -61,16 +61,35 @@ typedef struct {
 } NinCPU;
 
 typedef struct {
-    uint16_t    addr;
-    uint16_t    newAddr;
-    uint8_t     readBuf;
-    uint8_t     latch;
-    uint8_t     nmi;
-    uint8_t     controller;
-    uint8_t     scrollX;
-    uint8_t     scrollY;
-    unsigned    addrHalfFlag:1;
-    unsigned    dataHalfFlag:1;
+    uint16_t    t;
+    uint16_t    v;
+    uint8_t     x;
+    uint16_t    scanline;
+    uint16_t    cycle;
+    uint8_t     latchName;
+    uint8_t     latchAttr;
+    uint8_t     latchTileLo;
+    uint8_t     latchTileHi;
+    uint16_t    shiftPatternLo;
+    uint16_t    shiftPatternHi;
+    uint16_t    shiftPaletteHi;
+    uint16_t    shiftPaletteLo;
+    uint8_t     oam2[64];
+    uint8_t     oam3[64];
+} NinRuntimePPU;
+
+typedef struct {
+    NinRuntimePPU   rt;
+    uint16_t        addr;
+    uint16_t        newAddr;
+    uint8_t         readBuf;
+    uint8_t         latch;
+    uint8_t         nmi;
+    uint8_t         controller;
+    uint8_t         scrollX;
+    uint8_t         scrollY;
+    unsigned        addrHalfFlag:1;
+    unsigned        dataHalfFlag:1;
 } NinPPU;
 
 struct NinState_ {
@@ -82,6 +101,7 @@ struct NinState_ {
     NinTraceCache*  traceCache;
     uint8_t*        ram;
     uint8_t*        vram;
+    uint8_t*        palettes;
     uint8_t*        oam;
     uint8_t*        prgRom;
     uint8_t*        chrRom;
@@ -107,5 +127,6 @@ void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
 NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
 void        ninPpuRenderFrame(NinState* state);
+int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 
 #endif

@@ -1,5 +1,6 @@
 #include <libnin/libnin.h>
 
+/*
 void ninRunFrame(NinState* state)
 {
     ninSetFlagNMI(state, NMI_OCCURED);
@@ -8,3 +9,4 @@ void ninRunFrame(NinState* state)
     ninUnsetFlagNMI(state, NMI_OCCURED);
     ninRunCycles(state, 27507);
 }
+*/

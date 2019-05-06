@@ -109,6 +109,6 @@ void NinMainWindow::keyReleaseEvent(QKeyEvent* event)
 
 void NinMainWindow::update(const char* texture)
 {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 256, 240, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 256, 240, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
     QOpenGLWindow::update();
 }

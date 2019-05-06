@@ -89,9 +89,10 @@ static uint8_t _adc(NinState* state, uint8_t a, uint8_t b)
     return tmp;
 }
 
-void ninRunCycles(NinState* state, size_t cycles)
+void ninRunFrame(NinState* state)
 {
     uint16_t pc;
+    uint8_t cycles;
     NinTrace* trace;
     NinUop* uop;
     uint8_t tmp;
@@ -100,7 +101,7 @@ void ninRunCycles(NinState* state, size_t cycles)
 
     pc = state->cpu.pc;
 
-    while (cycles--)
+    for (;;)
     {
         trace = ninGetTrace(state, pc);
         for (size_t i = 0; i < trace->length; ++i)
@@ -116,74 +117,93 @@ void ninRunCycles(NinState* state, size_t cycles)
                 break;
 
             case ADDR_NONE:
+                cycles = 2;
                 break;
             case ADDR_IMM:
+                cycles = 2;
                 tmp = (uint8_t)uop->addr;
                 break;
             case ADDR_ABS:
+                cycles = 4;
                 addr = uop->addr;
                 tmp = ninMemoryRead8(state, addr);
                 break;
             case ADDR_ABS_NOREAD:
+                cycles = 3;
                 addr = uop->addr;
                 break;
             case ADDR_ABS_INDIRECT_NOREAD:
+                cycles = 5; // FIXME
                 addr = ninMemoryRead8(state, uop->addr);
                 addr |= ((ninMemoryRead8(state, ((uop->addr + 1) & 0xff) | (uop->addr & 0xff00))) << 8);
                 break;
             case ADDR_ABS_X:
+                cycles = 4;
                 addr = uop->addr + state->cpu.regs[REG_X];
                 tmp = ninMemoryRead8(state, addr);
                 break;
             case ADDR_ABS_X_NOREAD:
+                cycles = 3;
                 addr = uop->addr + state->cpu.regs[REG_X];
                 break;
             case ADDR_ABS_Y:
+                cycles = 4;
                 addr = uop->addr + state->cpu.regs[REG_Y];
                 tmp = ninMemoryRead8(state, addr);
                 break;
             case ADDR_ABS_Y_NOREAD:
+                cycles = 3;
                 addr = uop->addr + state->cpu.regs[REG_Y];
                 break;
             case ADDR_ZERO:
+                cycles = 3;
                 addr = uop->addr;
                 tmp = ninMemoryRead8(state, addr);
                 break;
             case ADDR_ZERO_NOREAD:
+                cycles = 2;
                 addr = uop->addr;
                 break;
             case ADDR_ZERO_X:
+                cycles = 4;
                 addr = (uop->addr + state->cpu.regs[REG_X]) & 0xff;
                 tmp = ninMemoryRead8(state, addr);
                 break;
             case ADDR_ZERO_X_NOREAD:
+                cycles = 3;
                 addr = (uop->addr + state->cpu.regs[REG_X]) & 0xff;
                 break;
             case ADDR_ZERO_Y:
+                cycles = 4;
                 addr = (uop->addr + state->cpu.regs[REG_Y]) & 0xff;
                 tmp = ninMemoryRead8(state, addr);
                 break;
             case ADDR_ZERO_Y_NOREAD:
+                cycles = 3;
                 addr = (uop->addr + state->cpu.regs[REG_Y]) & 0xff;
                 break;
             case ADDR_ZERO_X_INDIRECT:
+                cycles = 6;
                 tmp = (uop->addr + state->cpu.regs[REG_X]) & 0xff;
                 addr = ninMemoryRead8(state, tmp);
                 addr |= (ninMemoryRead8(state, (tmp + 1) & 0xff)) << 8;
                 tmp = ninMemoryRead8(state, addr);
                 break;
             case ADDR_ZERO_X_INDIRECT_NOREAD:
+                cycles = 5;
                 tmp = (uop->addr + state->cpu.regs[REG_X]) & 0xff;
                 addr = ninMemoryRead8(state, tmp);
                 addr |= (ninMemoryRead8(state, (tmp + 1) & 0xff)) << 8;
                 break;
             case ADDR_ZERO_Y_INDIRECT:
+                cycles = 6;
                 addr = ninMemoryRead8(state, uop->addr);
                 addr |= (ninMemoryRead8(state, (uop->addr + 1) & 0xff)) << 8;
                 addr += state->cpu.regs[REG_Y];
                 tmp = ninMemoryRead8(state, addr);
                 break;
             case ADDR_ZERO_Y_INDIRECT_NOREAD:
+                cycles = 5;
                 addr = ninMemoryRead8(state, uop->addr);
                 addr |= (ninMemoryRead8(state, (uop->addr + 1) & 0xff)) << 8;
                 addr += state->cpu.regs[REG_Y];
@@ -360,17 +380,25 @@ void ninRunCycles(NinState* state, size_t cycles)
             case UOP_NOP:
                 break;
             }
-        }
-        state->cpu.pc = pc;
-        if (state->nmi)
-        {
-            state->nmi = 0;
-            printf("--- NMI! ---\n");
-            //getchar();
-            stackPush16(state, pc);
-            stackPush8(state, state->cpu.p);
-            pc = ninMemoryRead16(state, 0xfffa);
             state->cpu.pc = pc;
+
+            //printf("CYC: %d\n", cycles);
+
+            if (ninPpuRunCycles(state, cycles * 3)) goto end;
+
+            if (state->nmi)
+            {
+                state->nmi = 0;
+                printf("--- NMI! ---\n");
+                //getchar();
+                stackPush16(state, pc);
+                stackPush8(state, state->cpu.p);
+                pc = ninMemoryRead16(state, 0xfffa);
+                state->cpu.pc = pc;
+            }
         }
     }
+
+end:
+    return;
 }
