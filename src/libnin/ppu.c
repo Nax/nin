@@ -359,7 +359,9 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
                         if (tmp)
                         {
-                            state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kTempPalette[tmp];
+                            palette = rt.latchSpriteBitmapAttr[i] & 0x03;
+                            colorIndex = ninVMemoryRead8(state, 0x3F10 | (palette << 2) | tmp) & 0x3f;
+                            state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
                             break;
                         }
                     }
