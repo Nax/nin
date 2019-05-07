@@ -89,7 +89,7 @@ static uint8_t _adc(NinState* state, uint8_t a, uint8_t b)
     return tmp;
 }
 
-void ninRunFrame(NinState* state)
+void ninRunFrameCPU(NinState* state)
 {
     uint16_t pc;
     uint8_t cycles;
@@ -380,9 +380,8 @@ void ninRunFrame(NinState* state)
             case UOP_NOP:
                 break;
             }
-            state->cpu.pc = pc;
 
-            //printf("CYC: %d\n", cycles);
+            state->cpu.pc = pc;
 
             if (ninPpuRunCycles(state, cycles * 3)) goto end;
 

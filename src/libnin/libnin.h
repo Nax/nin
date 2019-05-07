@@ -81,20 +81,19 @@ typedef struct {
     uint8_t     latchSpriteBitmapX[8];
     unsigned    zeroHit:1;
     unsigned    zeroHitNext:1;
+    unsigned    maskEnableBackground:1;
+    unsigned    maskEnableSprites:1;
 } NinRuntimePPU;
 
 typedef struct {
     NinRuntimePPU   rt;
-    uint16_t        addr;
-    uint16_t        newAddr;
     uint8_t         readBuf;
     uint8_t         latch;
     uint8_t         nmi;
     uint8_t         controller;
     uint8_t         scrollX;
     uint8_t         scrollY;
-    unsigned        addrHalfFlag:1;
-    unsigned        dataHalfFlag:1;
+    unsigned        w:1;
     unsigned        zeroHitFlag:1;
 } NinPPU;
 
@@ -134,5 +133,7 @@ void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
 void        ninPpuRenderFrame(NinState* state);
 int         ninPpuRunCycles(NinState* state, uint16_t cycles);
+
+void        ninRunFrameCPU(NinState* state);
 
 #endif

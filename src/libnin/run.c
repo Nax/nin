@@ -1,12 +1,7 @@
 #include <libnin/libnin.h>
 
-/*
 void ninRunFrame(NinState* state)
 {
-    ninSetFlagNMI(state, NMI_OCCURED);
-    ninRunCycles(state, 2273);
-    ninPpuRenderFrame(state);
-    ninUnsetFlagNMI(state, NMI_OCCURED);
-    ninRunCycles(state, 27507);
+    memset(state->bitmap, 0, BITMAP_X * BITMAP_Y * 4);
+    ninRunFrameCPU(state);
 }
-*/
