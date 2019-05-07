@@ -1,6 +1,13 @@
 #include <cstdio>
 #include "NinEmulator.h"
 
+static const unsigned kBufferCount = 64;
+
+static void _audioCallback(void* arg, const int16_t* samples)
+{
+    ((NinEmulator*)arg)->handleAudio(samples);
+}
+
 NinEmulator::NinEmulator(const char* path)
 {
     FILE* f;
@@ -8,6 +15,9 @@ NinEmulator::NinEmulator(const char* path)
     f = fopen(path, "rb");
     _state = ninCreateState(f);
     fclose(f);
+
+    _audio = new Audio;
+    ninSetAudioCallback(_state, &_audioCallback, this);
 
     _timer = new QTimer(this);
 
@@ -19,6 +29,9 @@ NinEmulator::NinEmulator(const char* path)
 
 void NinEmulator::start()
 {
+    // Run the first frame
+    update();
+
     connect(_timer, SIGNAL(timeout(void)), this, SLOT(update(void)));
     _timer->start(16);
 }
@@ -31,6 +44,11 @@ void NinEmulator::handleInput(uint8_t key, int pressed)
         _input &= ~key;
 
     printf("Input: 0x%02x\n", _input);
+}
+
+void NinEmulator::handleAudio(const int16_t* samples)
+{
+    _audio->pushSamples(samples);
 }
 
 void NinEmulator::update()

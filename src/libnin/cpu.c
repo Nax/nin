@@ -383,6 +383,7 @@ void ninRunFrameCPU(NinState* state)
 
             state->cpu.pc = pc;
 
+            ninRunCyclesAPU(state, cycles);
             if (ninPpuRunCycles(state, cycles * 3)) goto end;
 
             if (state->nmi)
