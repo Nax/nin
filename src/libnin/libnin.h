@@ -79,6 +79,8 @@ typedef struct {
     uint8_t     latchSpriteBitmapHi[8];
     uint8_t     latchSpriteBitmapAttr[8];
     uint8_t     latchSpriteBitmapX[8];
+    unsigned    zeroHit:1;
+    unsigned    zeroHitNext:1;
 } NinRuntimePPU;
 
 typedef struct {
@@ -93,6 +95,7 @@ typedef struct {
     uint8_t         scrollY;
     unsigned        addrHalfFlag:1;
     unsigned        dataHalfFlag:1;
+    unsigned        zeroHitFlag:1;
 } NinPPU;
 
 struct NinState_ {

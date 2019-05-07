@@ -3,7 +3,6 @@
 
 uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
 {
-    static int sp0hack = 0;
     uint8_t value;
     uint8_t mask;
 
@@ -21,9 +20,8 @@ uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         if (state->ppu.nmi & NMI_OCCURED)
             value |= 0x80;
         ninUnsetFlagNMI(state, NMI_OCCURED);
-        if (sp0hack)
+        if (state->ppu.zeroHitFlag)
             value |= 0x40;
-        sp0hack ^= 1;
         state->ppu.addrHalfFlag = 0;
         break;
     case 0x03:
@@ -215,7 +213,6 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     uint8_t tmp;
     uint8_t shift;
     uint8_t palette;
-    uint16_t tileNum;
     uint8_t colorIndex;
     uint8_t n;
     uint8_t i;
@@ -274,24 +271,13 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
             }
         }
 
-        /* Check for shifts */
-        /*
-        if ((rt.scanline < 240 && rt.cycle >= 9 && rt.cycle <= 257 && (((rt.cycle - 1) & 0x07) == 0)) || ((rt.scanline < 240 || rt.scanline == 261) && (rt.cycle == 327 || rt.cycle == 335)))
-        {
-            rt.shiftPatternLo <<= 8;
-            rt.shiftPatternHi <<= 8;
-            rt.shiftPatternLo |= rt.latchTileLo;
-            rt.shiftPatternHi |= rt.latchTileHi;
-            //printf("v (shift): 0x%04x | %d | %d\n", rt.v, rt.cycle, rt.scanline);
-            rt.v = _incX(rt.v);
-        }
-        */
-
         if (rt.scanline < 240)
         {
             /* Sprite evaluation */
             if (rt.cycle == 1)
             {
+                rt.zeroHit = rt.zeroHitNext;
+                rt.zeroHitNext = 0;
                 for (i = 0; i < 64; ++i)
                     rt.oam2[i] = 0xff;
                 n = 0;
@@ -299,6 +285,8 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                 {
                     if (rt.scanline >= state->oam[i * 4] && rt.scanline < state->oam[i * 4] + 8)
                     {
+                        if (i == 0)
+                            rt.zeroHitNext = 1;
                         rt.oam2[n * 4 + 0] = state->oam[i * 4 + 0];
                         rt.oam2[n * 4 + 1] = state->oam[i * 4 + 1];
                         rt.oam2[n * 4 + 2] = state->oam[i * 4 + 2];
@@ -362,15 +350,24 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                             palette = rt.latchSpriteBitmapAttr[i] & 0x03;
                             colorIndex = ninVMemoryRead8(state, 0x3F10 | (palette << 2) | tmp) & 0x3f;
                             state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
+
+                            if (i == 0 && rt.zeroHit)
+                                state->ppu.zeroHitFlag = 1;
                             break;
                         }
                     }
                 }
             }
         }
-        else if (rt.scanline == 240 && rt.cycle == 0)
+        else if (rt.scanline == 240)
         {
-            ninSetFlagNMI(state, NMI_OCCURED);
+            if (rt.cycle == 1)
+            {
+                ninSetFlagNMI(state, NMI_OCCURED);
+                state->ppu.zeroHitFlag = 0;
+                rt.zeroHit = 0;
+                rt.zeroHitNext = 0;
+            }
         }
         else if (rt.scanline == 261 && rt.cycle == 0)
         {

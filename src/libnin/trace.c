@@ -436,7 +436,7 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
     }
 
 end:
-    printf("Generated new trace at 0x%04x (length: %d)\n", trace->pc, trace->length);
+    //printf("Generated new trace at 0x%04x (length: %d)\n", trace->pc, trace->length);
     return trace;
 }
 
