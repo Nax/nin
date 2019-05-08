@@ -101,6 +101,10 @@ typedef struct {
     uint16_t        triangleTimer;
     uint16_t        triangleClock;
     uint8_t         triangleSeq;
+    uint16_t        pulseTimer[2];
+    uint16_t        pulseClock[2];
+    uint8_t         pulseSeq[2];
+    unsigned        half:1;
 } NinAPU;
 
 struct NinState_ {

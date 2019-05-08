@@ -10,6 +10,10 @@ static const int16_t kTriangleSequence[32] = {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 
+static const int16_t kPulseSequence[8] = {
+    0, 1, 1, 1, 1, 0, 0, 0
+};
+
 uint8_t ninApuRegRead(NinState* state, uint16_t reg)
 {
     uint8_t value;
@@ -27,6 +31,22 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
 {
     switch (reg)
     {
+    case 0x02: // Pulse 1 Timer Lo
+        state->apu.pulseTimer[0] &= 0xff00;
+        state->apu.pulseTimer[0] |= value;
+        break;
+    case 0x03: // Pulse 1 Timer Hi
+        state->apu.pulseTimer[0] &= 0x00ff;
+        state->apu.pulseTimer[0] |= ((value & 0x7) << 8);
+        break;
+    case 0x06: // Pulse 2 Timer Lo
+        state->apu.pulseTimer[1] &= 0xff00;
+        state->apu.pulseTimer[1] |= value;
+        break;
+    case 0x07: // Pulse 2 Timer Hi
+        state->apu.pulseTimer[1] &= 0x00ff;
+        state->apu.pulseTimer[1] |= ((value & 0x7) << 8);
+        break;
     case 0x0a: // Triangle Timer Lo
         state->apu.triangleTimer &= 0xff00;
         state->apu.triangleTimer |= value;
@@ -43,13 +63,41 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
     NinAPU apu;
     int16_t sample;
     int16_t triangleSample;
+    int16_t pulseSample[2];
 
     apu = state->apu;
     state->audioCycles += cycles;
 
     triangleSample = 0;
+    pulseSample[0] = 0;
+    pulseSample[1] = 0;
+
     while (cycles--)
     {
+        if (!apu.half)
+        {
+            for (int i = 0; i < 2; ++i)
+            {
+                if (apu.pulseClock[i] == 0)
+                {
+                    apu.pulseClock[i] = apu.pulseTimer[i];
+                    apu.pulseSeq[i] = (apu.pulseSeq[i] + 1) % 8;
+                }
+                else
+                    apu.pulseClock[i]--;
+            }
+        }
+
+        apu.half ^= 1;
+
+        for (int i = 0; i < 2; ++i)
+        {
+            if (apu.pulseTimer[i])
+            {
+                pulseSample[i] = kPulseSequence[apu.pulseSeq[i]] * 15 * TRIANGLE_VOLUME - ((15 * TRIANGLE_VOLUME) / 2);
+            }
+        }
+
         if (apu.triangleTimer > 2)
         {
             if (apu.triangleClock == 0)
@@ -64,6 +112,8 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
     }
 
     sample = triangleSample;
+    sample += pulseSample[0];
+    sample += pulseSample[1];
 
     /*
     if (sample)

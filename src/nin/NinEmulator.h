@@ -4,6 +4,7 @@
 #include <al.h>
 #include <alc.h>
 
+#include <thread>
 #include <QTimer>
 #include <nin/nin.h>
 #include "NinMainWindow.h"
@@ -18,14 +19,12 @@ public:
     void start();
     void handleInput(uint8_t key, int pressed);
     void handleAudio(const int16_t* samples);
-
-private slots:
     void update();
 
 private:
+    std::thread     _worker;
     Audio*          _audio;
     uint8_t         _input;
-    QTimer*         _timer;
     NinState*       _state;
     NinMainWindow*  _window;
 };
