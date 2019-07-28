@@ -97,13 +97,31 @@ typedef struct {
     unsigned        zeroHitFlag:1;
 } NinPPU;
 
+typedef union {
+    uint8_t     raw;
+    struct {
+        unsigned shift:3;
+        unsigned negate:1;
+        unsigned divider:3;
+        unsigned enabled:1;
+    };
+} NinAudioSweep;
+
 typedef struct {
+    uint16_t        frameCounter;
     uint16_t        triangleTimer;
     uint16_t        triangleClock;
     uint8_t         triangleSeq;
     uint16_t        pulseTimer[2];
     uint16_t        pulseClock[2];
     uint8_t         pulseSeq[2];
+    uint8_t         pulseLen[2];
+    unsigned        pulseEnable:2;
+    unsigned        pulseHalt:2;
+    NinAudioSweep   pulseSweep[2];
+    unsigned        pulseSweepCounter[2];
+    uint8_t         pulseDuty[2];
+    uint8_t         pulseVolume[2];
     unsigned        half:1;
 } NinAPU;
 
