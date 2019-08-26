@@ -97,22 +97,56 @@ typedef struct {
     unsigned        zeroHitFlag:1;
 } NinPPU;
 
+typedef union {
+    uint8_t     raw;
+    struct {
+        unsigned shift:3;
+        unsigned negate:1;
+        unsigned divider:3;
+        unsigned enabled:1;
+    };
+} NinAudioSweep;
+
+typedef struct {
+    uint16_t        frameCounter;
+    uint16_t        triangleTimer;
+    uint16_t        triangleClock;
+    uint8_t         triangleSeq;
+    uint16_t        pulseTimer[2];
+    uint16_t        pulseClock[2];
+    uint8_t         pulseSeq[2];
+    uint8_t         pulseLen[2];
+    unsigned        pulseEnable:2;
+    unsigned        pulseHalt:2;
+    NinAudioSweep   pulseSweep[2];
+    unsigned        pulseSweepCounter[2];
+    uint8_t         pulseDuty[2];
+    uint8_t         pulseVolume[2];
+    unsigned        half:1;
+} NinAPU;
+
 struct NinState_ {
-    uint8_t         controller;
-    uint8_t         controllerLatch;
-    uint32_t*       bitmap;
-    NinCPU          cpu;
-    NinPPU          ppu;
-    NinTraceCache*  traceCache;
-    uint8_t*        ram;
-    uint8_t*        vram;
-    uint8_t*        palettes;
-    uint8_t*        oam;
-    uint8_t*        prgRom;
-    uint8_t*        chrRom;
-    uint32_t        prgRomSize;
-    uint32_t        chrRomSize;
-    unsigned        nmi:1;
+    uint8_t             controller;
+    uint8_t             controllerLatch;
+    uint32_t*           bitmap;
+    int16_t*            audioSamples;
+    uint16_t            audioSamplesCount;
+    uint32_t            audioCycles;
+    NINAUDIOCALLBACK    audioCallback;
+    void*               audioCallbackArg;
+    NinCPU              cpu;
+    NinPPU              ppu;
+    NinAPU              apu;
+    NinTraceCache*      traceCache;
+    uint8_t*            ram;
+    uint8_t*            vram;
+    uint8_t*            palettes;
+    uint8_t*            oam;
+    uint8_t*            prgRom;
+    uint8_t*            chrRom;
+    uint32_t            prgRomSize;
+    uint32_t            chrRomSize;
+    unsigned            nmi:1;
 };
 
 uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
@@ -130,10 +164,14 @@ void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
 uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
 void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
+uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
+void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
+
 NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
 void        ninPpuRenderFrame(NinState* state);
 int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 
 void        ninRunFrameCPU(NinState* state);
+void        ninRunCyclesAPU(NinState* state, size_t cycles);
 
 #endif

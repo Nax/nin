@@ -12,6 +12,10 @@
 
 typedef struct NinState_ NinState;
 
+typedef void (*NINAUDIOCALLBACK)(void*, const int16_t*);
+
+#define NIN_AUDIO_SAMPLE_SIZE   1024
+
 #define NIN_BUTTON_A        0x01
 #define NIN_BUTTON_B        0x02
 #define NIN_BUTTON_SELECT   0x04
@@ -26,5 +30,6 @@ NIN_API void            ninDestroyState(NinState* state);
 NIN_API void            ninRunFrame(NinState* state);
 NIN_API const uint32_t* ninGetScreenBuffer(NinState* state);
 NIN_API void            ninSetInput(NinState* state, uint8_t input);
+NIN_API void            ninSetAudioCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg);
 
 #endif

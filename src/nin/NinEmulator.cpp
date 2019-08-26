@@ -1,5 +1,44 @@
 #include <cstdio>
+#include <chrono>
+#include <thread>
 #include "NinEmulator.h"
+
+static const unsigned kBufferCount = 64;
+
+static void _audioCallback(void* arg, const int16_t* samples)
+{
+    ((NinEmulator*)arg)->handleAudio(samples);
+}
+
+static void _workerMain(NinEmulator* emu)
+{
+    static const uint64_t kDelay = 16666666;
+
+    using Clock = std::chrono::high_resolution_clock;
+    using Duration = std::chrono::nanoseconds;
+    using TimePoint = std::chrono::time_point<Clock, Duration>;
+
+    TimePoint prev;
+    TimePoint now;
+    uint64_t acc;
+
+    prev = Clock::now();
+    acc = 0;
+    for (;;)
+    {
+        now = Clock::now();
+        acc += (now - prev).count();
+        prev = now;
+
+        while (acc >= kDelay)
+        {
+            QMetaObject::invokeMethod(emu, &NinEmulator::update);
+            acc -= kDelay;
+        }
+
+        std::this_thread::sleep_for(std::chrono::nanoseconds(kDelay - acc));
+    }
+}
 
 NinEmulator::NinEmulator(const char* path)
 {
@@ -9,7 +48,8 @@ NinEmulator::NinEmulator(const char* path)
     _state = ninCreateState(f);
     fclose(f);
 
-    _timer = new QTimer(this);
+    _audio = new Audio;
+    ninSetAudioCallback(_state, &_audioCallback, this);
 
     _window = new NinMainWindow(*this);
     _window->show();
@@ -19,8 +59,10 @@ NinEmulator::NinEmulator(const char* path)
 
 void NinEmulator::start()
 {
-    connect(_timer, SIGNAL(timeout(void)), this, SLOT(update(void)));
-    _timer->start(16);
+    // Run the first frame
+    update();
+
+    _worker = std::thread(_workerMain, this);
 }
 
 void NinEmulator::handleInput(uint8_t key, int pressed)
@@ -31,6 +73,11 @@ void NinEmulator::handleInput(uint8_t key, int pressed)
         _input &= ~key;
 
     printf("Input: 0x%02x\n", _input);
+}
+
+void NinEmulator::handleAudio(const int16_t* samples)
+{
+    _audio->pushSamples(samples);
 }
 
 void NinEmulator::update()

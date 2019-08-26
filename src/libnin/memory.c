@@ -1,6 +1,6 @@
 #include <libnin/libnin.h>
 
-static uint16_t badIO(NinState* state, uint16_t addr, int write)
+static uint8_t badIO(NinState* state, uint16_t addr, int write)
 {
     printf("Bad IO at 0x%04x, PC: 0x%04x (%c)\n", addr, state->cpu.pc, write ? 'w' : 'r');
     //getchar();
@@ -59,7 +59,16 @@ uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
     else if (addr < 0x4000)
         return ninPpuRegRead(state, addr);
     else if (addr < 0x4018)
-        return ioRead(state, addr & 0xff);
+    {
+        switch (addr & 0xff)
+        {
+        case 0x14:
+        case 0x16:
+            return ioRead(state, addr & 0xff);
+        default:
+            return ninApuRegRead(state, addr & 0xff);
+        }
+    }
     else if (addr >= 0x8000)
         return state->prgRom[addr & 0x7fff];
     return badIO(state, addr, 0);
@@ -83,7 +92,18 @@ void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
     else if (addr < 0x4000)
         ninPpuRegWrite(state, addr, value);
     else if (addr < 0x4018)
-        ioWrite(state, addr & 0xff, value);
+    {
+        switch (addr & 0xff)
+        {
+        case 0x14:
+        case 0x16:
+            ioWrite(state, addr & 0xff, value);
+            break;
+        default:
+            ninApuRegWrite(state, addr & 0xff, value);
+            break;
+        }
+    }
     else
         badIO(state, addr, 1);
 }
