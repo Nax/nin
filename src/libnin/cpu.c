@@ -91,6 +91,7 @@ static uint8_t _adc(NinState* state, uint8_t a, uint8_t b)
 
 void ninRunFrameCPU(NinState* state)
 {
+    int leaveTrace;
     uint16_t pc;
     uint8_t cycles;
     NinTrace* trace;
@@ -104,6 +105,7 @@ void ninRunFrameCPU(NinState* state)
     for (;;)
     {
         trace = ninGetTrace(state, pc);
+        leaveTrace = 0;
         for (size_t i = 0; i < trace->length; ++i)
         {
             uop = trace->uops + i;
@@ -236,7 +238,7 @@ void ninRunFrameCPU(NinState* state)
                 flagNZ(state, tmp);
                 break;
             case UOP_STORE:
-                ninMemoryWrite8(state, addr, state->cpu.regs[uop->data]);
+                leaveTrace = ninMemoryWrite8(state, addr, state->cpu.regs[uop->data]);
                 break;
             case UOP_CMP:
                 compare(state, state->cpu.regs[uop->data], tmp);
@@ -248,7 +250,7 @@ void ninRunFrameCPU(NinState* state)
                 break;
             case UOP_ADD_MEM:
                 tmp += incr(uop->data);
-                ninMemoryWrite8(state, addr, tmp);
+                leaveTrace = ninMemoryWrite8(state, addr, tmp);
                 flagNZ(state, tmp);
                 break;
             case UOP_TEST:
@@ -307,7 +309,7 @@ void ninRunFrameCPU(NinState* state)
                 _carry(state, tmp & 0x80);
                 tmp <<= 1;
                 flagNZ(state, tmp);
-                ninMemoryWrite8(state, addr, tmp);
+                leaveTrace = ninMemoryWrite8(state, addr, tmp);
                 break;
             case UOP_ASL_REG:
                 tmp = state->cpu.regs[REG_A];
@@ -322,7 +324,7 @@ void ninRunFrameCPU(NinState* state)
                 tmp <<= 1;
                 tmp |= c;
                 flagNZ(state, tmp);
-                ninMemoryWrite8(state, addr, tmp);
+                leaveTrace = ninMemoryWrite8(state, addr, tmp);
                 break;
             case UOP_ROL_REG:
                 tmp = state->cpu.regs[REG_A];
@@ -337,7 +339,7 @@ void ninRunFrameCPU(NinState* state)
                 _carry(state, tmp & 0x01);
                 tmp >>= 1;
                 flagNZ(state, tmp);
-                ninMemoryWrite8(state, addr, tmp);
+                leaveTrace = ninMemoryWrite8(state, addr, tmp);
                 break;
             case UOP_LSR_REG:
                 tmp = state->cpu.regs[REG_A];
@@ -352,7 +354,7 @@ void ninRunFrameCPU(NinState* state)
                 tmp >>= 1;
                 tmp |= (c << 7);
                 flagNZ(state, tmp);
-                ninMemoryWrite8(state, addr, tmp);
+                leaveTrace = ninMemoryWrite8(state, addr, tmp);
                 break;
             case UOP_ROR_REG:
                 tmp = state->cpu.regs[REG_A];
@@ -383,8 +385,18 @@ void ninRunFrameCPU(NinState* state)
 
             state->cpu.pc = pc;
 
+            if (leaveTrace)
+            {
+                printf("FLUSH TRACES\n");
+                fflush(stdout);
+                ninFlushTraces(state);
+            }
+
             ninRunCyclesAPU(state, cycles);
             if (ninPpuRunCycles(state, cycles * 3)) goto end;
+
+            if (leaveTrace)
+                break;
 
             if (state->nmi)
             {

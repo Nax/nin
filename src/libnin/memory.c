@@ -3,7 +3,8 @@
 static uint8_t badIO(NinState* state, uint16_t addr, int write)
 {
     printf("Bad IO at 0x%04x, PC: 0x%04x (%c)\n", addr, state->cpu.pc, write ? 'w' : 'r');
-    //getchar();
+    fflush(stdout);
+    getchar();
     return 0;
 }
 
@@ -69,8 +70,15 @@ uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
             return ninApuRegRead(state, addr & 0xff);
         }
     }
-    else if (addr < 0x8000)
+    else if (addr < 0x6000)
         return badIO(state, addr, 0);
+    else if (addr < 0x8000)
+    {
+        if ((addr & 0x1fff) < state->prgRamSize)
+            return state->prgRam[addr & 0x1fff];
+        else
+            return badIO(state, addr, 0);
+    }
     else if (addr < 0xc000)
         return state->prgRomBank[0][addr & 0x3fff];
     else
@@ -88,7 +96,7 @@ uint16_t ninMemoryRead16(NinState* state, uint16_t addr)
     return lo | (hi << 8);
 }
 
-void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
+int ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
 {
     if (addr < 0x2000)
         state->ram[addr & 0x7ff] = value;
@@ -107,14 +115,26 @@ void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
             break;
         }
     }
-    else if (addr < 0x8000)
+    else if (addr < 0x6000)
         badIO(state, addr, 1);
+    else if (addr < 0x8000)
+    {
+        if ((addr & 0x1fff) < state->prgRamSize)
+            state->prgRam[addr & 0x1fff] = value;
+        else
+            badIO(state, addr, 1);
+    }
     else
-        state->prgWriteHandler(state, addr, value);
+        return state->prgWriteHandler(state, addr, value);
+    return 0;
 }
 
-void ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
+int ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
 {
-    ninMemoryWrite8(state, addr, value & 0xff);
-    ninMemoryWrite8(state, addr + 1, value >> 8);
+    int tmp;
+
+    tmp = ninMemoryWrite8(state, addr, value & 0xff);
+    tmp |= ninMemoryWrite8(state, addr + 1, value >> 8);
+
+    return !!tmp;
 }

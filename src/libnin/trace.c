@@ -429,7 +429,8 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             break;
 
         default:
-            printf("Opcode 0x%02x generated no uop, trace error?\n", op);
+            printf("Opcode 0x%02x generated no uop, trace error? (%04x)\n", op, pc);
+            fflush(stdout);
             getchar();
             break;
         }
@@ -456,4 +457,10 @@ NinTrace* ninGetTrace(NinState* state, uint16_t addr)
     }
 
     return trace;
+}
+
+void ninFlushTraces(NinState* state)
+{
+    for (size_t i = 0; i < 0x10000; ++i)
+        state->traceCache->index[i] = TRACE_NONE;
 }

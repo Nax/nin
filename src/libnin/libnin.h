@@ -34,7 +34,7 @@
 #define BITMAP_X    256
 #define BITMAP_Y    240
 
-typedef void (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
+typedef int (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
 
 typedef struct {
     uint8_t     mode;
@@ -61,6 +61,21 @@ typedef struct {
     uint8_t     regs[4];
     uint8_t     p;
 } NinCPU;
+
+typedef struct {
+    uint8_t shift;
+    uint8_t count;
+    uint8_t mirroring:2;
+    uint8_t prgBankMode:2;
+    uint8_t chrBankMode:1;
+    uint8_t chrBank0:5;
+    uint8_t chrBank1:5;
+    uint8_t prgBank:4;
+} NinMapperRegsMMC1;
+
+typedef union {
+    NinMapperRegsMMC1 mmc1;
+} NinMapperRegs;
 
 typedef struct {
     uint16_t    t;
@@ -144,10 +159,13 @@ struct NinState_ {
     uint8_t*            vram;
     uint8_t*            palettes;
     uint8_t*            oam;
+    NinMapperRegs       mapper;
     uint8_t             bankCount;
     uint8_t*            prgRom;
     uint8_t*            prgRomBank[2];
     NinPrgWriteHandler  prgWriteHandler;
+    uint8_t*            prgRam;
+    uint16_t            prgRamSize;
     uint8_t*            chrRom;
     uint32_t            prgRomSize;
     uint32_t            chrRomSize;
@@ -158,8 +176,8 @@ void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
 uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
 uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
-void        ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
-void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
+int         ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
+int         ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
 
 uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
@@ -175,6 +193,8 @@ uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
 void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
 NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
+void        ninFlushTraces(NinState* state);
+
 void        ninPpuRenderFrame(NinState* state);
 int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 
@@ -182,7 +202,7 @@ void        ninRunFrameCPU(NinState* state);
 void        ninRunCyclesAPU(NinState* state, size_t cycles);
 
 /* Mapper handlers */
-void        ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
-void        ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
+int        ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
+int        ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
 
 #endif

@@ -1,6 +1,6 @@
 #include <libnin/libnin.h>
 
-void ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value)
+int ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value)
 {
-
+    return 0;
 }
