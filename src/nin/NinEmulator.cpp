@@ -71,8 +71,6 @@ void NinEmulator::handleInput(uint8_t key, int pressed)
         _input |= key;
     else
         _input &= ~key;
-
-    printf("Input: 0x%02x\n", _input);
 }
 
 void NinEmulator::handleAudio(const int16_t* samples)

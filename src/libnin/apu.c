@@ -140,7 +140,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
 
                     if (apu.pulseSweep[i].enabled)
                     {
-                        if (!apu.pulseSweepCounter)
+                        if (!apu.pulseSweepCounter[i])
                         {
                             apu.pulseTimer[i] = pulseSweepTarget;
                             apu.pulseSweepCounter[i] = apu.pulseSweep[i].divider;
