@@ -11,6 +11,7 @@ static void initCPU(NinState* state)
 static void loadRom(NinState* state, FILE* rom)
 {
     uint8_t header[16];
+    uint8_t mapperNum;
 
     fread(header, 16, 1, rom);
     state->prgRomSize = 16384 * header[4];
@@ -19,6 +20,9 @@ static void loadRom(NinState* state, FILE* rom)
     state->chrRom = malloc(state->chrRomSize);
     fread(state->prgRom, state->prgRomSize, 1, rom);
     fread(state->chrRom, state->chrRomSize, 1, rom);
+
+    mapperNum = ((header[6] & 0xf0) >> 4) | (header[7] & 0xf0);
+    ninApplyMapper(state, mapperNum);
 }
 
 NinState* ninCreateState(FILE* rom)

@@ -143,11 +143,14 @@ struct NinState_ {
     uint8_t*            palettes;
     uint8_t*            oam;
     uint8_t*            prgRom;
+    uint8_t*            prgRomBank[2];
     uint8_t*            chrRom;
     uint32_t            prgRomSize;
     uint32_t            chrRomSize;
     unsigned            nmi:1;
 };
+
+void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
 uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
 uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
