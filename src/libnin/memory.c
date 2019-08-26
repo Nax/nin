@@ -107,8 +107,10 @@ void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
             break;
         }
     }
-    else
+    else if (addr < 0x8000)
         badIO(state, addr, 1);
+    else
+        state->prgWriteHandler(state, addr, value);
 }
 
 void ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)

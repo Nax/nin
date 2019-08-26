@@ -34,6 +34,8 @@
 #define BITMAP_X    256
 #define BITMAP_Y    240
 
+typedef void (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
+
 typedef struct {
     uint8_t     mode;
     uint8_t     op;
@@ -142,8 +144,10 @@ struct NinState_ {
     uint8_t*            vram;
     uint8_t*            palettes;
     uint8_t*            oam;
+    uint8_t             bankCount;
     uint8_t*            prgRom;
     uint8_t*            prgRomBank[2];
+    NinPrgWriteHandler  prgWriteHandler;
     uint8_t*            chrRom;
     uint32_t            prgRomSize;
     uint32_t            chrRomSize;
@@ -176,5 +180,9 @@ int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 
 void        ninRunFrameCPU(NinState* state);
 void        ninRunCyclesAPU(NinState* state, size_t cycles);
+
+/* Mapper handlers */
+void        ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
+void        ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
 
 #endif
