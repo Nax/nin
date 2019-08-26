@@ -16,10 +16,22 @@ static void loadRom(NinState* state, FILE* rom)
     fread(header, 16, 1, rom);
     state->prgRomSize = 16384 * header[4];
     state->chrRomSize = 8192 * header[5];
+
     state->prgRom = malloc(state->prgRomSize);
-    state->chrRom = malloc(state->chrRomSize);
     fread(state->prgRom, state->prgRomSize, 1, rom);
-    fread(state->chrRom, state->chrRomSize, 1, rom);
+
+    if (state->chrRomSize)
+    {
+        state->chrRom = malloc(state->chrRomSize);
+        fread(state->chrRom, state->chrRomSize, 1, rom);
+        state->chr = state->chrRom;
+    }
+    else
+    {
+        state->chrRamSize = 0x2000;
+        state->chrRam = zalloc(state->chrRamSize);
+        state->chr = state->chrRam;
+    }
 
     mapperNum = ((header[6] & 0xf0) >> 4) | (header[7] & 0xf0);
     ninApplyMapper(state, mapperNum);

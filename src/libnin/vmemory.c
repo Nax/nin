@@ -11,7 +11,7 @@ uint8_t ninVMemoryRead8(NinState* state, uint16_t addr)
 {
     addr = addr & 0x3fff;
     if (addr < 0x2000)
-        return state->chrRom[addr];
+        return state->chr[addr];
     if (addr >= 0x2000 && addr < 0x3f00)
         return state->vram[addr & 0x7ff];
     else
@@ -22,7 +22,12 @@ void ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
 {
     addr = addr & 0x3fff;
     if (addr < 0x2000)
-        badIO(state, addr, 1);
+    {
+        if (addr < state->chrRamSize)
+            state->chrRam[addr] = value;
+        else
+            badIO(state, addr, 1);
+    }
     else if (addr >= 0x2000 && addr < 0x3f00)
         state->vram[addr & 0x7ff] = value;
     else

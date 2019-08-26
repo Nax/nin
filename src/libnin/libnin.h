@@ -162,13 +162,16 @@ struct NinState_ {
     NinMapperRegs       mapper;
     uint8_t             bankCount;
     uint8_t*            prgRom;
+    uint32_t            prgRomSize;
     uint8_t*            prgRomBank[2];
     NinPrgWriteHandler  prgWriteHandler;
     uint8_t*            prgRam;
     uint16_t            prgRamSize;
     uint8_t*            chrRom;
-    uint32_t            prgRomSize;
     uint32_t            chrRomSize;
+    uint8_t*            chrRam;
+    uint32_t            chrRamSize;
+    uint8_t*            chr;
     unsigned            nmi:1;
 };
 
