@@ -3,6 +3,12 @@
 #include <time.h>
 #include <nin/nin.h>
 
+#if defined(WIN32) || defined(_WIN32)
+# define LF "\r\n"
+#else
+# define LF "\n"
+#endif
+
 int main(int argc, char** argv)
 {
     FILE* rom;
@@ -33,7 +39,8 @@ int main(int argc, char** argv)
         now = clock();
         if (now - lastFrame > CLOCKS_PER_SEC)
         {
-            printf("%d frames/s\n", frameCount);
+            printf("%d frames/s" LF, frameCount);
+            fflush(stdout);
             frameCount = 0;
             lastFrame = now;
         }
