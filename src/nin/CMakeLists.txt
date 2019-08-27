@@ -10,8 +10,11 @@ add_executable(nin ${SOURCES})
 target_link_libraries(nin OpenGL::GL ${OPENAL_LIBRARY} libnin Qt5::Core Qt5::Widgets)
 target_include_directories(nin PRIVATE ${OPENAL_INCLUDE_DIR})
 
-install(TARGETS nin RUNTIME DESTINATION .)
-
 if (WIN32)
 
-endif()
+elseif (APPLE)
+    target_compile_definitions(nin PRIVATE GL_SILENCE_DEPRECATION=1)
+    target_compile_options(nin PRIVATE "-Wno-unknown-pragmas")
+endif ()
+
+install(TARGETS nin RUNTIME DESTINATION .)

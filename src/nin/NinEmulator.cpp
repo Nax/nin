@@ -3,8 +3,6 @@
 #include <thread>
 #include "NinEmulator.h"
 
-static const unsigned kBufferCount = 64;
-
 static void _audioCallback(void* arg, const int16_t* samples)
 {
     ((NinEmulator*)arg)->handleAudio(samples);
