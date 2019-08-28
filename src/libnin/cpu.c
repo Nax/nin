@@ -286,8 +286,8 @@ void ninRunFrameCPU(NinState* state)
             case UOP_BRK:
                 pc++;
                 stackPush16(state, pc);
-                stackPush8(state, state->cpu.p);
-                pc = ninMemoryRead16(state, 0xfffa);
+                stackPush8(state, state->cpu.p | PFLAG_1 | PFLAG_B);
+                pc = ninMemoryRead16(state, 0xfffe);
                 break;
             case UOP_ORA:
                 tmp |= state->cpu.regs[REG_A];
