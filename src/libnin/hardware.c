@@ -15,21 +15,40 @@ void ninApplyMapper(NinState* state, uint8_t mapperNum)
         exit(1);
     case 0:
         /* NROM */
-        state->bankCount = 0;
+        state->prgBankCount = 0;
         state->prgRomBank[0] = state->prgRom;
         if (state->prgRomSize > 0x4000)
             state->prgRomBank[1] = state->prgRom + 0x4000;
         else
             state->prgRomBank[1] = state->prgRom;
+        state->chrBankCount = 0;
+        state->chrBank[0] = state->chrRom;
+        state->chrBank[1] = state->chrRom + 0x1000;
         break;
     case 1:
         /* MMC1 */
         state->prgWriteHandler = &ninPrgWriteHandlerMMC1;
-        state->bankCount = state->prgRomSize / 0x4000;
+        state->prgBankCount = state->prgRomSize / 0x4000;
         state->prgRomBank[0] = state->prgRom;
-        state->prgRomBank[1] = state->prgRom + (state->bankCount - 1) * 0x4000ll;
+        state->prgRomBank[1] = state->prgRom + (state->prgBankCount - 1) * 0x4000ll;
         state->prgRamSize = 0x2000;
         state->prgRam = zalloc(state->prgRamSize);
+
+        if (state->chrRam)
+        {
+            state->chrBankCount = state->chrRamSize / 0x1000;
+            state->chrBank[0] = state->chrRam;
+            state->chrBank[1] = state->chrRam + 0x1000;
+        }
+        else
+        {
+            state->chrBankCount = state->chrRomSize / 0x1000;
+            state->chrBank[0] = state->chrRom;
+            state->chrBank[1] = state->chrRom + 0x1000;
+        }
+
+        state->mapper.mmc1.chrBank0 = 0;
+        state->mapper.mmc1.chrBank1 = 1;
         break;
     }
 }

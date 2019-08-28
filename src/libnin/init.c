@@ -19,18 +19,17 @@ static void loadRom(NinState* state, FILE* rom)
 
     state->prgRom = malloc(state->prgRomSize);
     fread(state->prgRom, state->prgRomSize, 1, rom);
+    printf("%d\r\n", state->prgRomSize);
 
     if (state->chrRomSize)
     {
         state->chrRom = malloc(state->chrRomSize);
         fread(state->chrRom, state->chrRomSize, 1, rom);
-        state->chr = state->chrRom;
     }
     else
     {
         state->chrRamSize = 0x2000;
         state->chrRam = zalloc(state->chrRamSize);
-        state->chr = state->chrRam;
     }
 
     mapperNum = ((header[6] & 0xf0) >> 4) | (header[7] & 0xf0);

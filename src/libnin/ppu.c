@@ -57,14 +57,15 @@ void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
     switch (reg & 0x07)
     {
     case 0x00: // PPUCTRL
-        if (value & 0x80)
-            ninSetFlagNMI(state, NMI_OUTPUT);
-        else
-            ninUnsetFlagNMI(state, NMI_OUTPUT);
         state->ppu.controller = value;
         // Set base nametable
         state->ppu.rt.t &= ~0x0c00;
         state->ppu.rt.t |= ((value & 0x03) << 10);
+        state->ppu.rt.largeSprites = ((value >> 5) & 1);
+        if (value & 0x80)
+            ninSetFlagNMI(state, NMI_OUTPUT);
+        else
+            ninUnsetFlagNMI(state, NMI_OUTPUT);
         break;
     case 0x01:
         state->ppu.rt.maskEnableBackground = ((value & 0x08) >> 3);
@@ -219,6 +220,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     uint8_t colorIndex;
     uint8_t n;
     uint8_t i;
+    uint8_t spriteHeight;
     int newFrame;
     int isRendering;
     NinRuntimePPU rt;
@@ -229,6 +231,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
     while (cycles--)
     {
+        spriteHeight = rt.largeSprites ? 16 : 8;
         /*
          * Scanlines are numbered from 0 to 261 (inclusive), 261 being
          * the dummy pre-render one.
@@ -273,10 +276,10 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                         rt.latchAttr >>= 4;
                     break;
                 case 4:
-                    rt.latchTileLo = ninVMemoryRead8(state, 0x1000 | rt.latchName << 4 | ((rt.v >> 12) & 0x07));
+                    rt.latchTileLo = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0x0000) | rt.latchName << 4 | ((rt.v >> 12) & 0x07));
                     break;
                 case 6:
-                    rt.latchTileHi = ninVMemoryRead8(state, 0x1000 | rt.latchName << 4 | 0x08 | ((rt.v >> 12) & 0x07));
+                    rt.latchTileHi = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0x0000) | rt.latchName << 4 | 0x08 | ((rt.v >> 12) & 0x07));
                     rt.v = _incX(rt.v);
                     break;
                 }
@@ -294,7 +297,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                     n = 0;
                     for (i = 0; i < 64; ++i)
                     {
-                        if (rt.scanline >= state->oam[i * 4] && rt.scanline < state->oam[i * 4] + 8)
+                        if (rt.scanline >= state->oam[i * 4] && rt.scanline < state->oam[i * 4] + spriteHeight)
                         {
                             if (i == 0)
                                 rt.zeroHitNext = 1;
@@ -316,11 +319,24 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                     {
                         rt.latchSpriteBitmapAttr[i] = rt.oam2[i * 4 + 2];
                         rt.latchSpriteBitmapX[i] = rt.oam2[i * 4 + 3];
-                        tmp = (rt.scanline - rt.oam2[i * 4 + 0]) & 0x07;
+                        tmp = (rt.scanline - rt.oam2[i * 4 + 0]);
+                        if (rt.largeSprites && tmp >= 8)
+                        {
+                            tmp = (tmp & 0x07) | 0x10;
+                        }
                         if (rt.latchSpriteBitmapAttr[i] & 0x80)
-                            tmp = 7 - tmp;
-                        rt.latchSpriteBitmapLo[i] = ninVMemoryRead8(state, ((state->ppu.controller & 0x08) ? 0x1000 : 0x0000) | (rt.oam2[i * 4 + 1] << 4) | tmp);
-                        rt.latchSpriteBitmapHi[i] = ninVMemoryRead8(state, ((state->ppu.controller & 0x08) ? 0x1000 : 0x0000) | (rt.oam2[i * 4 + 1] << 4) | 0x08 | tmp);
+                        {
+                            tmp = (~tmp & 0x10) | (7 - (tmp & 7));
+                        }
+                        if (rt.largeSprites)
+                        {
+                            if (tmp & 0x08)
+                                tmp = (tmp & ~0x08) | 0x1000;
+                        }
+                        else if (state->ppu.controller & 0x08)
+                            tmp |= 0x1000;
+                        rt.latchSpriteBitmapLo[i] = ninVMemoryRead8(state, (rt.oam2[i * 4 + 1] << 4) | tmp);
+                        rt.latchSpriteBitmapHi[i] = ninVMemoryRead8(state, (rt.oam2[i * 4 + 1] << 4) | 0x08 | tmp);
 
                         if (rt.latchSpriteBitmapAttr[i] & 0x40)
                         {

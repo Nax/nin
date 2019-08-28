@@ -224,7 +224,7 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             uop->data = MOV(REG_A, REG_Y);
             break;
         case 0xba:
-            uop->op = UOP_MOV_NOFLAG;
+            uop->op = UOP_MOV;
             uop->data = MOV(REG_S, REG_X);
             break;
         case 0x8a:
@@ -232,7 +232,7 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             uop->data = MOV(REG_X, REG_A);
             break;
         case 0x9a:
-            uop->op = UOP_MOV;
+            uop->op = UOP_MOV_NOFLAG;
             uop->data = MOV(REG_X, REG_S);
             break;
         case 0x98:
@@ -291,7 +291,7 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             uop->op = UOP_ADD_MEM;
             uop->data = DEC(0);
             break;
-        case 0xe8:
+        case 0xe8: // INX
             uop->op = UOP_ADD_REG;
             uop->data = INC(REG_X);
             break;
@@ -299,7 +299,7 @@ static NinTrace* ninBuildTrace(NinState* state, uint16_t pc)
             uop->op = UOP_ADD_REG;
             uop->data = INC(REG_Y);
             break;
-        case 0xca:
+        case 0xca: // DEX
             uop->op = UOP_ADD_REG;
             uop->data = DEC(REG_X);
             break;

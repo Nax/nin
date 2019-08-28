@@ -5,6 +5,17 @@ static void setBank(NinState* state, uint8_t slot, uint8_t number)
     state->prgRomBank[slot] = state->prgRom + 0x4000 * number;
 }
 
+static void setBankChr(NinState* state, uint8_t slot, uint8_t number)
+{
+    uint8_t* base;
+
+    if (state->chrRam)
+        base = state->chrRam;
+    else
+        base = state->chrRom;
+    state->chrBank[slot] = base + 0x1000 * (number % state->chrBankCount);
+}
+
 static void bankSwitch(NinState* state)
 {
     NinMapperRegsMMC1* mmc1 = &state->mapper.mmc1;
@@ -22,12 +33,28 @@ static void bankSwitch(NinState* state)
         break;
     case 3:
         setBank(state, 0, mmc1->prgBank);
-        setBank(state, 1, state->bankCount - 1);
+        setBank(state, 1, state->prgBankCount - 1);
         break;
     }
 
     printf("BANK SWITCH!\n");
     fflush(stdout);
+}
+
+static void bankSwitchChr(NinState* state)
+{
+    NinMapperRegsMMC1* mmc1 = &state->mapper.mmc1;
+
+    if (mmc1->chrBankMode == 0)
+    {
+        setBankChr(state, 0, mmc1->chrBank0);
+        setBankChr(state, 1, mmc1->chrBank1);
+    }
+    else
+    {
+        setBankChr(state, 0, mmc1->chrBank0 & ~(0x01));
+        setBankChr(state, 1, mmc1->chrBank0 | 0x01);
+    }
 }
 
 static int writeReg(NinState* state, uint16_t addr, uint8_t value)
@@ -44,18 +71,21 @@ static int writeReg(NinState* state, uint16_t addr, uint8_t value)
         mmc1->prgBankMode = (value >> 2) & 0x03;
         mmc1->chrBankMode = (value >> 4) & 0x01;
         bankSwitch(state);
+        bankSwitchChr(state);
         return 1;
     case 1:
         /* 0xa000 - 0xbfff */
         printf("CHR Bank 0: %02x\n", value);
         fflush(stdout);
         mmc1->chrBank0 = value;
+        bankSwitchChr(state);
         return 0;
     case 2:
         /* 0xc000 - 0xdfff */
         printf("CHR Bank 1: %02x\n", value);
         fflush(stdout);
         mmc1->chrBank1 = value;
+        bankSwitchChr(state);
         return 0;
     case 3:
         /* 0xe000 - 0xffff */

@@ -4,13 +4,18 @@
 static void flagZ(NinState* state, uint8_t value)
 {
     state->cpu.p &= ~PFLAG_Z;
-    state->cpu.p |= (!value) << 1;
+    if (!value)
+    {
+        state->cpu.p |= PFLAG_Z;
+    }
+    //state->cpu.p |= ((!value) << 1);
 }
 
 static void flagN(NinState* state, uint8_t value)
 {
     state->cpu.p &= ~PFLAG_N;
-    state->cpu.p |= (value & 0x80);
+    if (value & 0x80)
+        state->cpu.p |= PFLAG_N;
 }
 
 static void flagNZ(NinState* state, uint8_t value)
@@ -76,17 +81,17 @@ static uint8_t _adc(NinState* state, uint8_t a, uint8_t b)
 {
     uint16_t sum;
     uint8_t carryIn;
-    uint8_t carryOut;
-    uint8_t tmp;
 
-    carryIn = state->cpu.p & 0x01;
-    sum = ((uint16_t)a) + b + carryIn;
-    carryOut = sum >> 8;
-    tmp = sum & 0xff;
-    state->cpu.p &= ~(PFLAG_C | PFLAG_V);
-    state->cpu.p |= carryOut;
-    state->cpu.p |= (carryOut ^ carryIn) << 6;
-    return tmp;
+    carryIn = (state->cpu.p & PFLAG_C) ? 1 : 0;
+    sum = (uint16_t)a + (uint16_t)b + (uint16_t)carryIn;
+
+    state->cpu.p &= ~(PFLAG_C | PFLAG_V | PFLAG_N | PFLAG_Z);
+    if (sum & 0x100) state->cpu.p |= PFLAG_C;
+    if ((sum & 0xff) == 0) state->cpu.p |= PFLAG_Z;
+    if ((a ^ sum) & (b ^ sum) & 0x80) state->cpu.p |= PFLAG_V;
+    if (sum & 0x80) state->cpu.p |= PFLAG_N;
+
+    return (sum & 0xff);
 }
 
 void ninRunFrameCPU(NinState* state)
@@ -106,18 +111,17 @@ void ninRunFrameCPU(NinState* state)
     {
         trace = ninGetTrace(state, pc);
         leaveTrace = 0;
-        for (size_t i = 0; i < trace->length; ++i)
+        for (size_t i = 0; i < 1 /*trace->length */; ++i)
         {
             uop = trace->uops + i;
             pc += uop->len;
-
+            
             switch (uop->mode)
             {
             default:
                 printf("Invalid addressing mode: 0x%02x\n", uop->mode);
                 getchar();
                 break;
-
             case ADDR_NONE:
                 cycles = 2;
                 break;
@@ -254,7 +258,7 @@ void ninRunFrameCPU(NinState* state)
                 flagNZ(state, tmp);
                 break;
             case UOP_TEST:
-                state->cpu.p &= ~(0xc1);
+                state->cpu.p &= ~(0xc2);
                 state->cpu.p |= (tmp & 0xc0);
                 if (!(tmp & state->cpu.regs[REG_A]))
                     state->cpu.p |= PFLAG_Z;
@@ -301,9 +305,7 @@ void ninRunFrameCPU(NinState* state)
                 flagNZ(state, tmp);
                 break;
             case UOP_ADC:
-                tmp = _adc(state, state->cpu.regs[REG_A], tmp ^ uop->data);
-                state->cpu.regs[REG_A] = tmp;
-                flagNZ(state, tmp);
+                state->cpu.regs[REG_A] = _adc(state, state->cpu.regs[REG_A], tmp ^ uop->data);
                 break;
             case UOP_ASL:
                 _carry(state, tmp & 0x80);
@@ -369,7 +371,7 @@ void ninRunFrameCPU(NinState* state)
                 stackPush8(state, state->cpu.regs[REG_A]);
                 break;
             case UOP_PUSHP:
-                stackPush8(state, state->cpu.p);
+                stackPush8(state, state->cpu.p | PFLAG_1 | PFLAG_B);
                 break;
             case UOP_POPA:
                 tmp = stackPop8(state);
@@ -387,7 +389,7 @@ void ninRunFrameCPU(NinState* state)
 
             if (leaveTrace)
             {
-                printf("FLUSH TRACES\n");
+                printf("FLUSH TRACES 0x%04x\n", pc);
                 fflush(stdout);
                 ninFlushTraces(state);
             }
@@ -403,6 +405,7 @@ void ninRunFrameCPU(NinState* state)
                 state->nmi = 0;
                 stackPush16(state, pc);
                 stackPush8(state, state->cpu.p);
+                printf("--- NMI ---\n");
                 pc = ninMemoryRead16(state, 0xfffa);
                 state->cpu.pc = pc;
             }

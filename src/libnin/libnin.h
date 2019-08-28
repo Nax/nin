@@ -100,6 +100,7 @@ typedef struct {
     unsigned    zeroHitNext:1;
     unsigned    maskEnableBackground:1;
     unsigned    maskEnableSprites:1;
+    unsigned    largeSprites:1;
 } NinRuntimePPU;
 
 typedef struct {
@@ -160,18 +161,19 @@ struct NinState_ {
     uint8_t*            palettes;
     uint8_t*            oam;
     NinMapperRegs       mapper;
-    uint8_t             bankCount;
+    uint8_t             prgBankCount;
     uint8_t*            prgRom;
     uint32_t            prgRomSize;
     uint8_t*            prgRomBank[2];
     NinPrgWriteHandler  prgWriteHandler;
     uint8_t*            prgRam;
     uint16_t            prgRamSize;
+    uint8_t             chrBankCount;
     uint8_t*            chrRom;
     uint32_t            chrRomSize;
     uint8_t*            chrRam;
     uint32_t            chrRamSize;
-    uint8_t*            chr;
+    uint8_t*            chrBank[2];
     unsigned            nmi:1;
 };
 
