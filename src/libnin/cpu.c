@@ -1,14 +1,12 @@
 #include <libnin/libnin.h>
 #include "uop.h"
 
+#define INLINE __forceinline
+
 static void flagZ(NinState* state, uint8_t value)
 {
     state->cpu.p &= ~PFLAG_Z;
-    if (!value)
-    {
-        state->cpu.p |= PFLAG_Z;
-    }
-    //state->cpu.p |= ((!value) << 1);
+    state->cpu.p |= ((!value) << 1);
 }
 
 static void flagN(NinState* state, uint8_t value)
@@ -64,19 +62,6 @@ static uint16_t stackPop16(NinState* state)
     return lo | ((uint16_t)hi << 8);
 }
 
-static uint8_t incr(uint8_t value)
-{
-    return (value & 0x80) ? 0xff : 0x01;
-}
-
-static void _carry(NinState* state, uint8_t value)
-{
-    if (value)
-        state->cpu.p |= PFLAG_C;
-    else
-        state->cpu.p &= ~PFLAG_C;
-}
-
 static uint8_t _adc(NinState* state, uint8_t a, uint8_t b)
 {
     uint16_t sum;
@@ -94,324 +79,135 @@ static uint8_t _adc(NinState* state, uint8_t a, uint8_t b)
     return (sum & 0xff);
 }
 
+static uint16_t indirect(NinState* state, uint16_t addr)
+{
+    uint8_t hi;
+    uint8_t lo0;
+    uint8_t lo1;
+    uint8_t hh;
+    uint8_t ll;
+
+    hi = addr >> 8;
+    lo0 = addr & 0xff;
+    lo1 = lo0 + 1;
+
+    ll = ninMemoryRead8(state, ((uint16_t)hi << 8) | lo0);
+    hh = ninMemoryRead8(state, ((uint16_t)hi << 8) | lo1);
+
+    return ((uint16_t)hh << 8) | ll;
+}
+
+static const uint8_t kHex[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15 };
+static const uint8_t kBranchFlags[] = { PFLAG_N, PFLAG_V, PFLAG_C, PFLAG_Z };
+
+#define X(n, str, code) do { if ((kHex[str[(n) / 4] - '0']) & (1 << ((n) % 4))) code } while (0)
+#define CYCLE()         do { cyc++; ninPpuRunCycles(state, 3); } while (0)
+#define READ(x)         do { tmp = ninMemoryRead8(state, (x)); } while (0)
+
+#define INSTRUCTION(n)                                                                                                                                          \
+do                                                                                                                                                              \
+{                                                                                                                                                               \
+    tmp = addr = r0 = r1 = i = 0;                                                                                                                               \
+    switch (n)                                                                                                                                                  \
+    {                                                                                                                                                           \
+    case 0x18: state->cpu.p &= ~PFLAG_C; break;                                                                                                                 \
+    case 0x58: state->cpu.p &= ~PFLAG_I; break;                                                                                                                 \
+    case 0xb8: state->cpu.p &= ~PFLAG_V; break;                                                                                                                 \
+    case 0xc8: state->cpu.p &= ~PFLAG_D; break;                                                                                                                 \
+                                                                                                                                                                \
+    case 0x38: state->cpu.p |= PFLAG_C; break;                                                                                                                  \
+    case 0x78: state->cpu.p |= PFLAG_I; break;                                                                                                                  \
+    case 0xf8: state->cpu.p |= PFLAG_D; break;                                                                                                       \
+    }                                                                                                                                               \
+                                                                                                                                                    \
+    X(n, "0000000000000000000000000000000000000000000000000000000000000000", { r0 = REG_A; });                                                      \
+    X(n, "0000000000000000000000000000000000000000000000000000000000000000", { r0 = REG_X; });                                                      \
+    X(n, "0000000000000000000000000000000000000000000000000000000000000000", { r0 = REG_Y; });                                                      \
+    X(n, "0000000000000000000000000000000000000000222222220000000000000000", { r1 = REG_A; });                                                      \
+    X(n, "0000000000000000000000000000000000000000000000000000000000000000", { r1 = REG_X; });                                                      \
+    X(n, "0000000000000000000000000000000000000000000000000000000000000000", { r1 = REG_Y; });                                                              \
+    X(n, "2000060620000606200006062000060620000302200003032000060620000606", { i = state->cpu.regs[REG_X]; });                          /* index-X */       \
+    X(n, "0000002000000020000000200000002000000420000004240000002000000020", { i = state->cpu.regs[REG_Y]; });                          /* index-Y */       \
+    X(n, "2626362637273626262736262627362627073722772737273727362637273626", { tmp = ninMemoryRead8(state, pc++); addr = tmp; });       /* op1 */           \
+    X(n, "2006202630072026200720262007202620072022200720272007202620072026", { CYCLE(); READ(pc++); addr |= ((uint16_t)tmp << 8); });   /* op2 */           \
+    X(n, "2000060020000600200006002000060020000300200003002000060020000600", { CYCLE(); addr = (addr + i) & 0xff; });                   /* zero-index */    \
+    X(n, "0000002600000026000000260000002600000022000000270000002600000026", { CYCLE(); addr += i; });                                  /* abs-index */     \
+    X(n, "2000200020002000200020002001200020002000200020002000200020002000", { CYCLE(); addr = indirect(state, addr); });               /* indirect */      \
+    X(n, "0000200000002000000020000000200000002000000020000000200000002000", { CYCLE(); addr += state->cpu.regs[REG_Y]; });             /* post-index */    \
+    X(n, "2606262627072626260626262606262600000000270727272707262627072626", { CYCLE(); READ(addr); });                                 /* mem */           \
+    X(n, "0000000000000000000000000000000000000000000000000000000000000000", { tmp = state->cpu.regs[r0]; });                           /* reg -> tmp */    \
+    X(n, "2222222200000000000000000000000000000000000000000000000000000000", { tmp = state->cpu.regs[REG_A] | tmp; });                  /* ora */           \
+    X(n, "0000000022222222000000000000000000000000000000000000000000000000", { tmp = state->cpu.regs[REG_A] & tmp; });                  /* and */           \
+    X(n, "0000000000000000222222220000000000000000000000000000000000000000", { tmp = state->cpu.regs[REG_A] ^ tmp; });                  /* eor */           \
+    X(n, "0000000000000000000000002222222200000000000000000000000000000000", { tmp = _adc(state, state->cpu.regs[REG_A], tmp); });      /* adc */           \
+    X(n, "0000000000000000000000000000000027172722000000000000000000000000", { CYCLE(); ninMemoryWrite8(state, addr, tmp); });          /* store */         \
+    X(n, "0000000000000000000000000000000000000000777727670000000000000000", { state->cpu.regs[r1] = tmp; });                           /* load */          \
+    X(n, "0000000000000000000000000000000000000000000000000000000022222222", { tmp = _adc(state, state->cpu.regs[REG_A], ~tmp); });     /* sbc */           \
+    X(n, "2666266627672666266626662666005000107777276737777777262637372626", { flagZ(state, tmp); });                                   /* Z */             \
+    X(n, "2666266627672666266626662666005000107777276737777777262637372626", { flagN(state, tmp); });                                   /* N */             \
+    X(n, "0000000000000000100000000000000000000000000000000000000000000000", { state->cpu.p = (stackPop8(state) & PFLAG_MASK); pc = stackPop16(state); }); /* rti */    \
+    X(n, "0000000000000000000000001000000000000000000000000000000000000000", { pc = stackPop16(state) + 1; }); /* rts */        \
+    X(n, "0000000010000000000000000000000000000000000000000000000000000000", { stackPush16(state, pc - 1); }); /* jsr */        \
+    X(n, "0000000010000000000100000001000000000000000000000000000000000000", { pc = addr; }); /* jmp */                         \
+    X(n, "0000100000000000000010000000000000001000000000000000100000000000", { if (!(state->cpu.p & kBranchFlags[(n) >> 6])) pc += (int8_t)tmp; }); /* branch-clear */ \
+    X(n, "0000000000001000000000000000100000000000000010000000000000001000", { if ( (state->cpu.p & kBranchFlags[(n) >> 6])) pc += (int8_t)tmp; }); /* branch-set */   \
+}                                                                                                                               \
+while (0)
+
+#define ICASE1(n)    case n: INSTRUCTION(n); break
+#define ICASE2(n)   ICASE1(n + 0x00); ICASE1(n + 0x01); ICASE1(n + 0x02); ICASE1(n + 0x03)
+#define ICASE3(n)   ICASE2(n + 0x00); ICASE2(n + 0x04); ICASE2(n + 0x08); ICASE2(n + 0x0c)
+#define ICASE4(n)   ICASE3(n + 0x00); ICASE3(n + 0x10); ICASE3(n + 0x20); ICASE3(n + 0x30)
+#define EXECUTE()   ICASE4()
+
 void ninRunFrameCPU(NinState* state)
 {
-    int leaveTrace;
     uint16_t pc;
-    uint8_t cycles;
-    NinTrace* trace;
-    NinUop* uop;
-    uint8_t tmp;
-    uint8_t c;
     uint16_t addr;
+    uint8_t tmp;
+    uint8_t op;
+    uint8_t r0;
+    uint8_t r1;
+    uint8_t i;
+    uint16_t cyc;
 
     pc = state->cpu.pc;
+    cyc = 0;
 
     for (;;)
     {
-        trace = ninGetTrace(state, pc);
-        leaveTrace = 0;
-        for (size_t i = 0; i < 1 /*trace->length */; ++i)
+        /* TODO: Refactor this */
+        if (state->nmi)
         {
-            uop = trace->uops + i;
-            pc += uop->len;
-            
-            switch (uop->mode)
-            {
-            default:
-                printf("Invalid addressing mode: 0x%02x\n", uop->mode);
-                getchar();
-                break;
-            case ADDR_NONE:
-                cycles = 2;
-                break;
-            case ADDR_IMM:
-                cycles = 2;
-                tmp = (uint8_t)uop->addr;
-                break;
-            case ADDR_ABS:
-                cycles = 4;
-                addr = uop->addr;
-                tmp = ninMemoryRead8(state, addr);
-                break;
-            case ADDR_ABS_NOREAD:
-                cycles = 3;
-                addr = uop->addr;
-                break;
-            case ADDR_ABS_INDIRECT_NOREAD:
-                cycles = 5; // FIXME
-                addr = ninMemoryRead8(state, uop->addr);
-                addr |= ((ninMemoryRead8(state, ((uop->addr + 1) & 0xff) | (uop->addr & 0xff00))) << 8);
-                break;
-            case ADDR_ABS_X:
-                cycles = 4;
-                addr = uop->addr + state->cpu.regs[REG_X];
-                tmp = ninMemoryRead8(state, addr);
-                break;
-            case ADDR_ABS_X_NOREAD:
-                cycles = 3;
-                addr = uop->addr + state->cpu.regs[REG_X];
-                break;
-            case ADDR_ABS_Y:
-                cycles = 4;
-                addr = uop->addr + state->cpu.regs[REG_Y];
-                tmp = ninMemoryRead8(state, addr);
-                break;
-            case ADDR_ABS_Y_NOREAD:
-                cycles = 3;
-                addr = uop->addr + state->cpu.regs[REG_Y];
-                break;
-            case ADDR_ZERO:
-                cycles = 3;
-                addr = uop->addr;
-                tmp = ninMemoryRead8(state, addr);
-                break;
-            case ADDR_ZERO_NOREAD:
-                cycles = 2;
-                addr = uop->addr;
-                break;
-            case ADDR_ZERO_X:
-                cycles = 4;
-                addr = (uop->addr + state->cpu.regs[REG_X]) & 0xff;
-                tmp = ninMemoryRead8(state, addr);
-                break;
-            case ADDR_ZERO_X_NOREAD:
-                cycles = 3;
-                addr = (uop->addr + state->cpu.regs[REG_X]) & 0xff;
-                break;
-            case ADDR_ZERO_Y:
-                cycles = 4;
-                addr = (uop->addr + state->cpu.regs[REG_Y]) & 0xff;
-                tmp = ninMemoryRead8(state, addr);
-                break;
-            case ADDR_ZERO_Y_NOREAD:
-                cycles = 3;
-                addr = (uop->addr + state->cpu.regs[REG_Y]) & 0xff;
-                break;
-            case ADDR_ZERO_X_INDIRECT:
-                cycles = 6;
-                tmp = (uop->addr + state->cpu.regs[REG_X]) & 0xff;
-                addr = ninMemoryRead8(state, tmp);
-                addr |= (ninMemoryRead8(state, (tmp + 1) & 0xff)) << 8;
-                tmp = ninMemoryRead8(state, addr);
-                break;
-            case ADDR_ZERO_X_INDIRECT_NOREAD:
-                cycles = 5;
-                tmp = (uop->addr + state->cpu.regs[REG_X]) & 0xff;
-                addr = ninMemoryRead8(state, tmp);
-                addr |= (ninMemoryRead8(state, (tmp + 1) & 0xff)) << 8;
-                break;
-            case ADDR_ZERO_Y_INDIRECT:
-                cycles = 6;
-                addr = ninMemoryRead8(state, uop->addr);
-                addr |= (ninMemoryRead8(state, (uop->addr + 1) & 0xff)) << 8;
-                addr += state->cpu.regs[REG_Y];
-                tmp = ninMemoryRead8(state, addr);
-                break;
-            case ADDR_ZERO_Y_INDIRECT_NOREAD:
-                cycles = 5;
-                addr = ninMemoryRead8(state, uop->addr);
-                addr |= (ninMemoryRead8(state, (uop->addr + 1) & 0xff)) << 8;
-                addr += state->cpu.regs[REG_Y];
-                break;
-            }
-
-            switch (uop->op)
-            {
-            default:
-                printf("Unknown uop: 0x%02x\n", uop->op);
-                getchar();
-                break;
-            case UOP_P_SET:
-                state->cpu.p |= uop->data;
-                break;
-            case UOP_P_UNSET:
-                state->cpu.p &= ~(uop->data);
-                break;
-            case UOP_MOV:
-                tmp = state->cpu.regs[uop->data & 0x03];
-                state->cpu.regs[(uop->data >> 2) & 0x03] = tmp;
-                flagNZ(state, tmp);
-                break;
-            case UOP_MOV_NOFLAG:
-                tmp = state->cpu.regs[uop->data & 0x03];
-                state->cpu.regs[(uop->data >> 2) & 0x03] = tmp;
-                break;
-            case UOP_LOAD:
-                state->cpu.regs[uop->data] = tmp;
-                flagNZ(state, tmp);
-                break;
-            case UOP_STORE:
-                leaveTrace = ninMemoryWrite8(state, addr, state->cpu.regs[uop->data]);
-                break;
-            case UOP_CMP:
-                compare(state, state->cpu.regs[uop->data], tmp);
-                break;
-            case UOP_ADD_REG:
-                tmp = state->cpu.regs[uop->data & 0x03] + incr(uop->data);
-                state->cpu.regs[uop->data & 0x03] = tmp;
-                flagNZ(state, tmp);
-                break;
-            case UOP_ADD_MEM:
-                tmp += incr(uop->data);
-                leaveTrace = ninMemoryWrite8(state, addr, tmp);
-                flagNZ(state, tmp);
-                break;
-            case UOP_TEST:
-                state->cpu.p &= ~(0xc2);
-                state->cpu.p |= (tmp & 0xc0);
-                if (!(tmp & state->cpu.regs[REG_A]))
-                    state->cpu.p |= PFLAG_Z;
-                break;
-            case UOP_BRANCH_SET:
-                if (state->cpu.p & uop->data) pc += (int8_t)tmp;
-                break;
-            case UOP_BRANCH_UNSET:
-                if (!(state->cpu.p & uop->data)) pc += (int8_t)tmp;
-                break;
-            case UOP_JMP:
-                pc = addr;
-                break;
-            case UOP_JSR:
-                stackPush16(state, pc - 1);
-                pc = addr;
-                break;
-            case UOP_RTS:
-                pc = stackPop16(state) + 1;
-                break;
-            case UOP_RTI:
-                state->cpu.p = stackPop8(state) & PFLAG_MASK;
-                pc = stackPop16(state);
-                break;
-            case UOP_BRK:
-                pc++;
-                stackPush16(state, pc);
-                stackPush8(state, state->cpu.p | PFLAG_1 | PFLAG_B);
-                pc = ninMemoryRead16(state, 0xfffe);
-                break;
-            case UOP_ORA:
-                tmp |= state->cpu.regs[REG_A];
-                state->cpu.regs[REG_A] = tmp;
-                flagNZ(state, tmp);
-                break;
-            case UOP_AND:
-                tmp &= state->cpu.regs[REG_A];
-                state->cpu.regs[REG_A] = tmp;
-                flagNZ(state, tmp);
-                break;
-            case UOP_EOR:
-                tmp ^= state->cpu.regs[REG_A];
-                state->cpu.regs[REG_A] = tmp;
-                flagNZ(state, tmp);
-                break;
-            case UOP_ADC:
-                state->cpu.regs[REG_A] = _adc(state, state->cpu.regs[REG_A], tmp ^ uop->data);
-                break;
-            case UOP_ASL:
-                _carry(state, tmp & 0x80);
-                tmp <<= 1;
-                flagNZ(state, tmp);
-                leaveTrace = ninMemoryWrite8(state, addr, tmp);
-                break;
-            case UOP_ASL_REG:
-                tmp = state->cpu.regs[REG_A];
-                _carry(state, tmp & 0x80);
-                tmp <<= 1;
-                flagNZ(state, tmp);
-                state->cpu.regs[REG_A] = tmp;
-                break;
-            case UOP_ROL:
-                c = state->cpu.p & PFLAG_C;
-                _carry(state, tmp & 0x80);
-                tmp <<= 1;
-                tmp |= c;
-                flagNZ(state, tmp);
-                leaveTrace = ninMemoryWrite8(state, addr, tmp);
-                break;
-            case UOP_ROL_REG:
-                tmp = state->cpu.regs[REG_A];
-                c = state->cpu.p & PFLAG_C;
-                _carry(state, tmp & 0x80);
-                tmp <<= 1;
-                tmp |= c;
-                flagNZ(state, tmp);
-                state->cpu.regs[REG_A] = tmp;
-                break;
-            case UOP_LSR:
-                _carry(state, tmp & 0x01);
-                tmp >>= 1;
-                flagNZ(state, tmp);
-                leaveTrace = ninMemoryWrite8(state, addr, tmp);
-                break;
-            case UOP_LSR_REG:
-                tmp = state->cpu.regs[REG_A];
-                _carry(state, tmp & 0x01);
-                tmp >>= 1;
-                flagNZ(state, tmp);
-                state->cpu.regs[REG_A] = tmp;
-                break;
-            case UOP_ROR:
-                c = state->cpu.p & PFLAG_C;
-                _carry(state, tmp & 0x01);
-                tmp >>= 1;
-                tmp |= (c << 7);
-                flagNZ(state, tmp);
-                leaveTrace = ninMemoryWrite8(state, addr, tmp);
-                break;
-            case UOP_ROR_REG:
-                tmp = state->cpu.regs[REG_A];
-                c = state->cpu.p & PFLAG_C;
-                _carry(state, tmp & 0x01);
-                tmp >>= 1;
-                tmp |= (c << 7);
-                flagNZ(state, tmp);
-                state->cpu.regs[REG_A] = tmp;
-                break;
-            case UOP_PUSHA:
-                stackPush8(state, state->cpu.regs[REG_A]);
-                break;
-            case UOP_PUSHP:
-                stackPush8(state, state->cpu.p | PFLAG_1 | PFLAG_B);
-                break;
-            case UOP_POPA:
-                tmp = stackPop8(state);
-                state->cpu.regs[REG_A] = tmp;
-                flagNZ(state, tmp);
-                break;
-            case UOP_POPP:
-                state->cpu.p = stackPop8(state) & PFLAG_MASK;
-                break;
-            case UOP_NOP:
-                break;
-            }
-
+            state->nmi = 0;
+            stackPush16(state, pc);
+            stackPush8(state, state->cpu.p);
+            printf("--- NMI ---\n");
+            fflush(stdout);
+            getchar();
+            pc = ninMemoryRead16(state, 0xfffa);
             state->cpu.pc = pc;
-
-            if (leaveTrace)
-            {
-                printf("FLUSH TRACES 0x%04x\n", pc);
-                fflush(stdout);
-                ninFlushTraces(state);
-            }
-
-            ninRunCyclesAPU(state, cycles);
-            if (ninPpuRunCycles(state, cycles * 3)) goto end;
-
-            if (leaveTrace)
-                break;
-
-            if (state->nmi)
-            {
-                state->nmi = 0;
-                stackPush16(state, pc);
-                stackPush8(state, state->cpu.p);
-                printf("--- NMI ---\n");
-                pc = ninMemoryRead16(state, 0xfffa);
-                state->cpu.pc = pc;
-            }
         }
+
+        cyc += 2;
+        printf("CYC:%05d PC:0x%04x ", cyc, pc);
+        cyc++;
+        op = ninMemoryRead8(state, pc++);
+        printf("OP:0x%02x A:0x%02x X:0x%02x Y:0x%02x S:0x%02x P:0x%02x\n", op, state->cpu.regs[REG_A], state->cpu.regs[REG_X], state->cpu.regs[REG_Y], state->cpu.regs[REG_S], state->cpu.p);
+        fflush(stdout);
+        //getchar();
+
+        switch (op)
+        {
+            ICASE4(0x00);
+            ICASE4(0x40);
+            ICASE4(0x80);
+            ICASE4(0xc0);
+        }
+
+        if (ninPpuRunCycles(state, 3))
+            break;
     }
 
-end:
-    return;
+    state->cpu.pc = pc;
 }
