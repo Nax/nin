@@ -176,6 +176,7 @@ struct NinState_ {
     uint8_t*            chrRam;
     uint32_t            chrRamSize;
     uint8_t*            chrBank[2];
+    uint8_t*            nametables[4];
     unsigned            nmi:1;
     uint64_t            cyc;
     uint8_t             frame:1;

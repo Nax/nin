@@ -37,8 +37,8 @@ static void bankSwitch(NinState* state)
         break;
     }
 
-    printf("BANK SWITCH!\n");
-    fflush(stdout);
+    //printf("BANK SWITCH!\n");
+    //fflush(stdout);
 }
 
 static void bankSwitchChr(NinState* state)
@@ -65,8 +65,8 @@ static int writeReg(NinState* state, uint16_t addr, uint8_t value)
     {
     case 0:
         /* 0x8000 - 0x9fff */
-        printf("Control: %02x\n", value);
-        fflush(stdout);
+        //printf("Control: %02x\n", value);
+        //fflush(stdout);
         mmc1->mirroring = value & 0x03;
         mmc1->prgBankMode = (value >> 2) & 0x03;
         mmc1->chrBankMode = (value >> 4) & 0x01;
@@ -75,22 +75,24 @@ static int writeReg(NinState* state, uint16_t addr, uint8_t value)
         return 1;
     case 1:
         /* 0xa000 - 0xbfff */
-        printf("CHR Bank 0: %02x\n", value);
-        fflush(stdout);
+        //printf("CHR Bank 0: %02x\n", value);
+        //fflush(stdout);
         mmc1->chrBank0 = value;
         bankSwitchChr(state);
+        //getchar();
         return 0;
     case 2:
         /* 0xc000 - 0xdfff */
-        printf("CHR Bank 1: %02x\n", value);
-        fflush(stdout);
+        //printf("CHR Bank 1: %02x\n", value);
+        //fflush(stdout);
         mmc1->chrBank1 = value;
         bankSwitchChr(state);
+        //getchar();
         return 0;
     case 3:
         /* 0xe000 - 0xffff */
-        printf("PRG Bank: %02x\n", value);
-        fflush(stdout);
+        //printf("PRG Bank: %02x\n", value);
+        //fflush(stdout);
         mmc1->prgBank = value & 0xf;
         bankSwitch(state);
         return 1;
@@ -103,8 +105,8 @@ int ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value)
     NinMapperRegsMMC1* mmc1 = &state->mapper.mmc1;
     uint8_t shift;
 
-    printf("MMC1 %04x: %02x\n", addr, value);
-    fflush(stdout);
+    //printf("MMC1 %04x: %02x\n", addr, value);
+    //fflush(stdout);
 
     if (value & 0x80)
     {
@@ -117,8 +119,8 @@ int ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value)
     }
 
     shift = (((value & 1) << 4) | (mmc1->shift >> 1));
-    printf("SHIFT: %02x\n", shift);
-    fflush(stdout);
+    //printf("SHIFT: %02x\n", shift);
+    //fflush(stdout);
     if (mmc1->count < 4)
     {
         mmc1->shift = shift;

@@ -320,18 +320,16 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                         rt.latchSpriteBitmapAttr[i] = rt.oam2[i * 4 + 2];
                         rt.latchSpriteBitmapX[i] = rt.oam2[i * 4 + 3];
                         tmp = (rt.scanline - rt.oam2[i * 4 + 0]);
-                        if (rt.largeSprites && tmp >= 8)
-                        {
-                            tmp = (tmp & 0x07) | 0x10;
-                        }
                         if (rt.latchSpriteBitmapAttr[i] & 0x80)
                         {
-                            tmp = (~tmp & 0x10) | (7 - (tmp & 7));
+                            /* Vertical split */
+                            tmp = spriteHeight - 1 - tmp;
                         }
                         if (rt.largeSprites)
                         {
+                            /* Large sprite second half */
                             if (tmp & 0x08)
-                                tmp = (tmp & ~0x08) | 0x1000;
+                                tmp = (tmp & ~0x08) | 0x10;
                         }
                         else if (state->ppu.controller & 0x08)
                             tmp |= 0x1000;
@@ -362,7 +360,6 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                         colorIndex = ninVMemoryRead8(state, 0x3F00 | (palette << 2) | tmp) & 0x3f;
 
                     state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
-                    //state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kTempPalette[tmp];
 
                     for (i = 0; i < 8; ++i)
                     {

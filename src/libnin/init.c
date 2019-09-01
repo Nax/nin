@@ -34,6 +34,24 @@ static void loadRom(NinState* state, FILE* rom)
         state->chrRam = zalloc(state->chrRamSize);
     }
 
+    /* Mirroring */
+    if (!(header[6] & 0x01))
+    {
+        /* Horizontal */
+        state->nametables[0] = state->vram + 0x000;
+        state->nametables[1] = state->vram + 0x000;
+        state->nametables[2] = state->vram + 0x400;
+        state->nametables[3] = state->vram + 0x400;
+    }
+    else
+    {
+        /* Vertical */
+        state->nametables[0] = state->vram + 0x000;
+        state->nametables[1] = state->vram + 0x400;
+        state->nametables[2] = state->vram + 0x000;
+        state->nametables[3] = state->vram + 0x400;
+    }
+
     mapperNum = ((header[6] & 0xf0) >> 4) | (header[7] & 0xf0);
     ninApplyMapper(state, mapperNum);
 }
