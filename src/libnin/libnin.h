@@ -34,6 +34,8 @@
 #define BITMAP_X    256
 #define BITMAP_Y    240
 
+#define DEBUG_LEVEL 0
+
 typedef int (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
 
 typedef struct {
@@ -175,14 +177,16 @@ struct NinState_ {
     uint32_t            chrRamSize;
     uint8_t*            chrBank[2];
     unsigned            nmi:1;
+    uint64_t            cyc;
+    uint8_t             frame:1;
 };
 
 void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
-uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
-uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
-int         ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
-int         ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
+NIN_API uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
+NIN_API uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
+NIN_API int         ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
+NIN_API int         ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
 
 uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
@@ -200,14 +204,12 @@ void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
 void        ninFlushTraces(NinState* state);
 
-void        ninPpuRenderFrame(NinState* state);
-int         ninPpuRunCycles(NinState* state, uint16_t cycles);
-
-void        ninRunFrameCPU(NinState* state);
-void        ninRunCyclesAPU(NinState* state, size_t cycles);
+NIN_API int         ninPpuRunCycles(NinState* state, uint16_t cycles);
+NIN_API void        ninRunFrameCPU(NinState* state);
+NIN_API void        ninRunCyclesAPU(NinState* state, size_t cycles);
 
 /* Mapper handlers */
-int        ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
-int        ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
+NIN_API int        ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
+NIN_API int        ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
 
 #endif

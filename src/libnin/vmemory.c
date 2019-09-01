@@ -3,6 +3,7 @@
 static uint8_t badIO(NinState* state, uint16_t addr, int write)
 {
     printf("PPU bad IO at 0x%04x, PC: 0x%04x (%c)\n", addr, state->cpu.pc, write ? 'w' : 'r');
+    fflush(stdout);
     //getchar();
     return 0;
 }
