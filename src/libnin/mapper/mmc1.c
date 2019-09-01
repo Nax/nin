@@ -16,6 +16,37 @@ static void setBankChr(NinState* state, uint8_t slot, uint8_t number)
     state->chrBank[slot] = base + 0x1000 * (number % state->chrBankCount);
 }
 
+static void mirroringSwitch(NinState* state)
+{
+    switch (state->mapper.mmc1.mirroring)
+    {
+    case 0x00:
+        state->nametables[0] = state->vram + 0x000;
+        state->nametables[1] = state->vram + 0x000;
+        state->nametables[2] = state->vram + 0x000;
+        state->nametables[3] = state->vram + 0x000;
+        break;
+    case 0x01:
+        state->nametables[0] = state->vram + 0x400;
+        state->nametables[1] = state->vram + 0x400;
+        state->nametables[2] = state->vram + 0x400;
+        state->nametables[3] = state->vram + 0x400;
+        break;
+    case 0x02:
+        state->nametables[0] = state->vram + 0x000;
+        state->nametables[1] = state->vram + 0x400;
+        state->nametables[2] = state->vram + 0x000;
+        state->nametables[3] = state->vram + 0x400;
+        break;
+    case 0x03:
+        state->nametables[0] = state->vram + 0x000;
+        state->nametables[1] = state->vram + 0x000;
+        state->nametables[2] = state->vram + 0x400;
+        state->nametables[3] = state->vram + 0x400;
+        break;
+    }
+}
+
 static void bankSwitch(NinState* state)
 {
     NinMapperRegsMMC1* mmc1 = &state->mapper.mmc1;
@@ -70,6 +101,7 @@ static int writeReg(NinState* state, uint16_t addr, uint8_t value)
         mmc1->mirroring = value & 0x03;
         mmc1->prgBankMode = (value >> 2) & 0x03;
         mmc1->chrBankMode = (value >> 4) & 0x01;
+        mirroringSwitch(state);
         bankSwitch(state);
         bankSwitchChr(state);
         return 1;
