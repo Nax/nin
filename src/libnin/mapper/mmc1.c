@@ -55,15 +55,15 @@ static void bankSwitch(NinState* state)
     {
     case 0:
     case 1:
-        setBank(state, 0, (mmc1->prgBank & 0xe) | 0);
-        setBank(state, 1, (mmc1->prgBank & 0xe) | 1);
+        setBank(state, 0, (mmc1->prgBank & 0xfe) | 0);
+        setBank(state, 1, (mmc1->prgBank & 0xfe) | 1);
         break;
     case 2:
         setBank(state, 0, 0);
-        setBank(state, 1, mmc1->prgBank);
+        setBank(state, 1, mmc1->prgBank & 0xff);
         break;
     case 3:
-        setBank(state, 0, mmc1->prgBank);
+        setBank(state, 0, mmc1->prgBank & 0xff);
         setBank(state, 1, state->prgBankCount - 1);
         break;
     }
@@ -76,7 +76,7 @@ static void bankSwitchChr(NinState* state)
 {
     NinMapperRegsMMC1* mmc1 = &state->mapper.mmc1;
 
-    if (mmc1->chrBankMode == 0)
+    if (mmc1->chrBankMode)
     {
         setBankChr(state, 0, mmc1->chrBank0);
         setBankChr(state, 1, mmc1->chrBank1);
