@@ -8,6 +8,7 @@ static void initCPU(NinState* state)
     state->cpu.pc = ninMemoryRead16(state, 0xfffc);
     //state->cpu.pc = 0xc000;
     state->cpu.regs[REG_S] = 0xfd;
+    state->cyc = 7;
 }
 
 static void loadRom(NinState* state, FILE* rom)
