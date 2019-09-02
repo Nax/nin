@@ -152,7 +152,6 @@ static constexpr const bool matchPattern(const char* pattern, uint8_t value)
 #define PUSH16(x)       do { PUSH8((x) >> 8); PUSH8((x) & 0xff); } while (0)
 #define POP8()          do { CYCLE(); tmp = stackPop8(state); } while (0)
 #define POP16()         do { POP8(); addr = tmp; POP8(); addr |= ((uint16_t)tmp << 8); } while (0)
-#define EXTRA(acc, d)   do { if (((acc + d) ^ (acc)) & 0xff00) CYCLE(); acc += d; } while (0)
 #define ECYCLE(a, b)    do { if (((a + b) ^ (a)) & 0xff00) CYCLE(); } while (0)
 
 template <uint8_t N>
@@ -196,10 +195,11 @@ static void instruction(NinState* state)
     X("2626362637273626262736262627362627073722772737273727362637273626") { tmp = ninMemoryRead8(state, state->cpu.pc++); addr = tmp; }         /* op1 */
     X("0006002610070026000700260007002600070022000700270007002600070026") { CYCLE(); READ(state->cpu.pc++); addr |= ((uint16_t)tmp << 8); }     /* op2 */
     X("2000060020000600200006002000060020000700200007002000060020000600") { CYCLE(); addr = (addr + i) & 0xff; }                                /* zero-index */
-    X("0000002600000026000000260000002600000000000000270000002200000022") { ECYCLE(addr, i); }                                                  /* abs-extra */
+    X("0000002200000022000000220000002200000000000000270000002200000022") { ECYCLE(addr, i); }                                                  /* abs-extra */
     X("0000002600000026000000260000002600000022000000270000002600000026") { addr += i; }                                                        /* abs-index */
     X("2000200020002000200020002001200020002000200020002000200020002000") { CYCLE(); CYCLE(); addr = indirect(state, addr); }                   /* indirect */
-    X("0000200000002000000020000000200000002000000020000000200000002000") { EXTRA(addr, state->cpu.regs[REG_Y]); }                              /* post-index */
+    X("0000200000002000000020000000200000000000000020000000200000002000") { ECYCLE(addr, state->cpu.regs[REG_Y]); }                             /* post-extra */
+    X("0000200000002000000020000000200000002000000020000000200000002000") { addr += state->cpu.regs[REG_Y]; }                                   /* post-index */
     X("0000000000000000000000000000000000000000000000000000000000000000") { CYCLE(); }                                                          /* post-X */
     X("0000000400000004000000040000000400002022000000000000000400000004") { CYCLE(); }                                                          /* phantom read */
     X("2606262627072626260626262606262600000000270727272707262627072626") { CYCLE(); READ(addr); }                                              /* mem */
@@ -232,7 +232,7 @@ static void instruction(NinState* state)
     X("0000000010000000000100000001000000000000000000000000000000000000") { state->cpu.pc = addr; } /* jmp */
     X("0000100000000000000010000000000000001000000000000000100000000000") { if (!(state->cpu.p & kBranchFlags[N >> 6])) { CYCLE();  state->cpu.pc += (int8_t)tmp; } } /* branch-clear */
     X("0000000000001000000000000000100000000000000010000000000000001000") { if ((state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); state->cpu.pc += (int8_t)tmp; } } /* branch-set */
-    X("1000000000000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc + 1); PUSH8(state->cpu.p | PFLAG_1 | PFLAG_B); state->cpu.p |= PFLAG_I; state->cpu.pc = ninMemoryRead16(state, 0xfffe); } /* brk */
+    X("1000000000000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc + 1); PUSH8(state->cpu.p | PFLAG_1 | PFLAG_B); CYCLE(); CYCLE(); state->cpu.p |= PFLAG_I; state->cpu.pc = ninMemoryRead16(state, 0xfffe); } /* brk */
 }
 
 #define ICASE1(n)   case n: instruction<(n)>(state); break
