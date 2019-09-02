@@ -22,8 +22,16 @@ void ninApplyMapper(NinState* state, uint8_t mapperNum)
         else
             state->prgRomBank[1] = state->prgRom;
         state->chrBankCount = 0;
-        state->chrBank[0] = state->chrRom;
-        state->chrBank[1] = state->chrRom + 0x1000;
+        if (state->chrRam)
+        {
+            state->chrBank[0] = state->chrRam;
+            state->chrBank[1] = state->chrRam + 0x1000;
+        }
+        else
+        {
+            state->chrBank[0] = state->chrRom;
+            state->chrBank[1] = state->chrRom + 0x1000;
+        }
         break;
     case 1:
         /* MMC1 */
