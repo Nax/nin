@@ -241,12 +241,6 @@ static void instruction(NinState* state)
 #define ICASE4(n)   ICASE3(n + 0x00); ICASE3(n + 0x10); ICASE3(n + 0x20); ICASE3(n + 0x30)
 #define EXECUTE()   ICASE4()
 
-/*
-static const uint64_t kTestCycles[] = {
-#include "test.h"
-};
-static int gTest = 0;*/
-
 NIN_API void ninRunFrameCPU(NinState* state)
 {
     uint8_t op;
@@ -264,15 +258,6 @@ NIN_API void ninRunFrameCPU(NinState* state)
         }
 
         op = ninMemoryRead8(state, state->cpu.pc++);
-        /*
-        printf("OP:%02x CYC:%05lld\n", op, state->cyc);
-        if (state->cyc != kTestCycles[gTest])
-        {
-            printf("--- DIFF CYC:%05lld ---\n", kTestCycles[gTest]);
-            fflush(stdout);
-            getchar();
-        }
-        gTest++;*/
         state->cyc += 2;
         ninRunCyclesAPU(state, 2);
         state->frame = ninPpuRunCycles(state, 6);
