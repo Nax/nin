@@ -224,14 +224,15 @@ static void instruction(NinState* state)
     X("2262222222622222226222222272222200500050777727670050000022322222") { state->cpu.regs[r1] = tmp; }                                        /* load */
     X("0000000000100000000000000000000000000000000000000000000000000000") { state->cpu.p = (tmp & PFLAG_MASK); }                                /* tmp -> flags */
     X("0000000000000000000000000000000000000000000000003323222211010000") { tmp = compare(state, state->cpu.regs[r0], tmp); }                   /* cmp */
-    X("2666266727672666266626662676042600706037777727677777262637372626") { flagZ(state, tmp); }                                                /* Z */
-    X("2666266726662666266626662676042600706037777727677777262637372626") { flagN(state, tmp); }                                                /* N */
+    X("2666266727672666266626662676042600704010777727677777262637372626") { flagZ(state, tmp); }                                                /* Z */
+    X("2666266726662666266626662676042600704010777727677777262637372626") { flagN(state, tmp); }                                                /* N */
     X("0000000000000000100000000000000000000000000000000000000000000000") { POP8(); state->cpu.p = (tmp & PFLAG_MASK); POP16(); state->cpu.pc = addr; CYCLE(); } /* rti */
     X("0000000000000000000000001000000000000000000000000000000000000000") { POP16(); state->cpu.pc = addr + 1; CYCLE(); CYCLE(); } /* rts */
     X("0000000010000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc - 1); CYCLE(); } /* jsr */
     X("0000000010000000000100000001000000000000000000000000000000000000") { state->cpu.pc = addr; } /* jmp */
     X("0000100000000000000010000000000000001000000000000000100000000000") { if (!(state->cpu.p & kBranchFlags[N >> 6])) { CYCLE();  state->cpu.pc += (int8_t)tmp; } } /* branch-clear */
     X("0000000000001000000000000000100000000000000010000000000000001000") { if ((state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); state->cpu.pc += (int8_t)tmp; } } /* branch-set */
+    X("1000000000000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc + 1); PUSH8(state->cpu.p | PFLAG_1 | PFLAG_B); state->cpu.p |= PFLAG_I; state->cpu.pc = ninMemoryRead16(state, 0xfffe); } /* brk */
 }
 
 #define ICASE1(n)   case n: instruction<(n)>(state); break
@@ -258,6 +259,7 @@ NIN_API void ninRunFrameCPU(NinState* state)
             state->nmi = 0;
             stackPush16(state, state->cpu.pc);
             stackPush8(state, state->cpu.p);
+            state->cpu.p |= PFLAG_I;
             state->cpu.pc = ninMemoryRead16(state, 0xfffa);
         }
 
