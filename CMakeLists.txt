@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.10)
 project(Nim)
 
+set (CMAKE_CXX_STANDARD 17)
+
 if (NOT MSVC)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fomit-frame-pointer -fstrict-aliasing")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fomit-frame-pointer -fstrict-aliasing -fno-exceptions -fno-rtti")
