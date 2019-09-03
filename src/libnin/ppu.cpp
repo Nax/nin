@@ -248,6 +248,32 @@ static void fetchBackground(NinState* state, uint16_t cycle)
     }
 }
 
+static constexpr const uint32_t kTempPalette[] = {
+    0xff000000, 0xffff0000, 0xff00ff00, 0xff0000ff
+};
+
+static void emitPixel(NinState* state, uint16_t cycle)
+{
+    uint8_t shift;
+    uint8_t bgIndex;
+    uint8_t palette;
+    uint8_t color;
+
+    shift = 15 - (cycle % 8);
+    shift -= RT.x;
+    bgIndex = (RT.shiftPatternLo >> shift) & 0x01;
+    bgIndex |= (((RT.shiftPatternHi >> shift) & 0x01) << 1);
+
+    palette = (RT.shiftPaletteLo >> shift) & 0x01;
+    palette |= (((RT.shiftPaletteHi >> shift) & 0x01) << 1);
+
+    if (bgIndex == 0)
+        color = ninVMemoryRead8(state, 0x3F00);
+    else
+        color = ninVMemoryRead8(state, 0x3F00 | (palette << 2) | bgIndex) & 0x3f;
+    state->bitmap[RT.scanline * BITMAP_X + cycle] = kTempPalette[color];
+}
+
 template <bool visible>
 static void scanline(NinState* state)
 {
@@ -256,8 +282,20 @@ static void scanline(NinState* state)
     cycle = state->ppu.rt.cycle;
     if (cycle == 0)
         return;
-    else if (cycle <= 256)
+    if (cycle <= 256)
+    {
         fetchBackground(state, cycle - 1);
+        emitPixel(state, cycle - 1);
+    }
+    if (cycle == 256)
+    {
+        RT.v = _incY(RT.v);
+    }
+    else if (cycle == 257)
+    {
+        RT.v &= ~kHMask;
+        RT.v |= (RT.t & kHMask);
+    }
 }
 
 int ninPpuRunCycles(NinState* state, uint16_t cycles)
