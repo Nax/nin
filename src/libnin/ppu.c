@@ -382,13 +382,14 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                             spIndex = (rt.latchSpriteBitmapLo[i] >> shift) & 0x01;
                             spIndex |= (((rt.latchSpriteBitmapHi[i] >> shift) & 0x01) << 1);
 
+                            if (i == 0 && spIndex && bgIndex && rt.zeroHit && rt.maskEnableBackground && rt.maskEnableSprites)
+                                state->ppu.zeroHitFlag = 1;
+
                             if (spIndex && (((rt.latchSpriteBitmapAttr[i] & 0x20) == 0) || (!bgIndex)))
                             {
                                 spPalette = rt.latchSpriteBitmapAttr[i] & 0x03;
                                 colorIndex = ninVMemoryRead8(state, 0x3F10 | (spPalette << 2) | spIndex) & 0x3f;
 
-                                if (i == 0 && rt.zeroHit && rt.maskEnableBackground && rt.maskEnableSprites)
-                                    state->ppu.zeroHitFlag = 1;
                                 break;
                             }
                         }
