@@ -217,10 +217,13 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     uint8_t tmp;
     uint16_t spriteIndex;
     uint8_t shift;
-    uint8_t palette;
     uint8_t colorIndex;
     uint8_t n;
     uint8_t i;
+    uint8_t bgIndex;
+    uint8_t spIndex;
+    uint8_t bgPalette;
+    uint8_t spPalette;
     uint8_t spriteHeight;
     int newFrame;
     int isRendering;
@@ -360,31 +363,29 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                 {
                     shift = 15 - ((rt.cycle - 1) % 8);
                     shift -= rt.x;
-                    tmp = (rt.shiftPatternLo >> shift) & 0x01;
-                    tmp |= (((rt.shiftPatternHi >> shift) & 0x01) << 1);
+                    bgIndex = (rt.shiftPatternLo >> shift) & 0x01;
+                    bgIndex |= (((rt.shiftPatternHi >> shift) & 0x01) << 1);
 
-                    palette = (rt.shiftPaletteLo >> shift) & 0x01;
-                    palette |= (((rt.shiftPaletteHi >> shift) & 0x01) << 1);
-                    if (tmp == 0)
+                    bgPalette = (rt.shiftPaletteLo >> shift) & 0x01;
+                    bgPalette |= (((rt.shiftPaletteHi >> shift) & 0x01) << 1);
+
+                    if (bgIndex == 0)
                         colorIndex = ninVMemoryRead8(state, 0x3F00);
                     else
-                        colorIndex = ninVMemoryRead8(state, 0x3F00 | (palette << 2) | tmp) & 0x3f;
-
-                    state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
+                        colorIndex = ninVMemoryRead8(state, 0x3F00 | (bgPalette << 2) | bgIndex) & 0x3f;
 
                     for (i = 0; i < 8; ++i)
                     {
                         if ((rt.cycle - 1) >= rt.latchSpriteBitmapX[i] && (rt.cycle - 1) < rt.latchSpriteBitmapX[i] + 8)
                         {
                             shift = 7 - ((rt.cycle - 1) - rt.latchSpriteBitmapX[i]);
-                            tmp = (rt.latchSpriteBitmapLo[i] >> shift) & 0x01;
-                            tmp |= (((rt.latchSpriteBitmapHi[i] >> shift) & 0x01) << 1);
+                            spIndex = (rt.latchSpriteBitmapLo[i] >> shift) & 0x01;
+                            spIndex |= (((rt.latchSpriteBitmapHi[i] >> shift) & 0x01) << 1);
 
-                            if (tmp)
+                            if (spIndex && (((rt.latchSpriteBitmapAttr[i] & 0x20) == 0) || (!bgIndex)))
                             {
-                                palette = rt.latchSpriteBitmapAttr[i] & 0x03;
-                                colorIndex = ninVMemoryRead8(state, 0x3F10 | (palette << 2) | tmp) & 0x3f;
-                                state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
+                                spPalette = rt.latchSpriteBitmapAttr[i] & 0x03;
+                                colorIndex = ninVMemoryRead8(state, 0x3F10 | (spPalette << 2) | spIndex) & 0x3f;
 
                                 if (i == 0 && rt.zeroHit && rt.maskEnableBackground && rt.maskEnableSprites)
                                     state->ppu.zeroHitFlag = 1;
@@ -392,6 +393,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                             }
                         }
                     }
+                    state->bitmap[rt.scanline * BITMAP_X + (rt.cycle - 1)] = kPalette[colorIndex];
                 }
             }
             if (rt.scanline == 261 && rt.cycle == 304)
