@@ -248,10 +248,6 @@ static void fetchBackground(NinState* state, uint16_t cycle)
     }
 }
 
-static constexpr const uint32_t kTempPalette[] = {
-    0xff000000, 0xffff0000, 0xff00ff00, 0xff0000ff
-};
-
 static void emitPixel(NinState* state, uint16_t cycle)
 {
     uint8_t shift;
@@ -271,14 +267,16 @@ static void emitPixel(NinState* state, uint16_t cycle)
         color = ninVMemoryRead8(state, 0x3F00);
     else
         color = ninVMemoryRead8(state, 0x3F00 | (palette << 2) | bgIndex) & 0x3f;
-    state->bitmap[RT.scanline * BITMAP_X + cycle] = kTempPalette[color];
+    state->bitmap[RT.scanline * BITMAP_X + cycle] = kPalette[color];
 }
 
 static void preScanline(NinState* state)
 {
     uint16_t cycle;
+    int isRendering;
 
     cycle = RT.cycle;
+    isRendering = (RT.maskEnableBackground || RT.maskEnableSprites);
     if (cycle == 1)
     {
         ninUnsetFlagNMI(state, NMI_OCCURED);
@@ -286,22 +284,30 @@ static void preScanline(NinState* state)
         RT.zeroHit = 0;
         RT.zeroHitNext = 0;
     }
-    if (cycle == 304)
+    if (isRendering && cycle == 304)
     {
         RT.v = RT.t;
+    }
+    if (isRendering && cycle >= 321 && cycle <= 336)
+    {
+        fetchBackground(state, cycle - 1);
     }
 }
 
 static void scanline(NinState* state)
 {
     uint16_t cycle;
+    int isRendering;
 
     cycle = RT.cycle;
-    if (cycle == 0)
+    isRendering = (RT.maskEnableBackground || RT.maskEnableSprites);
+
+    if (cycle == 0 || !isRendering)
         return;
-    if (cycle <= 256)
+    if (cycle >= 3 && cycle < 259)
+        emitPixel(state, cycle - 3);
+    if (cycle <= 256 || (cycle >= 321 && cycle <= 336))
     {
-        emitPixel(state, cycle - 1);
         fetchBackground(state, cycle - 1);
     }
     if (cycle == 256)
