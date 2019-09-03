@@ -279,22 +279,33 @@ static void scanline(NinState* state)
 {
     uint16_t cycle;
 
-    cycle = state->ppu.rt.cycle;
+    cycle = RT.cycle;
     if (cycle == 0)
         return;
+    if (!visible && cycle == 1)
+    {
+        ninUnsetFlagNMI(state, NMI_OCCURED);
+        state->ppu.zeroHitFlag = 0;
+        RT.zeroHit = 0;
+        RT.zeroHitNext = 0;
+    }
     if (cycle <= 256)
     {
+        if (visible) emitPixel(state, cycle - 1);
         fetchBackground(state, cycle - 1);
-        emitPixel(state, cycle - 1);
     }
     if (cycle == 256)
     {
         RT.v = _incY(RT.v);
     }
-    else if (cycle == 257)
+    if (cycle == 257)
     {
         RT.v &= ~kHMask;
         RT.v |= (RT.t & kHMask);
+    }
+    if (!visible && cycle == 304)
+    {
+        RT.v = RT.t;
     }
 }
 
@@ -320,17 +331,18 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
     while (cycles--)
     {
-        if (state->ppu.rt.scanline < 240) scanline<true>(state);
-        else if (state->ppu.rt.scanline == 261) scanline<false>(state);
+        if (RT.scanline < 240) scanline<true>(state);
+        else if (RT.scanline == 261) scanline<false>(state);
+        else if (RT.scanline == 241 && RT.cycle == 1) ninSetFlagNMI(state, NMI_OCCURED);
 
-        state->ppu.rt.cycle++;
-        if (state->ppu.rt.cycle == 341)
+        RT.cycle++;
+        if (RT.cycle == 341)
         {
-            state->ppu.rt.cycle = 0;
-            state->ppu.rt.scanline++;
-            if (state->ppu.rt.scanline == 262)
+            RT.cycle = 0;
+            RT.scanline++;
+            if (RT.scanline == 262)
             {
-                state->ppu.rt.scanline = 0;
+                RT.scanline = 0;
                 newFrame = 1;
             }
         }
