@@ -1,7 +1,7 @@
 #include <math.h>
 #include <libnin/libnin.h>
 
-uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
+NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
 {
     uint8_t value;
     uint8_t mask;
@@ -50,7 +50,7 @@ uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
     return value;
 }
 
-void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
+NIN_API void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
 {
     state->ppu.latch = value;
 
@@ -190,30 +190,78 @@ static uint8_t bitswap8(uint8_t b)
     return v;
 }
 
+/* A R G B */
+static const uint32_t kPalette[] = {
+    0xff7c7c7c, 0xfffc0000, 0xffbc0000, 0xffbc2844,
+    0xff840094, 0xff2000a8, 0xff0010a8, 0xff001488,
+    0xff003050, 0xff007800, 0xff006800, 0xff005800,
+    0xff584000, 0xff000000, 0xff000000, 0xff000000,
+    0xffbcbcbc, 0xfff87800, 0xfff85800, 0xfffc4468,
+    0xffcc00d8, 0xff5800e4, 0xff0038f8, 0xff105ce4,
+    0xff007cac, 0xff00b800, 0xff00a800, 0xff44a800,
+    0xff888800, 0xff000000, 0xff000000, 0xff000000,
+    0xfff8f8f8, 0xfffcbc3c, 0xfffc8868, 0xfff87898,
+    0xfff878f8, 0xff9858f8, 0xff5878f8, 0xff44a0fc,
+    0xff00b8f8, 0xff18f8b8, 0xff54d858, 0xff98f858,
+    0xffd8e800, 0xff787878, 0xff000000, 0xff000000,
+    0xfffcfcfc, 0xfffce4a4, 0xfff8b8b8, 0xfff8b8d8,
+    0xfff8b8f8, 0xffc0a4f8, 0xffb0d0f0, 0xffa8e0fc,
+    0xff78d8f8, 0xff78f8d8, 0xffb8f8b8, 0xffd8f8b8,
+    0xfffcfc00, 0xfff8d8f8, 0xff000000, 0xff000000,
+};
+
+static const uint16_t kHMask = 0x041f;
+
+#define RT state->ppu.rt
+
+static void fetchBackground(NinState* state, uint16_t cycle)
+{
+    switch (cycle & 0x07)
+    {
+    case 0x01:
+        RT.shiftPatternLo <<= 8;
+        RT.shiftPatternHi <<= 8;
+        RT.shiftPaletteLo <<= 8;
+        RT.shiftPaletteHi <<= 8;
+        RT.shiftPatternLo |= RT.latchTileLo;
+        RT.shiftPatternHi |= RT.latchTileHi;
+        RT.shiftPaletteLo |= (RT.latchAttr & 0x01) ? 0xff : 0x00;
+        RT.shiftPaletteHi |= (RT.latchAttr & 0x02) ? 0xff : 0x00;
+        RT.latchName = ninVMemoryRead8(state, 0x2000 | (RT.v & 0xfff));
+        break;
+    case 0x03:
+        RT.latchAttr = ninVMemoryRead8(state, 0x23c0 | (RT.v & 0x0c00) | ((RT.v >> 4) & 0x38) | ((RT.v >> 2) & 0x07));
+        if (RT.v & 0x02)
+            RT.latchAttr >>= 2;
+        if ((RT.v >> 5) & 0x02)
+            RT.latchAttr >>= 4;
+        break;
+    case 0x05:
+        RT.latchTileLo = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0x0000) | RT.latchName << 4 | ((RT.v >> 12) & 0x07));
+        break;
+    case 0x07:
+        RT.latchTileHi = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0x0000) | RT.latchName << 4 | 0x08 | ((RT.v >> 12) & 0x07));
+        RT.v = _incX(RT.v);
+        break;
+    default:
+        break;
+    }
+}
+
+template <bool visible>
+static void scanline(NinState* state)
+{
+    uint16_t cycle;
+
+    cycle = state->ppu.rt.cycle;
+    if (cycle == 0)
+        return;
+    else if (cycle <= 256)
+        fetchBackground(state, cycle - 1);
+}
+
 int ninPpuRunCycles(NinState* state, uint16_t cycles)
 {
-    /* A R G B */
-    static const uint32_t kPalette[] = {
-        0xff7c7c7c, 0xfffc0000, 0xffbc0000, 0xffbc2844,
-        0xff840094, 0xff2000a8, 0xff0010a8, 0xff001488,
-        0xff003050, 0xff007800, 0xff006800, 0xff005800,
-        0xff584000, 0xff000000, 0xff000000, 0xff000000,
-        0xffbcbcbc, 0xfff87800, 0xfff85800, 0xfffc4468,
-        0xffcc00d8, 0xff5800e4, 0xff0038f8, 0xff105ce4,
-        0xff007cac, 0xff00b800, 0xff00a800, 0xff44a800,
-        0xff888800, 0xff000000, 0xff000000, 0xff000000,
-        0xfff8f8f8, 0xfffcbc3c, 0xfffc8868, 0xfff87898,
-        0xfff878f8, 0xff9858f8, 0xff5878f8, 0xff44a0fc,
-        0xff00b8f8, 0xff18f8b8, 0xff54d858, 0xff98f858,
-        0xffd8e800, 0xff787878, 0xff000000, 0xff000000,
-        0xfffcfcfc, 0xfffce4a4, 0xfff8b8b8, 0xfff8b8d8,
-        0xfff8b8f8, 0xffc0a4f8, 0xffb0d0f0, 0xffa8e0fc,
-        0xff78d8f8, 0xff78f8d8, 0xffb8f8b8, 0xffd8f8b8,
-        0xfffcfc00, 0xfff8d8f8, 0xff000000, 0xff000000,
-    };
-
-    static const uint16_t kHMask = 0x041f;
-
     uint8_t tmp;
     uint16_t spriteIndex;
     uint8_t shift;
@@ -227,12 +275,31 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     uint8_t spriteHeight;
     int newFrame;
     int isRendering;
-    NinRuntimePPU rt;
 
     newFrame = 0;
-    rt = state->ppu.rt;
-    isRendering = (rt.maskEnableBackground || rt.maskEnableSprites);
+    /*rt = state->ppu.rt;
+    isRendering = (rt.maskEnableBackground || rt.maskEnableSprites);*/
 
+    while (cycles--)
+    {
+        if (state->ppu.rt.scanline < 240) scanline<true>(state);
+        else if (state->ppu.rt.scanline == 261) scanline<false>(state);
+
+        state->ppu.rt.cycle++;
+        if (state->ppu.rt.cycle == 341)
+        {
+            state->ppu.rt.cycle = 0;
+            state->ppu.rt.scanline++;
+            if (state->ppu.rt.scanline == 262)
+            {
+                state->ppu.rt.scanline = 0;
+                newFrame = 1;
+            }
+        }
+    }
+
+    return newFrame;
+#if 0
     while (cycles--)
     {
         spriteHeight = rt.largeSprites ? 16 : 8;
@@ -432,4 +499,5 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
     state->ppu.rt = rt;
     return newFrame;
+#endif
 }

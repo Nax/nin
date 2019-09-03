@@ -189,15 +189,15 @@ NIN_API uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
 NIN_API int         ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 NIN_API int         ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
 
-uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
-void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
+NIN_API uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
+NIN_API void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 
 void        ninRunCycles(NinState* state, size_t cycles);
 void        ninSetFlagNMI(NinState* state, uint8_t flag);
 void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
 
-uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
-void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
+NIN_API uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
+NIN_API void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
 uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
 void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
