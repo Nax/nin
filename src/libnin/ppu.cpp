@@ -316,7 +316,9 @@ static void spriteEvaluation(NinState* state, uint16_t cycle)
 {
     unsigned n;
     uint16_t addr;
+    uint8_t tile;
     uint8_t y;
+    uint16_t alt;
     uint8_t height;
 
     height = RT.largeSprites ? 16 : 8;
@@ -337,7 +339,7 @@ static void spriteEvaluation(NinState* state, uint16_t cycle)
     {
         /* Actual evaluation */
         n = (cycle - 65) / 2;
-        if (RT.scanline >= state->oamSprites[n].y && RT.scanline < state->oamSprites[n].y + 8)
+        if (RT.scanline >= state->oamSprites[n].y && RT.scanline < state->oamSprites[n].y + height)
         {
             if (n == 0)
                 RT.zeroHitNext = 1;
@@ -358,11 +360,27 @@ static void spriteEvaluation(NinState* state, uint16_t cycle)
         else
         {
             y = RT.scanline - RT.oam2[n].y;
-            if (RT.oam2[n].yFlip)
-                y = height - y - 1;
-            addr = (RT.oam2[n].tile << 4) | y;
+            tile = RT.oam2[n].tile;
+            alt = 0;
             if (!RT.largeSprites && (state->ppu.controller & 0x08))
-                addr |= 0x100;
+            {
+                alt = 0x1000;
+            }
+            if (RT.largeSprites && (tile & 1))
+            {
+                tile &= ~0x01;
+                alt = 0x1000;
+            }
+            if (RT.oam2[n].yFlip)
+            {
+                y = height - y - 1;
+            }
+            if (RT.largeSprites && y > 7)
+            {
+                y &= 7;
+                tile++;
+            }
+            addr = alt | (tile << 4) | y;
 
             RT.latchSpriteBitmapX[n] = RT.oam2[n].x;
             RT.latchSpriteBitmapAttr[n] = RT.oam2[n].raw[2];
