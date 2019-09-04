@@ -330,10 +330,10 @@ static void spriteEvaluation(NinState* state, uint16_t cycle)
         n = (cycle - 1) / 2;
         RT.oam2[n / 4].raw[n % 4] = 0xff;
     }
-    if (cycle >= 65 && cycle <= 256 && !(cycle & 0x03) && RT.oam2Index < 8)
+    if (cycle >= 65 && cycle <= 192 && !(cycle & 0x01) && RT.oam2Index < 8)
     {
         /* Actual evaluation */
-        n = (cycle - 65) / 4;
+        n = (cycle - 65) / 2;
         if (RT.scanline >= state->oamSprites[n].y && RT.scanline < state->oamSprites[n].y + 8)
         {
             if (n == 0)
