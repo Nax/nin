@@ -214,19 +214,23 @@ static const uint16_t kHMask = 0x041f;
 
 #define RT state->ppu.rt
 
-static void fetchBackground(NinState* state, uint16_t cycle)
+static void bgReload(NinState* state)
 {
-    switch (cycle & 0x07)
+    RT.shiftPatternLo <<= 8;
+    RT.shiftPatternHi <<= 8;
+    RT.shiftPaletteLo <<= 8;
+    RT.shiftPaletteHi <<= 8;
+    RT.shiftPatternLo |= RT.latchTileLo;
+    RT.shiftPatternHi |= RT.latchTileHi;
+    RT.shiftPaletteLo |= (RT.latchAttr & 0x01) ? 0xff : 0x00;
+    RT.shiftPaletteHi |= (RT.latchAttr & 0x02) ? 0xff : 0x00;
+}
+
+static void bgFetch(NinState* state, uint16_t x)
+{
+    switch (x & 0x07)
     {
     case 0x01:
-        RT.shiftPatternLo <<= 8;
-        RT.shiftPatternHi <<= 8;
-        RT.shiftPaletteLo <<= 8;
-        RT.shiftPaletteHi <<= 8;
-        RT.shiftPatternLo |= RT.latchTileLo;
-        RT.shiftPatternHi |= RT.latchTileHi;
-        RT.shiftPaletteLo |= (RT.latchAttr & 0x01) ? 0xff : 0x00;
-        RT.shiftPaletteHi |= (RT.latchAttr & 0x02) ? 0xff : 0x00;
         RT.latchName = ninVMemoryRead8(state, 0x2000 | (RT.v & 0xfff));
         break;
     case 0x03:
@@ -248,14 +252,14 @@ static void fetchBackground(NinState* state, uint16_t cycle)
     }
 }
 
-static void emitPixel(NinState* state, uint16_t cycle)
+static void emitPixel(NinState* state, uint16_t x)
 {
     uint8_t shift;
     uint8_t bgIndex;
     uint8_t palette;
     uint8_t color;
 
-    shift = 15 - (cycle % 8);
+    shift = 15 - (x % 8);
     shift -= RT.x;
     bgIndex = (RT.shiftPatternLo >> shift) & 0x01;
     bgIndex |= (((RT.shiftPatternHi >> shift) & 0x01) << 1);
@@ -267,33 +271,10 @@ static void emitPixel(NinState* state, uint16_t cycle)
         color = ninVMemoryRead8(state, 0x3F00);
     else
         color = ninVMemoryRead8(state, 0x3F00 | (palette << 2) | bgIndex) & 0x3f;
-    state->bitmap[RT.scanline * BITMAP_X + cycle] = kPalette[color];
+    state->bitmap[RT.scanline * BITMAP_X + x] = kPalette[color];
 }
 
-static void preScanline(NinState* state)
-{
-    uint16_t cycle;
-    int isRendering;
-
-    cycle = RT.cycle;
-    isRendering = (RT.maskEnableBackground || RT.maskEnableSprites);
-    if (cycle == 1)
-    {
-        ninUnsetFlagNMI(state, NMI_OCCURED);
-        state->ppu.zeroHitFlag = 0;
-        RT.zeroHit = 0;
-        RT.zeroHitNext = 0;
-    }
-    if (isRendering && cycle == 304)
-    {
-        RT.v = RT.t;
-    }
-    if (isRendering && cycle >= 321 && cycle <= 336)
-    {
-        fetchBackground(state, cycle - 1);
-    }
-}
-
+template <bool prerender>
 static void scanline(NinState* state)
 {
     uint16_t cycle;
@@ -302,22 +283,38 @@ static void scanline(NinState* state)
     cycle = RT.cycle;
     isRendering = (RT.maskEnableBackground || RT.maskEnableSprites);
 
-    if (cycle == 0 || !isRendering)
-        return;
-    if (cycle >= 3 && cycle < 259)
-        emitPixel(state, cycle - 3);
-    if (cycle <= 256 || (cycle >= 321 && cycle <= 336))
+    if (prerender && cycle == 1)
     {
-        fetchBackground(state, cycle - 1);
+        ninUnsetFlagNMI(state, NMI_OCCURED);
+        state->ppu.zeroHitFlag = 0;
+        RT.zeroHit = 0;
+        RT.zeroHitNext = 0;
     }
-    if (cycle == 256)
+    if (isRendering)
     {
-        RT.v = _incY(RT.v);
-    }
-    if (cycle == 257)
-    {
-        RT.v &= ~kHMask;
-        RT.v |= (RT.t & kHMask);
+        if (!prerender && cycle >= 2 && cycle < 258)
+            emitPixel(state, cycle - 2);
+        if ((cycle > 0 && cycle <= 256) || (cycle >= 321 && cycle <= 336))
+        {
+            bgFetch(state, cycle - 1);
+        }
+        if (cycle >= 9 && cycle <= 257 && ((cycle % 8) == 1))
+        {
+            bgReload(state);
+        }
+        if (cycle == 256)
+        {
+            RT.v = _incY(RT.v);
+        }
+        if (cycle == 257)
+        {
+            RT.v &= ~kHMask;
+            RT.v |= (RT.t & kHMask);
+        }
+        if (prerender && (cycle == 304))
+        {
+            RT.v = RT.t;
+        }
     }
 }
 
@@ -343,8 +340,8 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
 
     while (cycles--)
     {
-        if (RT.scanline < 240) scanline(state);
-        if (RT.scanline == 261) preScanline(state);
+        if (RT.scanline < 240) scanline<false>(state);
+        if (RT.scanline == 261) scanline<true>(state);
         if (RT.scanline == 241 && RT.cycle == 1) ninSetFlagNMI(state, NMI_OCCURED);
 
         RT.cycle++;
