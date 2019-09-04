@@ -148,7 +148,8 @@ typedef struct {
 struct NinState_ {
     uint8_t             controller;
     uint8_t             controllerLatch;
-    uint32_t*           bitmap;
+    uint32_t*           backBuffer;
+    uint32_t*           frontBuffer;
     int16_t*            audioSamples;
     uint16_t            audioSamplesCount;
     uint32_t            audioCycles;

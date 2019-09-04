@@ -1,3 +1,4 @@
+#include <cstring>
 #include <math.h>
 #include <libnin/libnin.h>
 
@@ -214,6 +215,17 @@ static const uint16_t kHMask = 0x041f;
 
 #define RT state->ppu.rt
 
+static void swapBuffers(NinState* state)
+{
+    uint32_t* tmp;
+
+    tmp = state->backBuffer;
+    state->backBuffer = state->frontBuffer;
+    state->frontBuffer = tmp;
+
+    memset(state->backBuffer, 0, BITMAP_X * BITMAP_Y * 4);
+}
+
 static void bgReload(NinState* state)
 {
     RT.shiftPatternLo <<= 8;
@@ -271,7 +283,7 @@ static void emitPixel(NinState* state, uint16_t x)
         color = ninVMemoryRead8(state, 0x3F00);
     else
         color = ninVMemoryRead8(state, 0x3F00 | (palette << 2) | bgIndex) & 0x3f;
-    state->bitmap[RT.scanline * BITMAP_X + x] = kPalette[color];
+    state->backBuffer[RT.scanline * BITMAP_X + x] = kPalette[color];
 }
 
 template <bool prerender>
@@ -298,7 +310,7 @@ static void scanline(NinState* state)
         {
             bgFetch(state, cycle - 1);
         }
-        if (cycle >= 9 && cycle <= 257 && ((cycle % 8) == 1))
+        if ((cycle >= 9 && cycle <= 257 && ((cycle % 8) == 1)) || cycle == 329 || cycle == 337)
         {
             bgReload(state);
         }
@@ -351,6 +363,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
             RT.scanline++;
             if (RT.scanline == 262)
             {
+                swapBuffers(state);
                 RT.scanline = 0;
                 newFrame = 1;
             }

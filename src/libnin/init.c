@@ -62,7 +62,8 @@ NinState* ninCreateState(FILE* rom)
     NinState* state;
 
     state = zalloc(sizeof(*state));
-    state->bitmap = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
+    state->backBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
+    state->frontBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
     state->audioSamples = zalloc(NIN_AUDIO_SAMPLE_SIZE * sizeof(int16_t));
     state->traceCache = zalloc(sizeof(NinTraceCache));
     for (size_t i = 0; i < 0x10000; ++i)
@@ -85,7 +86,7 @@ void ninDestroyState(NinState* state)
 
 const uint32_t* ninGetScreenBuffer(NinState* state)
 {
-    return state->bitmap;
+    return state->frontBuffer;
 }
 
 void ninSetInput(NinState* state, uint8_t input)
