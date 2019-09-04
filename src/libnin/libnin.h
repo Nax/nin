@@ -79,6 +79,20 @@ typedef union {
     NinMapperRegsMMC1 mmc1;
 } NinMapperRegs;
 
+typedef union {
+    uint8_t raw[4];
+    struct {
+        uint8_t y;
+        uint8_t tile;
+        uint8_t palette:2;
+        uint8_t reserved:3;
+        uint8_t back:1;
+        uint8_t xFlip:1;
+        uint8_t yFlip:1;
+        uint8_t x;
+    };
+} NinSprite;
+
 typedef struct {
     uint16_t    t;
     uint16_t    v;
@@ -93,7 +107,8 @@ typedef struct {
     uint16_t    shiftPatternHi;
     uint16_t    shiftPaletteHi;
     uint16_t    shiftPaletteLo;
-    uint8_t     oam2[64];
+    NinSprite   oam2[8];
+    uint8_t     oam2Index;
     uint8_t     latchSpriteBitmapLo[8];
     uint8_t     latchSpriteBitmapHi[8];
     uint8_t     latchSpriteBitmapAttr[8];
@@ -162,7 +177,10 @@ struct NinState_ {
     uint8_t*            ram;
     uint8_t*            vram;
     uint8_t*            palettes;
-    uint8_t*            oam;
+    union {
+        uint8_t*        oam;
+        NinSprite*      oamSprites;
+    };
     NinMapperRegs       mapper;
     uint8_t             prgBankCount;
     uint8_t*            prgRom;

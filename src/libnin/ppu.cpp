@@ -266,8 +266,11 @@ static void bgFetch(NinState* state, uint16_t x)
 
 static void emitPixel(NinState* state, uint16_t x)
 {
+    uint16_t addr;
     uint8_t shift;
+    uint8_t spMask;
     uint8_t bgIndex;
+    uint8_t spIndex;
     uint8_t palette;
     uint8_t color;
 
@@ -279,11 +282,97 @@ static void emitPixel(NinState* state, uint16_t x)
     palette = (RT.shiftPaletteLo >> shift) & 0x01;
     palette |= (((RT.shiftPaletteHi >> shift) & 0x01) << 1);
 
-    if (bgIndex == 0)
-        color = ninVMemoryRead8(state, 0x3F00);
-    else
-        color = ninVMemoryRead8(state, 0x3F00 | (palette << 2) | bgIndex) & 0x3f;
+    addr = 0x3F00;
+    if (bgIndex)
+        addr = 0x3F00 | (palette << 2) | bgIndex;
+
+    for (unsigned i = 0; i < 8; ++i)
+    {
+        if (x >= RT.latchSpriteBitmapX[i] && x < RT.latchSpriteBitmapX[i] + 8)
+        {
+            spMask = (0x80 >> (x - RT.latchSpriteBitmapX[i]));
+            spIndex = !!(RT.latchSpriteBitmapLo[i] & spMask);
+            spIndex |= ((!!(RT.latchSpriteBitmapHi[i] & spMask)) << 1);
+            palette = RT.latchSpriteBitmapAttr[i] & 0x03;
+
+            if (spIndex)
+            {
+                if (i == 0 && RT.zeroHit)
+                    state->ppu.zeroHitFlag = 1;
+
+                addr = 0x3F10 | (palette << 2) | spIndex;
+                break;
+            }
+        }
+    }
+    color = ninVMemoryRead8(state, addr) & 0x3f;
     state->backBuffer[RT.scanline * BITMAP_X + x] = kPalette[color];
+}
+
+static void spriteEvaluation(NinState* state, uint16_t cycle)
+{
+    unsigned n;
+    uint16_t addr;
+    uint8_t y;
+    uint8_t height;
+
+    height = RT.largeSprites ? 16 : 8;
+
+    if (cycle == 0)
+    {
+        RT.oam2Index = 0;
+        RT.zeroHit = RT.zeroHitNext;
+        RT.zeroHitNext = 0;
+    }
+    if (cycle >= 1 && cycle <= 64 && !(cycle & 0x01))
+    {
+        /* Clear OAM2 */
+        n = (cycle - 1) / 2;
+        RT.oam2[n / 4].raw[n % 4] = 0xff;
+    }
+    if (cycle >= 65 && cycle <= 256 && !(cycle & 0x03) && RT.oam2Index < 8)
+    {
+        /* Actual evaluation */
+        n = (cycle - 65) / 4;
+        if (RT.scanline >= state->oamSprites[n].y && RT.scanline < state->oamSprites[n].y + 8)
+        {
+            if (n == 0)
+                RT.zeroHitNext = 1;
+            RT.oam2[RT.oam2Index++] = state->oamSprites[n];
+        }
+    }
+    if (cycle >= 257 && cycle <= 320 && ((cycle % 8) == 0))
+    {
+        n = (cycle - 257) / 8;
+
+        if (n >= RT.oam2Index)
+        {
+            RT.latchSpriteBitmapX[n] = 0x00;
+            RT.latchSpriteBitmapAttr[n] = 0x00;
+            RT.latchSpriteBitmapLo[n] = 0x00;
+            RT.latchSpriteBitmapHi[n] = 0x00;
+        }
+        else
+        {
+            y = RT.scanline - RT.oam2[n].y;
+            if (RT.oam2[n].yFlip)
+                y = height - y - 1;
+            addr = (RT.oam2[n].tile << 4) | y;
+            if (!RT.largeSprites && (state->ppu.controller & 0x08))
+                addr |= 0x100;
+
+            RT.latchSpriteBitmapX[n] = RT.oam2[n].x;
+            RT.latchSpriteBitmapAttr[n] = RT.oam2[n].raw[2];
+            RT.latchSpriteBitmapLo[n] = ninVMemoryRead8(state, addr);
+            RT.latchSpriteBitmapHi[n] = ninVMemoryRead8(state, addr | 0x08);
+
+            if (RT.oam2[n].xFlip)
+            {
+                RT.latchSpriteBitmapLo[n] = bitswap8(RT.latchSpriteBitmapLo[n]);
+                RT.latchSpriteBitmapHi[n] = bitswap8(RT.latchSpriteBitmapHi[n]);
+            }
+        }
+    }
 }
 
 template <bool prerender>
@@ -304,6 +393,7 @@ static void scanline(NinState* state)
     }
     if (isRendering)
     {
+        if (!prerender) spriteEvaluation(state, cycle);
         if (!prerender && cycle >= 2 && cycle < 258)
             emitPixel(state, cycle - 2);
         if ((cycle > 0 && cycle <= 256) || (cycle >= 321 && cycle <= 336))
