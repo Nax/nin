@@ -295,9 +295,12 @@ static void emitPixel(NinState* state, uint16_t x)
             spIndex |= ((!!(RT.latchSpriteBitmapHi[i] & spMask)) << 1);
             palette = RT.latchSpriteBitmapAttr[i] & 0x03;
 
-            if (spIndex)
+            if (i == 0 && spIndex && bgIndex && RT.zeroHit && RT.maskEnableBackground && RT.maskEnableSprites)
+                state->ppu.zeroHitFlag = 1;
+
+            if (spIndex && (!(RT.latchSpriteBitmapAttr[i] & 0x20) || !bgIndex))
             {
-                if (i == 0 && RT.zeroHit)
+                if (i == 0 && spIndex && bgIndex && RT.zeroHit && RT.maskEnableBackground && RT.maskEnableSprites)
                     state->ppu.zeroHitFlag = 1;
 
                 addr = 0x3F10 | (palette << 2) | spIndex;
