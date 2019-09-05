@@ -13,12 +13,6 @@ static void flagN(NinState* state, uint8_t value)
         state->cpu.p |= PFLAG_N;
 }
 
-static void flagNZ(NinState* state, uint8_t value)
-{
-    flagZ(state, value);
-    flagN(state, value);
-}
-
 static uint8_t compare(NinState* state, uint8_t a, uint8_t b)
 {
     state->cpu.p &= ~(PFLAG_C);
@@ -43,17 +37,6 @@ static void stackPush16(NinState* state, uint16_t value)
 {
     stackPush8(state, value >> 8);
     stackPush8(state, value & 0xff);
-}
-
-static uint16_t stackPop16(NinState* state)
-{
-    uint8_t hi;
-    uint8_t lo;
-
-    lo = stackPop8(state);
-    hi = stackPop8(state);
-
-    return lo | ((uint16_t)hi << 8);
 }
 
 static uint8_t asl(NinState* state, uint8_t v)
@@ -140,7 +123,7 @@ static uint16_t indirect(NinState* state, uint16_t addr)
 static constexpr const uint8_t kHex[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15 };
 static constexpr const uint8_t kBranchFlags[] = { PFLAG_N, PFLAG_V, PFLAG_C, PFLAG_Z };
 
-static constexpr const bool matchPattern(const char* pattern, uint8_t value)
+static constexpr bool matchPattern(const char* pattern, uint8_t value)
 {
     return !!((kHex[pattern[value / 4] - '0']) & (1 << (value % 4)));
 }
@@ -239,7 +222,7 @@ static void instruction(NinState* state)
 #define ICASE2(n)   ICASE1(n + 0x00); ICASE1(n + 0x01); ICASE1(n + 0x02); ICASE1(n + 0x03)
 #define ICASE3(n)   ICASE2(n + 0x00); ICASE2(n + 0x04); ICASE2(n + 0x08); ICASE2(n + 0x0c)
 #define ICASE4(n)   ICASE3(n + 0x00); ICASE3(n + 0x10); ICASE3(n + 0x20); ICASE3(n + 0x30)
-#define EXECUTE()   ICASE4()
+#define EXECUTE(x)  do { switch (x) { ICASE4(0x00); ICASE4(0x40); ICASE4(0x80); ICASE4(0xc0); } } while(0)
 
 NIN_API void ninRunFrameCPU(NinState* state)
 {
@@ -261,15 +244,7 @@ NIN_API void ninRunFrameCPU(NinState* state)
         state->cyc += 2;
         ninRunCyclesAPU(state, 2);
         state->frame = ninPpuRunCycles(state, 6);
-
-        switch (op)
-        {
-        ICASE4(0x00);
-        ICASE4(0x40);
-        ICASE4(0x80);
-        ICASE4(0xc0);
-        }
-
+        EXECUTE(op);
         if (state->frame)
             break;
     }
