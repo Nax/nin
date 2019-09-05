@@ -30,6 +30,9 @@ public slots:
     void pause();
     void resume();
 
+signals:
+    void gameUpdate(NinState*);
+
 private:
     bool            _running;
     bool            _workerRunning;

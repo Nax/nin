@@ -1,3 +1,4 @@
+#include <string.h>
 #include <libnin/libnin.h>
 
 static uint8_t badIO(NinState* state, uint16_t addr, int write)
@@ -137,4 +138,10 @@ int ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
     tmp |= ninMemoryWrite8(state, addr + 1, value >> 8);
 
     return !!tmp;
+}
+
+NIN_API void ninDumpMemory(NinState* state, uint8_t* dst)
+{
+    memset(dst, 0xff, 0x10000);
+    memcpy(dst, state->ram, RAM_SIZE);
 }

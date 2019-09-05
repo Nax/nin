@@ -8,6 +8,7 @@
 #include "MainWindow.h"
 #include "Emulator.h"
 #include "RenderWidget.h"
+#include "MemoryWindow.h"
 
 MainWindow::MainWindow(Emulator& emu, QWidget* parent)
 : QMainWindow(parent)
@@ -112,6 +113,14 @@ void MainWindow::openRom()
     }
 }
 
+void MainWindow::openMemoryViewer()
+{
+    MemoryWindow* memoryWindow;
+
+    memoryWindow = new MemoryWindow(_emu);
+    memoryWindow->show();
+}
+
 void MainWindow::createActions()
 {
     _openRom = new QAction(tr("&Open ROM"), this);
@@ -123,6 +132,9 @@ void MainWindow::createActions()
 
     _resumeEmulation = new QAction(tr("&Resume"), this);
     connect(_resumeEmulation, SIGNAL(triggered(void)), &_emu, SLOT(resume(void)));
+
+    _actionMemoryViewer = new QAction(tr("&Memory Viewer"), this);
+    connect(_actionMemoryViewer, SIGNAL(triggered(void)), this, SLOT(openMemoryViewer(void)));
 }
 
 void MainWindow::createMenus()
@@ -133,4 +145,7 @@ void MainWindow::createMenus()
     _emulationMenu = menuBar()->addMenu(tr("&Emulation"));
     _emulationMenu->addAction(_pauseEmulation);
     _emulationMenu->addAction(_resumeEmulation);
+
+    _windowMenu = menuBar()->addMenu(tr("&Window"));
+    _windowMenu->addAction(_actionMemoryViewer);
 }

@@ -11,7 +11,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT;
 public:
     explicit MainWindow(Emulator& emu, QWidget* parent = nullptr);
-    ~MainWindow();
+    virtual ~MainWindow();
 
     virtual void keyPressEvent(QKeyEvent* event) override;
     virtual void keyReleaseEvent(QKeyEvent* event) override;
@@ -20,6 +20,7 @@ public:
 
 private slots:
     void openRom();
+    void openMemoryViewer();
 
 private:
     void createActions();
@@ -31,9 +32,11 @@ private:
     QAction* _openRom;
     QAction* _pauseEmulation;
     QAction* _resumeEmulation;
+    QAction* _actionMemoryViewer;
 
     QMenu* _fileMenu;
     QMenu* _emulationMenu;
+    QMenu* _windowMenu;
 };
 
 #endif

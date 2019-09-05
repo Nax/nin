@@ -12,7 +12,7 @@ class RenderWidget : public QOpenGLWidget
 
 public:
     explicit RenderWidget(Emulator& emu, QWidget* parent = nullptr);
-    ~RenderWidget();
+    virtual ~RenderWidget();
 
     virtual void initializeGL() override;
     virtual void paintGL() override;

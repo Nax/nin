@@ -6,7 +6,7 @@ find_package(OpenAL REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
-add_executable(nin ${SOURCES})
+add_executable(nin WIN32 ${SOURCES})
 target_link_libraries(nin OpenGL::GL ${OPENAL_LIBRARY} libnin Qt5::Core Qt5::Widgets)
 target_include_directories(nin PRIVATE ${OPENAL_INCLUDE_DIR})
 

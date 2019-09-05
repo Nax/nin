@@ -121,6 +121,7 @@ void Emulator::update()
     ninSetInput(_state, _input);
     ninRunFrame(_state);
     _window->updateTexture((const char*)ninGetScreenBuffer(_state));
+    emit gameUpdate(_state);
 }
 
 bool Emulator::workerRunning()
