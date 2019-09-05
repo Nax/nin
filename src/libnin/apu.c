@@ -95,7 +95,7 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
     case 0x0b: // Triangle Timer Hi
         APU.triangle.timerPeriod &= 0x00ff;
         APU.triangle.timerPeriod |= ((value & 0x7) << 8);
-        APU.triangle.length = kLengthCounterLookup[value >> 3];
+        if (APU.triangle.enabled) APU.triangle.length = kLengthCounterLookup[value >> 3];
         APU.triangle.linearReloadFlag = 1;
         break;
     case 0x15: // STATUS
@@ -110,8 +110,8 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         }
         else
         {
-            APU.triangle.enabled = 1;
-            APU.triangle.length = 1;
+            APU.triangle.enabled = 0;
+            APU.triangle.length = 0;
         }
         break;
     }

@@ -133,6 +133,16 @@ typedef struct {
 } NinChannelTriangle;
 
 typedef struct {
+    uint16_t    timerPeriod;
+    uint16_t    timerValue;
+    uint8_t     seqIndex;
+    uint8_t     length;
+    uint8_t     duty:2;
+    uint8_t     halt:1;
+    uint8_t     enabled:1;
+} NinChannelPulse;
+
+typedef struct {
     uint16_t            frameCounter;
     NinChannelTriangle  triangle;
     uint16_t            pulseTimer[2];
