@@ -39,8 +39,6 @@ void ninApplyMapper(NinState* state, uint8_t mapperNum)
         state->prgBankCount = state->prgRomSize / 0x4000;
         state->prgRomBank[0] = state->prgRom;
         state->prgRomBank[1] = state->prgRom + (state->prgBankCount - 1) * 0x4000ll;
-        state->prgRamSize = 0x2000;
-        state->prgRam = zalloc(state->prgRamSize);
 
         if (state->chrRam)
         {

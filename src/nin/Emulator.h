@@ -5,7 +5,7 @@
 #include <alc.h>
 
 #include <thread>
-#include <QTimer>
+#include <QString>
 #include <nin/nin.h>
 #include "MainWindow.h"
 #include "Audio.h"
@@ -16,11 +16,15 @@ class Emulator : public QObject
 
 public:
     Emulator();
-    void loadRom(const char* path);
+    virtual ~Emulator();
+
+    void loadRom(const QString& path);
+    void closeRom();
     void start();
     void handleInput(uint8_t key, int pressed);
     void handleAudio(const int16_t* samples);
     void update();
+    bool workerRunning();
 
 public slots:
     void pause();
@@ -28,6 +32,7 @@ public slots:
 
 private:
     bool            _running;
+    bool            _workerRunning;
     std::thread     _worker;
     Audio*          _audio;
     uint8_t         _input;

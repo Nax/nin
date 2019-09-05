@@ -25,7 +25,9 @@ typedef void (*NINAUDIOCALLBACK)(void*, const int16_t*);
 #define NIN_BUTTON_LEFT     0x40
 #define NIN_BUTTON_RIGHT    0x80
 
-NIN_API NinState*       ninCreateState(FILE* rom);
+NIN_API NinState*       ninCreateState(const char* path);
+NIN_API NinState*       ninSetSaveFile(NinState* state, const char* path);
+NIN_API NinState*       ninSyncSave(NinState* state);
 NIN_API void            ninDestroyState(NinState* state);
 NIN_API void            ninRunFrame(NinState* state);
 NIN_API const uint32_t* ninGetScreenBuffer(NinState* state);

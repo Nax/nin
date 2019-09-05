@@ -22,6 +22,9 @@ static void loadRom(NinState* state, FILE* rom)
     state->prgRom = malloc(state->prgRomSize);
     fread(state->prgRom, state->prgRomSize, 1, rom);
 
+    state->prgRamSize = 0x2000;
+    state->prgRam = zalloc(state->prgRamSize);
+
     if (state->chrRomSize)
     {
         state->chrRom = malloc(state->chrRomSize);
@@ -55,9 +58,15 @@ static void loadRom(NinState* state, FILE* rom)
     ninApplyMapper(state, mapperNum);
 }
 
-NinState* ninCreateState(FILE* rom)
+NinState* ninCreateState(const char* path)
 {
+    FILE* file;
     NinState* state;
+
+    file = fopen(path, "rb");
+    if (!file)
+        return NULL;
+
     state = zalloc(sizeof(*state));
 
     state->backBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
@@ -67,14 +76,20 @@ NinState* ninCreateState(FILE* rom)
     state->vram = zalloc(VRAM_SIZE);
     state->palettes = zalloc(0x20);
     state->oam = zalloc(256);
-    loadRom(state, rom);
+    loadRom(state, file);
     initCPU(state);
+
+    fclose(file);
 
     return state;
 }
 
 void ninDestroyState(NinState* state)
 {
+    ninSyncSave(state);
+    if (state->saveFile)
+        fclose(state->saveFile);
+
     free(state->backBuffer);
     free(state->frontBuffer);
     free(state->audioSamples);

@@ -1,6 +1,8 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
+#include <QFileInfo>
+#include <QDir>
 #include "Emulator.h"
 
 static void _audioCallback(void* arg, const int16_t* samples)
@@ -24,6 +26,9 @@ static void _workerMain(Emulator* emu)
     acc = 0;
     for (;;)
     {
+        if (!emu->workerRunning())
+            return;
+
         now = Clock::now();
         acc += (now - prev).count();
         prev = now;
@@ -39,8 +44,10 @@ static void _workerMain(Emulator* emu)
 }
 
 Emulator::Emulator()
-: _state(nullptr)
+: QObject(nullptr)
+, _state(nullptr)
 , _running(false)
+, _workerRunning(false)
 {
     _audio = new Audio;
     _window = new MainWindow(*this);
@@ -49,21 +56,37 @@ Emulator::Emulator()
     _input = 0;
 }
 
-void Emulator::loadRom(const char* path)
+Emulator::~Emulator()
 {
-    FILE* f;
+    closeRom();
+    _workerRunning = false;
+    _worker.join();
+}
 
+void Emulator::closeRom()
+{
     if (_state)
     {
         ninDestroyState(_state);
         _state = nullptr;
     }
+}
 
-    f = fopen(path, "rb");
-    if (f)
+void Emulator::loadRom(const QString& path)
+{
+    QByteArray raw;
+    QString saveFile;
+    FILE* f;
+
+    closeRom();
+    raw = path.toUtf8();
+    _state = ninCreateState(raw.data());
+    if (_state)
     {
-        _state = ninCreateState(f);
-        fclose(f);
+        QFileInfo info(path);
+        saveFile = info.path() + "/" + info.completeBaseName() + ".sav";
+        raw = saveFile.toUtf8();
+        ninSetSaveFile(_state, raw.data());
         ninSetAudioCallback(_state, &_audioCallback, this);
     }
 }
@@ -73,6 +96,7 @@ void Emulator::start()
     // Run the first frame
     _running = true;
     update();
+    _workerRunning = true;
     _worker = std::thread(_workerMain, this);
 }
 
@@ -97,6 +121,11 @@ void Emulator::update()
     ninSetInput(_state, _input);
     ninRunFrame(_state);
     _window->updateTexture((const char*)ninGetScreenBuffer(_state));
+}
+
+bool Emulator::workerRunning()
+{
+    return _workerRunning;
 }
 
 void Emulator::pause()

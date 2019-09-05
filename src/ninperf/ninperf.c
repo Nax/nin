@@ -20,12 +20,9 @@ int main(int argc, char** argv)
     if (argc != 2)
         return 1;
 
-    rom = fopen(argv[1], "rb");
-    if (!rom)
+    state = ninCreateState(argv[1]);
+    if (!state)
         return 1;
-
-    state = ninCreateState(rom);
-    fclose(rom);
 
     srand((unsigned)time(NULL));
 

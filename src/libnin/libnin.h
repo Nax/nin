@@ -139,6 +139,7 @@ typedef struct {
 } NinAPU;
 
 struct NinState_ {
+    FILE*               saveFile;
     uint8_t             controller;
     uint8_t             controllerLatch;
     uint32_t*           backBuffer;
