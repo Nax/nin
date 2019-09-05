@@ -28,7 +28,7 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
     switch (reg)
     {
     case 0x15:
-        value = state->apu.pulseEnable;
+        //value = state->apu.pulseEnable;
         break;
     }
 
@@ -37,47 +37,37 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
 
 void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
 {
+    unsigned i = (reg >> 2) & 1;
+
     switch (reg)
     {
-    case 0x00: // Pulse 1 Envelope
-        APU.pulseVolume[0] = value & 0x0f;
-        APU.pulseHalt &= 0x02;
-        APU.pulseHalt |= ((value >> 5) & 0x01);
-        APU.pulseDuty[0] = (value >> 6) & 0x03;
+    case 0x00: // Pulse Envelope
+    case 0x04:
+        APU.pulse[i].envelope.volume = value & 0x0f;
+        APU.pulse[i].envelope.constant = !!(value & 0x10);
+        APU.pulse[i].envelope.halt = !!(value & 0x20);
+        APU.pulse[i].duty = kPulseSequence[value >> 6];
         break;
-    case 0x01: // Pulse 1 Sweep
-        APU.pulseSweep[0].raw = value;
-        APU.pulseSweepCounter[0] = state->apu.pulseSweep[0].divider;
+    case 0x01: // Pulse Sweep
+    case 0x05:
+        APU.pulse[i].sweepEnable = !!(value & 0x80);
+        APU.pulse[i].sweepPeriod = (value >> 4) & 0x07;
+        APU.pulse[i].sweepNegate = !!(value & 0x08);
+        APU.pulse[i].sweepShift = value & 0x07;
+        APU.pulse[i].sweepReload = 1;
         break;
-    case 0x02: // Pulse 1 Timer Lo
-        APU.pulseTimer[0] &= 0xff00;
-        APU.pulseTimer[0] |= value;
+    case 0x02: // Pulse Timer Lo
+    case 0x06:
+        APU.pulse[i].timerPeriod &= 0xff00;
+        APU.pulse[i].timerPeriod |= value;
         break;
-    case 0x03: // Pulse 1 Timer Hi
-        APU.pulseTimer[0] &= 0x00ff;
-        APU.pulseTimer[0] |= ((value & 0x7) << 8);
-        if (APU.pulseEnable & 0x01)
-            APU.pulseLen[0] = kLengthCounterLookup[value >> 3];
-        break;
-    case 0x04: // Pulse 2 Envelope
-        APU.pulseVolume[1] = value & 0x0f;
-        APU.pulseHalt &= 0x01;
-        APU.pulseHalt |= ((value >> 4) & 0x02);
-        APU.pulseDuty[1] = (value >> 6) & 0x03;
-        break;
-    case 0x05: // Pulse 2 Sweep
-        APU.pulseSweep[1].raw = value;
-        APU.pulseSweepCounter[1] = state->apu.pulseSweep[1].divider;
-        break;
-    case 0x06: // Pulse 2 Timer Lo
-        APU.pulseTimer[1] &= 0xff00;
-        APU.pulseTimer[1] |= value;
-        break;
-    case 0x07: // Pulse 2 Timer Hi
-        APU.pulseTimer[1] &= 0x00ff;
-        APU.pulseTimer[1] |= ((value & 0x7) << 8);
-        if (APU.pulseEnable & 0x02)
-            APU.pulseLen[1] = kLengthCounterLookup[value >> 3];
+    case 0x03: // Pulse Timer Hi
+    case 0x07:
+        APU.pulse[i].timerPeriod &= 0x00ff;
+        APU.pulse[i].timerPeriod |= ((value & 0x7) << 8);
+        APU.pulse[i].seqIndex = 0;
+        if (APU.pulse[i].enabled)
+            APU.pulse[i].length = kLengthCounterLookup[value >> 3];
         break;
     case 0x08:
         if (value & 0x80)
@@ -99,11 +89,20 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         APU.triangle.linearReloadFlag = 1;
         break;
     case 0x15: // STATUS
-        APU.pulseEnable = (value & 0x03);
-        if (!(value & 0x01))
-            APU.pulseLen[0] = 0;
-        if (!(value & 0x02))
-            APU.pulseLen[1] = 0;
+        if (value & 0x01)
+            APU.pulse[0].enabled = 1;
+        else
+        {
+            APU.pulse[0].enabled = 0;
+            APU.pulse[0].enabled = 0;
+        }
+        if (value & 0x02)
+            APU.pulse[1].enabled = 1;
+        else
+        {
+            APU.pulse[1].enabled = 0;
+            APU.pulse[1].enabled = 0;
+        }
         if (value & 0x04)
         {
             APU.triangle.enabled = 1;
@@ -178,6 +177,36 @@ static void triangleTick(NinState* state)
     }
 }
 
+static void pulseTick(NinState* state, unsigned c)
+{
+    NinChannelPulse* channel;
+
+    channel = &APU.pulse[c];
+    if (channel->timerValue == 0)
+    {
+        channel->timerValue = channel->timerPeriod;
+        if (channel->length)
+        {
+            channel->seqIndex++;
+            channel->seqIndex &= 0x07;
+        }
+    }
+    else
+    {
+        channel->timerValue--;
+    }
+}
+
+uint8_t samplePulse(NinState* state, unsigned c)
+{
+    NinChannelPulse* channel;
+
+    channel = &APU.pulse[c];
+    if (!channel->enabled || channel->timerValue < 8)
+        return 0;
+    return (channel->duty & (1 << channel->seqIndex)) ? 15 : 0;
+}
+
 void ninRunCyclesAPU(NinState* state, size_t cycles)
 {
     uint8_t triangleSample;
@@ -195,6 +224,8 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
 
         if (!APU.half)
         {
+            pulseTick(state, 0);
+            pulseTick(state, 1);
             switch (APU.frameCounter)
             {
             default:
@@ -209,63 +240,11 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
                 break;
             }
             APU.frameCounter++;
-            if (APU.frameCounter == 7456 || APU.frameCounter == 14914)
-            {
-                for (int i = 0; i < 2; ++i)
-                {
-                    /* Sweep */
-                    tmp = APU.pulseTimer[i] >> APU.pulseSweep[i].shift;
-                    if (APU.pulseSweep[i].negate)
-                        pulseSweepTarget = APU.pulseTimer[i] - tmp;
-                    else
-                        pulseSweepTarget = APU.pulseTimer[i] + tmp;
-
-                    if (pulseSweepTarget > 0x7FF)
-                        APU.pulseTimer[i] = 0;
-
-                    if (APU.pulseSweep[i].enabled)
-                    {
-                        if (!APU.pulseSweepCounter[i])
-                        {
-                            APU.pulseTimer[i] = pulseSweepTarget;
-                            APU.pulseSweepCounter[i] = APU.pulseSweep[i].divider;
-                        }
-                        else
-                            APU.pulseSweepCounter[i]--;
-                    }
-
-                    if ((state->apu.pulseHalt & (1 << i)) && APU.pulseLen[i])
-                        APU.pulseLen[i]--;
-                }
-                if (APU.frameCounter == 14914)
-                    APU.frameCounter = 0;
-            }
-
-            for (int i = 0; i < 2; ++i)
-            {
-                if (APU.pulseLen[i] > 0)
-                {
-                    if (APU.pulseClock[i] == 0)
-                    {
-                        APU.pulseClock[i] = APU.pulseTimer[i];
-                        APU.pulseSeq[i] = (APU.pulseSeq[i] + 1) % 8;
-                    }
-                    else
-                        APU.pulseClock[i]--;
-                }
-            }
+            if (APU.frameCounter == 14914)
+                APU.frameCounter = 0;
         }
 
         APU.half ^= 1;
-
-        for (int i = 0; i < 2; ++i)
-        {
-            if (APU.pulseTimer[i] && APU.pulseLen[i] > 0)
-            {
-                tmp = (kPulseSequence[APU.pulseDuty[i]] >> APU.pulseSeq[i]) & 1;
-                pulseSample[i] = tmp * APU.pulseVolume[i];
-            }
-        }
     }
 
     if (state->audioCycles >= CYCLES_PER_SAMPLE)
@@ -275,6 +254,8 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             triangleSample = kTriangleSequence[state->apu.triangle.seqIndex];
         else
             triangleSample = 0;
+        pulseSample[0] = samplePulse(state, 0);
+        pulseSample[1] = samplePulse(state, 1);
         /* Emit the sample */
         state->audioCycles -= CYCLES_PER_SAMPLE;
         state->audioSamples[state->audioSamplesCount++] = ninMix(triangleSample, pulseSample[0], pulseSample[1]);

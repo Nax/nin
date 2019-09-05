@@ -133,28 +133,31 @@ typedef struct {
 } NinChannelTriangle;
 
 typedef struct {
+    uint8_t halt:1;
+    uint8_t constant:1;
+    uint8_t volume:4;
+} NinEnvelope;
+
+typedef struct {
     uint16_t    timerPeriod;
     uint16_t    timerValue;
     uint8_t     seqIndex;
     uint8_t     length;
-    uint8_t     duty:2;
-    uint8_t     halt:1;
+    uint8_t     duty;
+    NinEnvelope envelope;
+    uint8_t     sweepEnable:1;
+    uint8_t     sweepPeriod:3;
+    uint8_t     sweepNegate:1;
+    uint8_t     sweepShift:3;
+    uint8_t     sweepDivider;
+    uint8_t     sweepReload:1;
     uint8_t     enabled:1;
 } NinChannelPulse;
 
 typedef struct {
     uint16_t            frameCounter;
     NinChannelTriangle  triangle;
-    uint16_t            pulseTimer[2];
-    uint16_t            pulseClock[2];
-    uint8_t             pulseSeq[2];
-    uint8_t             pulseLen[2];
-    unsigned            pulseEnable:2;
-    unsigned            pulseHalt:2;
-    NinAudioSweep       pulseSweep[2];
-    unsigned            pulseSweepCounter[2];
-    uint8_t             pulseDuty[2];
-    uint8_t             pulseVolume[2];
+    NinChannelPulse     pulse[2];
     unsigned            half:1;
 } NinAPU;
 
