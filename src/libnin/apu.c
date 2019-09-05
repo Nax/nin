@@ -97,12 +97,33 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
     }
 }
 
+static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2)
+{
+    float fPulse;
+    float fTND;
+
+    if (pulse1 || pulse2)
+    {
+        fPulse = 95.88f / ((8128.f / ((float)pulse1 + (float)pulse2)) + 100.f);
+    }
+    else
+        fPulse = 0.f;
+
+    if (triangle)
+    {
+        fTND = 159.79f / ((1.f / ((float)triangle / 8227.f)) + 100.f);
+    }
+    else
+        fTND = 0.f;
+
+    return (int16_t)((fPulse + fTND) * 32767.f);
+}
+
 void ninRunCyclesAPU(NinState* state, size_t cycles)
 {
     NinAPU apu;
-    int16_t sample;
-    int16_t triangleSample;
-    int16_t pulseSample[2];
+    uint8_t triangleSample;
+    uint8_t pulseSample[2];
     unsigned pulseSweepTarget;
     unsigned tmp;
 
@@ -176,7 +197,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             if (apu.pulseTimer[i] && apu.pulseLen[i] > 0)
             {
                 tmp = (kPulseSequence[apu.pulseDuty[i]] >> apu.pulseSeq[i]) & 1;
-                pulseSample[i] = tmp * apu.pulseVolume[i] * TRIANGLE_VOLUME;
+                pulseSample[i] = tmp * apu.pulseVolume[i];
             }
         }
 
@@ -189,23 +210,15 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             }
             else
                 apu.triangleClock--;
-            triangleSample = kTriangleSequence[apu.triangleSeq] * TRIANGLE_VOLUME - ((15 * TRIANGLE_VOLUME) / 2);
+            triangleSample = kTriangleSequence[apu.triangleSeq];
         }
     }
-
-    sample = triangleSample;
-    sample += pulseSample[0];
-    sample += pulseSample[1];
-
-    /*
-    if (sample)
-        printf("Sample: 0x%04x\n", (uint16_t)sample);*/
 
     if (state->audioCycles >= CYCLES_PER_SAMPLE)
     {
         /* Emit the sample */
         state->audioCycles -= CYCLES_PER_SAMPLE;
-        state->audioSamples[state->audioSamplesCount++] = sample;
+        state->audioSamples[state->audioSamplesCount++] = ninMix(triangleSample, pulseSample[0], pulseSample[1]);
         if (state->audioSamplesCount == NIN_AUDIO_SAMPLE_SIZE)
         {
             if (state->audioCallback)
