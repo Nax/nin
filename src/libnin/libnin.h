@@ -116,7 +116,9 @@ typedef struct {
     unsigned    zeroHit:1;
     unsigned    zeroHitNext:1;
     unsigned    maskEnableBackground:1;
+    unsigned    maskEnableBackgroundLeft:1;
     unsigned    maskEnableSprites:1;
+    unsigned    maskEnableSpritesLeft:1;
     unsigned    largeSprites:1;
 } NinRuntimePPU;
 

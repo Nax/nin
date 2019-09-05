@@ -71,6 +71,8 @@ NIN_API void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
     case 0x01:
         state->ppu.rt.maskEnableBackground = ((value & 0x08) >> 3);
         state->ppu.rt.maskEnableSprites = ((value & 0x10) >> 4);
+        state->ppu.rt.maskEnableBackgroundLeft = !!(value & 0x02);
+        state->ppu.rt.maskEnableSpritesLeft = !!(value & 0x04);
         break;
     case 0x02:
         break;
@@ -274,41 +276,55 @@ static void emitPixel(NinState* state, uint16_t x)
     uint8_t palette;
     uint8_t color;
 
+    bool bgEnabled = RT.maskEnableBackground && (x >= 8 || RT.maskEnableBackgroundLeft);
+    bool spEnabled = RT.maskEnableSprites && (x >= 8 || RT.maskEnableSpritesLeft);
+
     shift = 15 - (x % 8);
     shift -= RT.x;
-    bgIndex = (RT.shiftPatternLo >> shift) & 0x01;
-    bgIndex |= (((RT.shiftPatternHi >> shift) & 0x01) << 1);
 
-    palette = (RT.shiftPaletteLo >> shift) & 0x01;
-    palette |= (((RT.shiftPaletteHi >> shift) & 0x01) << 1);
-
-    addr = 0x3F00;
-    if (bgIndex)
-        addr = 0x3F00 | (palette << 2) | bgIndex;
-
-    for (unsigned i = 0; i < 8; ++i)
+    if (bgEnabled)
     {
-        if (x >= RT.latchSpriteBitmapX[i] && x < RT.latchSpriteBitmapX[i] + 8)
+        bgIndex = (RT.shiftPatternLo >> shift) & 0x01;
+        bgIndex |= (((RT.shiftPatternHi >> shift) & 0x01) << 1);
+
+        palette = (RT.shiftPaletteLo >> shift) & 0x01;
+        palette |= (((RT.shiftPaletteHi >> shift) & 0x01) << 1);
+
+        addr = 0x3F00;
+        if (bgIndex)
+            addr = 0x3F00 | (palette << 2) | bgIndex;
+        color = ninVMemoryRead8(state, addr) & 0x3f;
+    }
+    else
+    {
+        bgIndex = 0;
+        color = 0x3f;
+    }
+
+    if (spEnabled)
+    {
+        for (unsigned i = 0; i < 8; ++i)
         {
-            spMask = (0x80 >> (x - RT.latchSpriteBitmapX[i]));
-            spIndex = !!(RT.latchSpriteBitmapLo[i] & spMask);
-            spIndex |= ((!!(RT.latchSpriteBitmapHi[i] & spMask)) << 1);
-            palette = RT.latchSpriteBitmapAttr[i] & 0x03;
-
-            if (i == 0 && spIndex && bgIndex && RT.zeroHit && RT.maskEnableBackground && RT.maskEnableSprites)
-                state->ppu.zeroHitFlag = 1;
-
-            if (spIndex && (!(RT.latchSpriteBitmapAttr[i] & 0x20) || !bgIndex))
+            if (x >= RT.latchSpriteBitmapX[i] && x < RT.latchSpriteBitmapX[i] + 8)
             {
-                if (i == 0 && spIndex && bgIndex && RT.zeroHit && RT.maskEnableBackground && RT.maskEnableSprites)
+                spMask = (0x80 >> (x - RT.latchSpriteBitmapX[i]));
+                spIndex = !!(RT.latchSpriteBitmapLo[i] & spMask);
+                spIndex |= ((!!(RT.latchSpriteBitmapHi[i] & spMask)) << 1);
+                palette = RT.latchSpriteBitmapAttr[i] & 0x03;
+
+                if (i == 0 && spIndex && bgIndex && RT.zeroHit && RT.maskEnableBackground && RT.maskEnableSprites && x != 255)
                     state->ppu.zeroHitFlag = 1;
 
-                addr = 0x3F10 | (palette << 2) | spIndex;
-                break;
+                if (spIndex && (!(RT.latchSpriteBitmapAttr[i] & 0x20) || !bgIndex))
+                {
+                    addr = 0x3F10 | (palette << 2) | spIndex;
+                    color = ninVMemoryRead8(state, addr) & 0x3f;
+                    break;
+                }
             }
         }
     }
-    color = ninVMemoryRead8(state, addr) & 0x3f;
+
     state->backBuffer[RT.scanline * BITMAP_X + x] = kPalette[color];
 }
 
@@ -415,7 +431,7 @@ static void scanline(NinState* state)
     if (isRendering)
     {
         if (!prerender) spriteEvaluation(state, cycle);
-        if (!prerender && cycle >= 2 && cycle < 258)
+        if (!prerender && cycle >= 2 && cycle <= 257)
             emitPixel(state, cycle - 2);
         if ((cycle > 0 && cycle <= 256) || (cycle >= 321 && cycle <= 336))
         {
