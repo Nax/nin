@@ -277,7 +277,7 @@ static void emitPixel(NinState* state, uint16_t x)
     uint8_t color;
 
     bool bgEnabled = RT.maskEnableBackground && (x >= 8 || RT.maskEnableBackgroundLeft);
-    bool spEnabled = RT.maskEnableSprites && (x >= 8 || RT.maskEnableSpritesLeft);
+    bool spEnabled = RT.maskEnableSprites && (x >= 8 || RT.maskEnableSpritesLeft) && RT.scanline;
 
     shift = 15 - (x % 8);
     shift -= RT.x;
@@ -355,7 +355,7 @@ static void spriteEvaluation(NinState* state, uint16_t cycle)
     {
         /* Actual evaluation */
         n = (cycle - 65) / 2;
-        if (RT.scanline >= state->oamSprites[n].y && RT.scanline < state->oamSprites[n].y + height)
+        if (RT.scanline >= state->oamSprites[n].y && RT.scanline < (uint16_t)state->oamSprites[n].y + height)
         {
             if (n == 0)
                 RT.zeroHitNext = 1;
