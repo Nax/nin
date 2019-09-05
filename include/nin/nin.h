@@ -29,7 +29,7 @@ NIN_API NinState*       ninCreateState(const char* path);
 NIN_API NinState*       ninSetSaveFile(NinState* state, const char* path);
 NIN_API NinState*       ninSyncSave(NinState* state);
 NIN_API void            ninDestroyState(NinState* state);
-NIN_API void            ninRunFrame(NinState* state);
+NIN_API int             ninRunCycles(NinState* state, size_t cycles);
 NIN_API const uint32_t* ninGetScreenBuffer(NinState* state);
 NIN_API void            ninSetInput(NinState* state, uint8_t input);
 NIN_API void            ninSetAudioCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg);

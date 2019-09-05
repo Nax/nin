@@ -224,11 +224,12 @@ static void instruction(NinState* state)
 #define ICASE4(n)   ICASE3(n + 0x00); ICASE3(n + 0x10); ICASE3(n + 0x20); ICASE3(n + 0x30)
 #define EXECUTE(x)  do { switch (x) { ICASE4(0x00); ICASE4(0x40); ICASE4(0x80); ICASE4(0xc0); } } while(0)
 
-NIN_API void ninRunFrameCPU(NinState* state)
+NIN_API int ninRunCycles(NinState* state, size_t cycles)
 {
     uint8_t op;
 
     state->frame = 0;
+    state->cyc = 0;
     for (;;)
     {
         if (state->nmi)
@@ -243,9 +244,10 @@ NIN_API void ninRunFrameCPU(NinState* state)
         op = ninMemoryRead8(state, state->cpu.pc++);
         state->cyc += 2;
         ninRunCyclesAPU(state, 2);
-        state->frame = ninPpuRunCycles(state, 6);
+        state->frame |= ninPpuRunCycles(state, 6);
         EXECUTE(op);
-        if (state->frame)
+        if (state->cyc >= cycles)
             break;
     }
+    return state->frame;
 }

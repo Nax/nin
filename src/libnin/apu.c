@@ -1,8 +1,6 @@
 #include <libnin/libnin.h>
 
 #define CYCLES_PER_SAMPLE           37
-#define CYCLES_PER_LENGTH_COUNTER   7457
-
 #define TRIANGLE_VOLUME             300
 
 static const int16_t kTriangleSequence[32] = {

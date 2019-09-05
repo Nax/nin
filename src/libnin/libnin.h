@@ -189,7 +189,6 @@ NIN_API int         ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t va
 NIN_API uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 NIN_API void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 
-void        ninRunCycles(NinState* state, size_t cycles);
 void        ninSetFlagNMI(NinState* state, uint8_t flag);
 void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
 

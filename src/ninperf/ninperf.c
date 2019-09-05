@@ -15,7 +15,7 @@ int main(int argc, char** argv)
     NinState* state;
     clock_t lastFrame;
     clock_t now;
-    int frameCount;
+    size_t cyc;
 
     if (argc != 2)
         return 1;
@@ -26,19 +26,19 @@ int main(int argc, char** argv)
 
     srand((unsigned)time(NULL));
 
-    frameCount = 0;
+    cyc = 0;
     lastFrame = clock();
     for (;;)
     {
         ninSetInput(state, (rand() & 0xff));
-        ninRunFrame(state);
-        frameCount++;
+        ninRunCycles(state, 5000);
+        cyc += 5000;
         now = clock();
         if (now - lastFrame > CLOCKS_PER_SEC)
         {
-            printf("%d frames/s" LF, frameCount);
+            printf("%d cycles/s" LF, cyc);
             fflush(stdout);
-            frameCount = 0;
+            cyc = 0;
             lastFrame = now;
         }
     }
