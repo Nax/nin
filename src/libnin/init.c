@@ -6,7 +6,6 @@ static void initCPU(NinState* state)
 {
     state->cpu.p = PFLAG_I;
     state->cpu.pc = ninMemoryRead16(state, 0xfffc);
-    //state->cpu.pc = 0xc000;
     state->cpu.regs[REG_S] = 0xfd;
     state->cyc = 7;
 }
@@ -22,7 +21,6 @@ static void loadRom(NinState* state, FILE* rom)
 
     state->prgRom = malloc(state->prgRomSize);
     fread(state->prgRom, state->prgRomSize, 1, rom);
-    printf("%d\r\n", state->prgRomSize);
 
     if (state->chrRomSize)
     {
@@ -60,14 +58,11 @@ static void loadRom(NinState* state, FILE* rom)
 NinState* ninCreateState(FILE* rom)
 {
     NinState* state;
-
     state = zalloc(sizeof(*state));
+
     state->backBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
     state->frontBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
     state->audioSamples = zalloc(NIN_AUDIO_SAMPLE_SIZE * sizeof(int16_t));
-    state->traceCache = zalloc(sizeof(NinTraceCache));
-    for (size_t i = 0; i < 0x10000; ++i)
-        state->traceCache->index[i] = TRACE_NONE;
     state->ram = zalloc(RAM_SIZE);
     state->vram = zalloc(VRAM_SIZE);
     state->palettes = zalloc(0x20);
@@ -80,7 +75,17 @@ NinState* ninCreateState(FILE* rom)
 
 void ninDestroyState(NinState* state)
 {
+    free(state->backBuffer);
+    free(state->frontBuffer);
+    free(state->audioSamples);
     free(state->ram);
+    free(state->vram);
+    free(state->palettes);
+    free(state->oam);
+    free(state->prgRam);
+    free(state->prgRom);
+    free(state->chrRam);
+    free(state->chrRom);
     free(state);
 }
 

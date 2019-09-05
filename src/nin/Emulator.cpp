@@ -1,14 +1,14 @@
 #include <cstdio>
 #include <chrono>
 #include <thread>
-#include "NinEmulator.h"
+#include "Emulator.h"
 
 static void _audioCallback(void* arg, const int16_t* samples)
 {
-    ((NinEmulator*)arg)->handleAudio(samples);
+    ((Emulator*)arg)->handleAudio(samples);
 }
 
-static void _workerMain(NinEmulator* emu)
+static void _workerMain(Emulator* emu)
 {
     static const uint64_t kDelay = 16666666;
 
@@ -30,7 +30,7 @@ static void _workerMain(NinEmulator* emu)
 
         while (acc >= kDelay)
         {
-            QMetaObject::invokeMethod(emu, &NinEmulator::update);
+            QMetaObject::invokeMethod(emu, &Emulator::update);
             acc -= kDelay;
         }
 
@@ -38,32 +38,45 @@ static void _workerMain(NinEmulator* emu)
     }
 }
 
-NinEmulator::NinEmulator(const char* path)
+Emulator::Emulator()
+: _state(nullptr)
+, _running(false)
 {
-    FILE* f;
-
-    f = fopen(path, "rb");
-    _state = ninCreateState(f);
-    fclose(f);
-
     _audio = new Audio;
-    ninSetAudioCallback(_state, &_audioCallback, this);
-
-    _window = new NinMainWindow(*this);
+    _window = new MainWindow(*this);
     _window->show();
 
     _input = 0;
 }
 
-void NinEmulator::start()
+void Emulator::loadRom(const char* path)
+{
+    FILE* f;
+
+    if (_state)
+    {
+        ninDestroyState(_state);
+        _state = nullptr;
+    }
+
+    f = fopen(path, "rb");
+    if (f)
+    {
+        _state = ninCreateState(f);
+        fclose(f);
+        ninSetAudioCallback(_state, &_audioCallback, this);
+    }
+}
+
+void Emulator::start()
 {
     // Run the first frame
+    _running = true;
     update();
-
     _worker = std::thread(_workerMain, this);
 }
 
-void NinEmulator::handleInput(uint8_t key, int pressed)
+void Emulator::handleInput(uint8_t key, int pressed)
 {
     if (pressed)
         _input |= key;
@@ -71,14 +84,27 @@ void NinEmulator::handleInput(uint8_t key, int pressed)
         _input &= ~key;
 }
 
-void NinEmulator::handleAudio(const int16_t* samples)
+void Emulator::handleAudio(const int16_t* samples)
 {
     _audio->pushSamples(samples);
 }
 
-void NinEmulator::update()
+void Emulator::update()
 {
+    if (!_state || !_running)
+        return;
+
     ninSetInput(_state, _input);
     ninRunFrame(_state);
-    _window->update((const char*)ninGetScreenBuffer(_state));
+    _window->updateTexture((const char*)ninGetScreenBuffer(_state));
+}
+
+void Emulator::pause()
+{
+    _running = false;
+}
+
+void Emulator::resume()
+{
+    _running = true;
 }

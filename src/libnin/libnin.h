@@ -19,10 +19,6 @@
 
 #define PFLAG_MASK  (~(PFLAG_B | PFLAG_1))
 
-#define TRACE_MAX_UOPS      64
-#define TRACE_CACHE_SIZE    512
-#define TRACE_NONE          0xFFFF
-
 #define REG_A   0x00
 #define REG_X   0x01
 #define REG_Y   0x02
@@ -37,26 +33,6 @@
 #define DEBUG_LEVEL 0
 
 typedef int (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
-
-typedef struct {
-    uint8_t     mode;
-    uint8_t     op;
-    uint8_t     len;
-    uint8_t     data;
-    uint16_t    addr;
-} NinUop;
-
-typedef struct {
-    uint16_t    pc;
-    uint16_t    length;
-    NinUop      uops[TRACE_MAX_UOPS];
-} NinTrace;
-
-typedef struct {
-    uint16_t    index[0x10000];
-    NinTrace    traces[TRACE_CACHE_SIZE];
-    uint16_t    cursor;
-} NinTraceCache;
 
 typedef struct {
     uint16_t    pc;
@@ -175,7 +151,6 @@ struct NinState_ {
     NinCPU              cpu;
     NinPPU              ppu;
     NinAPU              apu;
-    NinTraceCache*      traceCache;
     uint8_t*            ram;
     uint8_t*            vram;
     uint8_t*            palettes;
@@ -222,9 +197,6 @@ NIN_API void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
 
 uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
 void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
-
-NinTrace*   ninGetTrace(NinState* state, uint16_t addr);
-void        ninFlushTraces(NinState* state);
 
 NIN_API int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 NIN_API void        ninRunFrameCPU(NinState* state);
