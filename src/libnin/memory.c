@@ -140,7 +140,7 @@ int ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
     return !!tmp;
 }
 
-NIN_API void ninDumpMemory(NinState* state, uint8_t* dst)
+NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)
 {
     memset(dst, 0xff, 0x10000);
     memcpy(dst, state->ram, RAM_SIZE);

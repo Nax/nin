@@ -1,6 +1,6 @@
 #include <libnin/libnin.h>
 
-NIN_API NinState* ninSetSaveFile(NinState* state, const char* path)
+NIN_API void ninSetSaveFile(NinState* state, const char* path)
 {
     FILE* f;
 
@@ -16,7 +16,7 @@ NIN_API NinState* ninSetSaveFile(NinState* state, const char* path)
     }
 }
 
-NIN_API NinState* ninSyncSave(NinState* state)
+NIN_API void ninSyncSave(NinState* state)
 {
     FILE* f;
 
