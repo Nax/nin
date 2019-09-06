@@ -202,7 +202,7 @@ uint8_t samplePulse(NinState* state, unsigned c)
     NinChannelPulse* channel;
 
     channel = &APU.pulse[c];
-    if (!channel->enabled || channel->timerValue < 8)
+    if (!channel->enabled || channel->timerValue < 8 || !channel->length)
         return 0;
     return (channel->duty & (1 << channel->seqIndex)) ? 15 : 0;
 }
