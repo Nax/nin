@@ -27,8 +27,9 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
     value = 0;
     switch (reg)
     {
+    default:
+        break;
     case 0x15:
-        //value = state->apu.pulseEnable;
         break;
     }
 
@@ -211,8 +212,6 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
 {
     uint8_t triangleSample;
     uint8_t pulseSample[2];
-    unsigned pulseSweepTarget;
-    unsigned tmp;
 
     state->audioCycles += cycles;
 
