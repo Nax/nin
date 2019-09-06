@@ -4,6 +4,7 @@
 #include <QMenu>
 #include <QFileDialog>
 #include <QByteArray>
+#include <QLayout>
 
 #include "MainWindow.h"
 #include "Emulator.h"
@@ -15,10 +16,10 @@ MainWindow::MainWindow(Emulator& emu, QWidget* parent)
 , _emu(emu)
 {
     static const int scale = 3;
+    int dx;
+    int dy;
 
-    resize(256 * scale, 240 * scale);
     setWindowTitle("Nin");
-
 
     _render = new RenderWidget(emu);
     setCentralWidget(_render);
@@ -26,6 +27,12 @@ MainWindow::MainWindow(Emulator& emu, QWidget* parent)
 
     createActions();
     createMenus();
+
+    layout()->update();
+    layout()->activate();
+    dx = size().width() - _render->size().width();
+    dy = size().height() - _render->size().height();
+    resize(256 * scale + dx, 240 * scale + dy);
 }
 
 MainWindow::~MainWindow()
