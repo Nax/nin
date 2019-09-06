@@ -146,10 +146,11 @@ typedef struct {
     uint8_t     duty;
     NinEnvelope envelope;
     uint8_t     sweepEnable:1;
-    uint8_t     sweepPeriod:3;
+    uint8_t     sweepPeriod:4;
+    uint8_t     sweepValue:3;
     uint8_t     sweepNegate:1;
     uint8_t     sweepShift:3;
-    uint8_t     sweepDivider;
+    uint16_t    sweepTarget;
     uint8_t     sweepReload:1;
     uint8_t     enabled:1;
 } NinChannelPulse;
