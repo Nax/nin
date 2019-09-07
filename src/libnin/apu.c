@@ -52,6 +52,14 @@ static void pulseUpdateTarget(NinState* state, unsigned c)
         ch->sweepTarget = ch->timerPeriod + tmp;
 }
 
+static void loadEnvelope(NinEnvelope* ev, uint8_t value)
+{
+    ev->halt = !!(value & 0x20);
+    ev->constant = !!(value & 0x10);
+    ev->volume = value & 0xf;
+    ev->start = 1;
+}
+
 void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
 {
     unsigned i = (reg >> 2) & 1;
@@ -60,10 +68,8 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
     {
     case 0x00: // Pulse Envelope
     case 0x04:
-        APU.pulse[i].envelope.volume = value & 0x0f;
-        APU.pulse[i].envelope.constant = !!(value & 0x10);
-        APU.pulse[i].envelope.halt = !!(value & 0x20);
         APU.pulse[i].duty = kPulseSequence[value >> 6];
+        loadEnvelope(&APU.pulse[i].envelope, value);
         break;
     case 0x01: // Pulse Sweep
     case 0x05:
@@ -197,6 +203,36 @@ static void triangleTick(NinState* state)
     }
 }
 
+static void envelopeTick(NinEnvelope* ev)
+{
+    if (ev->start)
+    {
+        ev->start = 0;
+        ev->decay = 15;
+        ev->divider = ev->volume;
+    }
+    else
+    {
+        if (ev->divider)
+            ev->divider--;
+        else
+        {
+            ev->divider = ev->volume;
+            if (ev->decay)
+                ev->decay--;
+            else if (ev->halt)
+                ev->decay = 15;
+        }
+    }
+}
+
+static uint8_t sampleEnvelope(NinEnvelope* ev)
+{
+    if (ev->constant)
+        return ev->volume;
+    return ev->decay;
+}
+
 static void pulseClockHalf(NinState* state, unsigned c)
 {
     NinChannelPulse* ch;
@@ -248,7 +284,7 @@ uint8_t samplePulse(NinState* state, unsigned c)
     channel = &APU.pulse[c];
     if (!channel->enabled || channel->timerValue < 8 || !channel->length || channel->sweepTarget >= 0x800)
         return 0;
-    return (channel->duty & (1 << channel->seqIndex)) ? channel->envelope.volume : 0;
+    return (channel->duty & (1 << channel->seqIndex)) ? sampleEnvelope(&channel->envelope) : 0;
 }
 
 void ninRunCyclesAPU(NinState* state, size_t cycles)
@@ -280,6 +316,8 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             case 3728:
             case 11185:
                 triangleClockQuarter(state);
+                envelopeTick(&APU.pulse[0].envelope);
+                envelopeTick(&APU.pulse[1].envelope);
                 break;
             }
             APU.frameCounter++;

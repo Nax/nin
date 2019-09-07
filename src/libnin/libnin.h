@@ -133,9 +133,12 @@ typedef struct {
 } NinChannelTriangle;
 
 typedef struct {
+    uint8_t volume:4;
+    uint8_t decay:4;
+    uint8_t divider:4;
     uint8_t halt:1;
     uint8_t constant:1;
-    uint8_t volume:4;
+    uint8_t start:1;
 } NinEnvelope;
 
 typedef struct {
