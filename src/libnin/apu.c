@@ -20,6 +20,10 @@ static const uint8_t kLengthCounterLookup[32] = {
     12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
 
+static const uint16_t kNoisePeriod[16] = {
+    4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
+};
+
 uint8_t ninApuRegRead(NinState* state, uint16_t reg)
 {
     uint8_t value;
@@ -94,6 +98,7 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         if (APU.pulse[i].enabled)
             APU.pulse[i].length = kLengthCounterLookup[value >> 3];
         pulseUpdateTarget(state, i);
+        APU.pulse[i].envelope.start = 1;
         break;
     case 0x08:
         if (value & 0x80)
@@ -113,6 +118,18 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         APU.triangle.timerPeriod |= ((value & 0x7) << 8);
         if (APU.triangle.enabled) APU.triangle.length = kLengthCounterLookup[value >> 3];
         APU.triangle.linearReloadFlag = 1;
+        break;
+    case 0xc: // Noise Envelope
+        loadEnvelope(&APU.noise.envelope, value);
+        break;
+    case 0xe: // Noise Timer
+        APU.noise.mode = !!(value & 0x80);
+        APU.noise.timerPeriod = kNoisePeriod[value & 0xf];
+        break;
+    case 0xf: // Noise Length
+        if (APU.noise.enabled)
+            APU.noise.length = kLengthCounterLookup[value >> 3];
+        APU.noise.envelope.start = 1;
         break;
     case 0x15: // STATUS
         if (value & 0x01)
@@ -138,11 +155,20 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
             APU.triangle.enabled = 0;
             APU.triangle.length = 0;
         }
+        if (value & 0x08)
+        {
+            APU.noise.enabled = 1;
+        }
+        else
+        {
+            APU.noise.enabled = 0;
+            APU.noise.length = 0;
+        }
         break;
     }
 }
 
-static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2)
+static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise)
 {
     float fPulse;
     float fTND;
@@ -154,9 +180,11 @@ static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2)
     else
         fPulse = 0.f;
 
-    if (triangle)
+    if (triangle || noise)
     {
-        fTND = 159.79f / ((1.f / ((float)triangle / 8227.f)) + 100.f);
+        fTND = ((float)triangle / 8227.f);
+        fTND += ((float)noise / 12241.f);
+        fTND = 159.79f / ((1.f / fTND) + 100.f);
     }
     else
         fTND = 0.f;
@@ -287,10 +315,50 @@ uint8_t samplePulse(NinState* state, unsigned c)
     return (channel->duty & (1 << channel->seqIndex)) ? sampleEnvelope(&channel->envelope) : 0;
 }
 
+static void noiseClockHalf(NinState* state)
+{
+    NinChannelNoise* ch;
+
+    ch = &APU.noise;
+
+    if (ch->length && !ch->envelope.halt)
+        ch->length--;
+}
+
+static void noiseTick(NinState* state)
+{
+    NinChannelNoise* ch;
+    uint16_t tmp;
+    uint16_t mask;
+
+    ch = &APU.noise;
+    if (ch->timerValue)
+        ch->timerValue--;
+    else
+    {
+        ch->timerValue = ch->timerPeriod;
+        mask = ch->mode ? 0x40 : 0x02;
+        tmp = (!!(ch->feedback & 0x01)) ^ (!!(ch->feedback & mask));
+        ch->feedback >>= 1;
+        ch->feedback |= (tmp << 14);
+    }
+}
+
+static uint8_t sampleNoise(NinState* state)
+{
+    NinChannelNoise* ch;
+
+    ch = &APU.noise;
+    if (!ch->enabled || (ch->feedback & 0x01) || !ch->length)
+        return 0;
+    return sampleEnvelope(&ch->envelope);
+}
+
 void ninRunCyclesAPU(NinState* state, size_t cycles)
 {
     uint8_t triangleSample;
     uint8_t pulseSample[2];
+    uint8_t noiseSample;
 
     state->audioCycles += cycles;
 
@@ -302,6 +370,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
         {
             pulseTick(state, 0);
             pulseTick(state, 1);
+            noiseTick(state);
 
             switch (APU.frameCounter)
             {
@@ -312,12 +381,14 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
                 triangleClockHalf(state);
                 pulseClockHalf(state, 0);
                 pulseClockHalf(state, 1);
+                noiseClockHalf(state);
                 /* fallthrough */
             case 3728:
             case 11185:
                 triangleClockQuarter(state);
                 envelopeTick(&APU.pulse[0].envelope);
                 envelopeTick(&APU.pulse[1].envelope);
+                envelopeTick(&APU.noise.envelope);
                 break;
             }
             APU.frameCounter++;
@@ -337,9 +408,10 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             triangleSample = 0;
         pulseSample[0] = samplePulse(state, 0);
         pulseSample[1] = samplePulse(state, 1);
+        noiseSample = sampleNoise(state);
         /* Emit the sample */
         state->audioCycles -= CYCLES_PER_SAMPLE;
-        state->audioSamples[state->audioSamplesCount++] = ninMix(triangleSample, pulseSample[0], pulseSample[1]);
+        state->audioSamples[state->audioSamplesCount++] = ninMix(triangleSample, pulseSample[0], pulseSample[1], noiseSample);
         if (state->audioSamplesCount == NIN_AUDIO_SAMPLE_SIZE)
         {
             if (state->audioCallback)

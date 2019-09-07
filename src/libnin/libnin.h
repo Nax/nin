@@ -159,9 +159,20 @@ typedef struct {
 } NinChannelPulse;
 
 typedef struct {
+    uint16_t        timerPeriod;
+    uint16_t        timerValue;
+    uint16_t        feedback;
+    uint8_t         length;
+    uint8_t         mode:1;
+    uint8_t         enabled:1;
+    NinEnvelope     envelope;
+} NinChannelNoise;
+
+typedef struct {
     uint16_t            frameCounter;
     NinChannelTriangle  triangle;
     NinChannelPulse     pulse[2];
+    NinChannelNoise     noise;
     unsigned            half:1;
 } NinAPU;
 
