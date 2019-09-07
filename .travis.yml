@@ -19,7 +19,7 @@ install:
 script:
   - mkdir -p build
   - cd build
-  - cmake .. -A x64 -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}""
+  - cmake .. -A x64 -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"
   - cmake --build . --config Release --target package
 
 deploy:
