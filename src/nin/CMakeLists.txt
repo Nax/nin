@@ -18,3 +18,11 @@ elseif (APPLE)
 endif ()
 
 install(TARGETS nin RUNTIME DESTINATION .)
+if (WIN32)
+    install(FILES "C:/Windows/System32/openal32.dll" DESTINATION .)
+endif()
+
+install(CODE "
+    include(BundleUtilities)
+    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\" \"\" \"\")
+")
