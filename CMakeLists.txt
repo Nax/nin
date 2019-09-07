@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(Nim)
+project(Nin VERSION 0.1.0 LANGUAGES C CXX)
 
 set (CMAKE_CXX_STANDARD 17)
 
@@ -13,21 +13,23 @@ else()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc- /GR-")
 endif()
 
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 add_subdirectory(src)
 
+set(CPACK_PACKAGE_NAME "Nin")
+set(CPACK_PACKAGE_VENDOR "Maxime Bacoux")
+set(CPACK_PACKAGE_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${PROJECT_VERSION_PATCH})
+set(CPACK_PACKAGE_DIRECTORY "${CMAKE_BINARY_DIR}/pkg")
+
 if (WIN32)
-    list(APPEND ADDITIONAL_DEPS "C:/Windows/System32/openal32.dll")
-    list(APPEND ADDITIONAL_DEPS ${OPENAL_LIBRARY})
-    list(APPEND DIRS "C:/Windows/System32")
+    set(CPACK_GENERATOR "ZIP")
 endif()
 
-
-install(CODE "
-    include(BundleUtilities)
-    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\" \"\" \"\")
-")
-
+include(CPack)
