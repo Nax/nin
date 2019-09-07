@@ -21,7 +21,6 @@ install(TARGETS nin RUNTIME DESTINATION .)
 
 if (WIN32)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".")
-    set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS "C:/Windows/SysNative/openal32.dll")
     include(InstallRequiredSystemLibraries)
 endif()
