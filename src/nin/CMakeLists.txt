@@ -18,11 +18,17 @@ elseif (APPLE)
 endif ()
 
 install(TARGETS nin RUNTIME DESTINATION .)
+
 if (WIN32)
-    install(FILES "C:/Windows/System32/openal32.dll" DESTINATION .)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".")
+    set(CMAKE_INSTALL_UCRT_LIBRARIES TRUE)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS "C:/Windows/SysNative/openal32.dll")
+    include(InstallRequiredSystemLibraries)
 endif()
 
 install(CODE "
+    include(\"${CMAKE_SOURCE_DIR}/cmake/DeployQt.cmake\")
+    DeployQt(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\")
     include(BundleUtilities)
     fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\" \"\" \"\")
 ")
