@@ -1,0 +1,21 @@
+language: c
+os: windows
+
+cache:
+  directories:
+    - C:/Qt
+
+install:
+ - |
+  if [ ! -e "C:/Qt/5.12.3" ]; then
+    curl -vLO http://download.qt.io/official_releases/online_installers/qt-unified-windows-x86-online.exe;
+    ./qt-unified-windows-x86-online.exe --verbose --script tools/qt-installer-windows.qs;
+  fi;
+  choco install openal openalsdk;
+  export CMAKE_PREFIX_PATH="C:/Program Files (x86)/OpenAL 1.1 SDK;C:/Qt/5.12.3/msvc2017_64";
+
+script:
+ - mkdir build
+ - cd build
+ - cmake .. -DCMAKE_BUILD_TYPE=Release -A x64 -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"
+ - cmake --build .
