@@ -25,8 +25,6 @@ if (WIN32)
 endif()
 
 install(CODE "
-    include(BundleUtilities)
-    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\" \"\" \"\" IGNORE_ITEM \"opengl32.dll\")
     include(\"${CMAKE_SOURCE_DIR}/cmake/DeployQt.cmake\")
     DeployQt(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\")
 ")

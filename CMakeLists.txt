@@ -23,7 +23,7 @@ if (SUPERBUILD)
             "-DSUPERBUILD=OFF"
             "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
             "-DCMAKE_PREFIX_PATH=${CMAKE_BINARY_DIR}/third_party;${CMAKE_PREFIX_PATH}"
-            "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/pkg-tree"
+            "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/bin"
             "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
             "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
         DEPENDS
@@ -38,7 +38,7 @@ if (SUPERBUILD)
 		ALWAYS ON
     )
 
-    install(DIRECTORY "${CMAKE_BINARY_DIR}/pkg-tree/" DESTINATION .)
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION .)
 
     set(CPACK_PACKAGE_NAME "Nin")
     set(CPACK_PACKAGE_VENDOR "Maxime Bacoux")
