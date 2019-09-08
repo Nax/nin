@@ -15,7 +15,7 @@ public:
     void pushSamples(const int16_t* samples);
 
 private:
-    static const unsigned kBufferCount = 8;
+    static const unsigned kBufferCount = 4;
 
     ALCdevice*          _device;
     ALCcontext*         _context;
