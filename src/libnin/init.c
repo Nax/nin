@@ -9,6 +9,7 @@ static void initCPU(NinState* state)
     state->cpu.regs[REG_S] = 0xfd;
     state->cyc = 7;
     state->apu.noise.feedback = 1;
+    state->apu.dmc.address = 0x8000;
 }
 
 static void loadRom(NinState* state, FILE* rom)

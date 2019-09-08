@@ -24,6 +24,10 @@ static const uint16_t kNoisePeriod[16] = {
     4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
 };
 
+static const uint8_t kDMCPeriod[] = {
+    214, 190, 170, 160, 143, 127, 113, 107, 95, 80, 71, 64, 53, 42, 36, 27
+};
+
 uint8_t ninApuRegRead(NinState* state, uint16_t reg)
 {
     uint8_t value;
@@ -34,9 +38,11 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
     default:
         break;
     case 0x15:
-        if (APU.pulse[0].enabled) value |= 0x01;
-        if (APU.pulse[1].enabled) value |= 0x02;
-        if (APU.triangle.enabled) value |= 0x04;
+        if (APU.pulse[0].enabled)   value |= 0x01;
+        if (APU.pulse[1].enabled)   value |= 0x02;
+        if (APU.triangle.enabled)   value |= 0x04;
+        if (APU.noise.enabled)      value |= 0x08;
+        if (APU.dmc.enabled)        value |= 0x10;
         break;
     }
 
@@ -131,6 +137,20 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
             APU.noise.length = kLengthCounterLookup[value >> 3];
         APU.noise.envelope.start = 1;
         break;
+    case 0x10: // DMC Config
+        APU.dmc.irqEnable = !!(value & 0x80);
+        APU.dmc.loop = !!(value & 0x40);
+        APU.dmc.timerPeriod = kDMCPeriod[value & 0xf];
+        break;
+    case 0x11: // DMC Load
+        APU.dmc.output = value & 0x7f;
+        break;
+    case 0x12: // DMC addr
+        APU.dmc.address = 0xc000 | ((uint16_t)value << 6);
+        break;
+    case 0x13: // DMC Length
+        APU.dmc.length = ((uint16_t)value << 4) | 1;
+        break;
     case 0x15: // STATUS
         if (value & 0x01)
             APU.pulse[0].enabled = 1;
@@ -164,14 +184,28 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
             APU.noise.enabled = 0;
             APU.noise.length = 0;
         }
+        if (value & 0x10)
+        {
+            APU.dmc.enabled = 1;
+        }
+        else
+        {
+            APU.dmc.enabled = 0;
+        }
         break;
     }
 }
 
-static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise)
+static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise, uint8_t dmc)
 {
     float fPulse;
     float fTND;
+
+    //pulse1 = 0;
+    //pulse2 = 0;
+    //noise = 0;
+    //triangle = 0;
+    //dmc = 0;
 
     if (pulse1 || pulse2)
     {
@@ -180,10 +214,11 @@ static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t 
     else
         fPulse = 0.f;
 
-    if (triangle || noise)
+    if (triangle || noise || dmc)
     {
         fTND = ((float)triangle / 8227.f);
         fTND += ((float)noise / 12241.f);
+        fTND += ((float)dmc / 22638.f);
         fTND = 159.79f / ((1.f / fTND) + 100.f);
     }
     else
@@ -354,6 +389,40 @@ static uint8_t sampleNoise(NinState* state)
     return sampleEnvelope(&ch->envelope);
 }
 
+static void dmcTick(NinState* state)
+{
+    NinChannelDMC* ch;
+    uint8_t bit;
+
+    ch = &APU.dmc;
+    if (!ch->enabled)
+        return;
+    if (ch->timerValue)
+    {
+        ch->timerValue--;
+        return;
+    }
+    ch->timerValue = ch->timerPeriod;
+    if (ch->bitCount)
+    {
+        bit = ch->sampleBuffer & 0x01;
+        ch->sampleBuffer >>= 1;
+        ch->bitCount--;
+
+        if (bit && ch->output <= 125)
+            ch->output += 2;
+        if (!bit && ch->output >= 2)
+            ch->output -= 2;
+    }
+    if (!ch->bitCount && ch->length)
+    {
+        ch->length--;
+        ch->sampleBuffer = ninMemoryRead8(state, ch->address | 0x8000);
+        ch->bitCount = 8;
+        ch->address++;
+    }
+}
+
 void ninRunCyclesAPU(NinState* state, size_t cycles)
 {
     uint8_t triangleSample;
@@ -371,6 +440,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             pulseTick(state, 0);
             pulseTick(state, 1);
             noiseTick(state);
+            dmcTick(state);
 
             switch (APU.frameCounter)
             {
@@ -411,7 +481,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
         noiseSample = sampleNoise(state);
         /* Emit the sample */
         state->audioCycles -= CYCLES_PER_SAMPLE;
-        state->audioSamples[state->audioSamplesCount++] = ninMix(triangleSample, pulseSample[0], pulseSample[1], noiseSample);
+        state->audioSamples[state->audioSamplesCount++] = ninMix(triangleSample, pulseSample[0], pulseSample[1], noiseSample, APU.dmc.output);
         if (state->audioSamplesCount == NIN_AUDIO_SAMPLE_SIZE)
         {
             if (state->audioCallback)

@@ -169,10 +169,26 @@ typedef struct {
 } NinChannelNoise;
 
 typedef struct {
+    uint16_t        timerPeriod;
+    uint16_t        timerValue;
+    uint16_t        address;
+    uint16_t        length;
+    uint8_t         output;
+    uint8_t         irqEnable:1;
+    uint8_t         irq:1;
+    uint8_t         loop:1;
+    uint8_t         enabled:1;
+    uint8_t         sampleBuffer;
+    uint8_t         bitCount:4;
+    uint8_t         silence:1;
+} NinChannelDMC;
+
+typedef struct {
     uint16_t            frameCounter;
     NinChannelTriangle  triangle;
     NinChannelPulse     pulse[2];
     NinChannelNoise     noise;
+    NinChannelDMC       dmc;
     unsigned            half:1;
 } NinAPU;
 
