@@ -39,7 +39,7 @@ if (SUPERBUILD)
 		ALWAYS ON
     )
 
-    install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION .)
+    install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION . USE_SOURCE_PERMISSIONS)
 
     set(CPACK_PACKAGE_NAME "Nin")
     set(CPACK_PACKAGE_VENDOR "Maxime Bacoux")
@@ -50,6 +50,9 @@ if (SUPERBUILD)
 
     if (WIN32)
         set(CPACK_GENERATOR "ZIP")
+    elseif(APPLE)
+        set(CPACK_GENERATOR "DragNDrop")
+        set(CPACK_SYSTEM_NAME "Mac")
     endif()
 
     include(CPack)
