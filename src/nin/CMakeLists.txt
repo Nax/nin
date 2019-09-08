@@ -7,8 +7,7 @@ find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
 add_executable(nin WIN32 ${SOURCES})
-target_link_libraries(nin OpenGL::GL ${OPENAL_LIBRARY} libnin Qt5::Core Qt5::Widgets)
-target_include_directories(nin PRIVATE ${OPENAL_INCLUDE_DIR})
+target_link_libraries(nin OpenGL::GL OpenAL::AL libnin Qt5::Core Qt5::Widgets)
 
 if (WIN32)
 
@@ -21,13 +20,13 @@ install(TARGETS nin RUNTIME DESTINATION .)
 
 if (WIN32)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".")
-    set(CMAKE_INSTALL_SYSTEM_RUNTIME_LIBS "C:/Windows/SysNative/openal32.dll")
     include(InstallRequiredSystemLibraries)
+    install(FILES "${OPENAL_DLL}" DESTINATION .)
 endif()
 
 install(CODE "
+    include(BundleUtilities)
+    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\" \"\" \"\" IGNORE_ITEM \"opengl32.dll\")
     include(\"${CMAKE_SOURCE_DIR}/cmake/DeployQt.cmake\")
     DeployQt(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\")
-    include(BundleUtilities)
-    fixup_bundle(\"\${CMAKE_INSTALL_PREFIX}/nin.exe\" \"\" \"\")
 ")

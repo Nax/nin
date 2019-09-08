@@ -1,8 +1,6 @@
 language: c
 os: windows
 
-filter_secrets: false
-
 cache:
   directories:
     - C:/Qt
