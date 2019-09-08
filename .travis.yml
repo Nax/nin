@@ -1,5 +1,7 @@
 language: c
-os: windows
+os:
+  - windows
+  - osx
 
 cache:
   directories:
@@ -7,11 +9,18 @@ cache:
 
 install:
   - |
-    if [ ! -e "C:/Qt/5.12.3" ]; then
-      curl -vLO http://download.qt.io/official_releases/online_installers/qt-unified-windows-x86-online.exe;
-      ./qt-unified-windows-x86-online.exe --verbose --script tools/qt-installer-windows.qs;
+    if [ "$TRAVIS_OS_NAME" = "windows" ]; then
+      if [ ! -e "C:/Qt/5.12.3" ]; then
+        curl -vLO http://download.qt.io/official_releases/online_installers/qt-unified-windows-x86-online.exe;
+        ./qt-unified-windows-x86-online.exe --verbose --script tools/qt-installer-windows.qs;
+      fi;
+      export CMAKE_PREFIX_PATH="C:/Qt/5.12.3/msvc2017_64";
     fi;
-    export CMAKE_PREFIX_PATH="C:/Qt/5.12.3/msvc2017_64";
+  - |
+    if [ "$TRAVIS_OS_NAME" = "osx" ]; then
+      brew install qt5;
+    fi;
+
 
 script:
   - mkdir -p build
