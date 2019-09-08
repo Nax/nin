@@ -1,35 +1,26 @@
-set(
-    OPENAL_SEARCH_PATH
-    ~/Library/Frameworks
-    /Library/Frameworks
-    /opt
-)
-
 find_path(OPENAL_INCLUDE_DIR al.h
-    HINTS
-        ENV OPENALDIR
+    HINTS "${OPENAL_DIR}"
     PATH_SUFFIXES include/AL include/OpenAL include AL OpenAL
-    PATHS
-    ${OPENAL_SEARCH_PATH}
+    NO_DEFAULT_PATH
 )
 
 find_library(OPENAL_LIBRARY
-    NAMES OpenAL al openal OpenAL32
-    HINTS
-        ENV OPENALDIR
+    NAMES OpenAL al openal libopenal OpenAL32
+    HINTS "${OPENAL_DIR}"
     PATH_SUFFIXES lib lib64
     PATHS
     ${OPENAL_SEARCH_PATH}
+    NO_DEFAULT_PATH
 )
 
 if (WIN32)
     find_file(OPENAL_DLL
         NAMES OpenAL32.dll
-        HINTS
-        ENV OPENALDIR
-    PATH_SUFFIXES bin
-    PATHS
-    ${OPENAL_SEARCH_PATH}
+        HINTS "${OPENAL_DIR}"
+        PATH_SUFFIXES bin
+        PATHS
+        ${OPENAL_SEARCH_PATH}
+        NO_DEFAULT_PATH
     )
 endif()
 

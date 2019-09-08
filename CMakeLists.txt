@@ -22,10 +22,11 @@ if (SUPERBUILD)
         CMAKE_ARGS
             "-DSUPERBUILD=OFF"
             "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-            "-DCMAKE_PREFIX_PATH=${CMAKE_BINARY_DIR}/third_party;${CMAKE_PREFIX_PATH}"
+            "-DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
             "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/bin"
             "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
             "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
+            "-DOPENAL_DIR=${CMAKE_BINARY_DIR}/third_party"
         DEPENDS
         openal_soft
     )
