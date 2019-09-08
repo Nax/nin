@@ -11,13 +11,22 @@ find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 find_package(QtDeploy REQUIRED)
 
 file(GLOB_RECURSE SOURCES "*.cpp")
+if (APPLE)
+    list(APPEND SOURCES "${CMAKE_SOURCE_DIR}/data/nin.icns")
+    set_source_files_properties("${CMAKE_SOURCE_DIR}/data/nin.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+endif()
+
 add_executable(nin WIN32 MACOSX_BUNDLE ${SOURCES})
 target_link_libraries(nin OpenGL::GL OpenAL::AL libnin Qt5::Core Qt5::Widgets)
 
 if (APPLE)
     target_compile_definitions(nin PRIVATE GL_SILENCE_DEPRECATION=1)
     target_compile_options(nin PRIVATE "-Wno-unknown-pragmas")
-    set_target_properties(nin PROPERTIES OUTPUT_NAME "Nin")
+    set_target_properties(nin
+        PROPERTIES
+        OUTPUT_NAME "Nin"
+        MACOSX_BUNDLE_ICON_FILE "nin"
+    )
 endif ()
 
 install(TARGETS nin RUNTIME DESTINATION . BUNDLE DESTINATION .)
