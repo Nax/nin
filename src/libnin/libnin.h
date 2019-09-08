@@ -200,6 +200,7 @@ struct NinState_ {
     uint32_t*           frontBuffer;
     int16_t*            audioSamples;
     uint16_t            audioSamplesCount;
+    int16_t*            audioSamplesFiltered;
     uint32_t            audioCycles;
     NINAUDIOCALLBACK    audioCallback;
     void*               audioCallbackArg;

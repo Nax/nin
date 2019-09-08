@@ -30,7 +30,11 @@ void Audio::pushSamples(const int16_t* samples)
     }
 
     if (_buffers.empty())
+    {
+        printf("AUDIO FULL\n");
+        fflush(stdout);
         return;
+    }
 
     buffer = _buffers.back();
     _buffers.pop_back();
@@ -39,5 +43,9 @@ void Audio::pushSamples(const int16_t* samples)
     alSourceQueueBuffers(_source, 1, &buffer);
     alGetSourcei(_source, AL_SOURCE_STATE, &attr);
     if (attr != AL_PLAYING)
+    {
+        printf("AUDIO EMPTY\n");
+        fflush(stdout);
         alSourcePlay(_source);
+    }
 }

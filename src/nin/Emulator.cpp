@@ -12,7 +12,7 @@ static void _audioCallback(void* arg, const int16_t* samples)
 
 static void _workerMain(Emulator* emu)
 {
-    static const uint64_t kDelay = 16666666 / 4;
+    static const uint64_t kDelay = 16639489;
 
     using Clock = std::chrono::high_resolution_clock;
     using Duration = std::chrono::nanoseconds;
@@ -119,7 +119,7 @@ void Emulator::update()
         return;
 
     ninSetInput(_state, _input);
-    if (ninRunCycles(_state, 7446))
+    if (ninRunCycles(_state, 29781))
         _window->updateTexture((const char*)ninGetScreenBuffer(_state));
     emit gameUpdate(_state);
 }
