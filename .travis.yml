@@ -6,6 +6,7 @@ os:
 cache:
   directories:
     - C:/Qt
+    - /usr/local
 
 install:
   - |
@@ -18,14 +19,18 @@ install:
     fi;
   - |
     if [ "$TRAVIS_OS_NAME" = "osx" ]; then
-      brew install qt5;
+      if [ ! -e "/usr/local/opt/qt" ]; then
+        brew install qt5;
+      fi;
+      export CMAKE_PREFIX_PATH="/usr/local/opt/qt";
     fi;
 
 
 script:
   - mkdir -p build
   - cd build
-  - cmake .. -A x64 -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then cmake .. -A x64 -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"; fi
+  - if [ "$TRAVIS_OS_NAME" = "osx" ]; then cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"; fi
   - cmake --build . --config Release --target package
 
 deploy:
