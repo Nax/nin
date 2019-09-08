@@ -14,6 +14,8 @@ file(GLOB_RECURSE SOURCES "*.cpp")
 if (APPLE)
     list(APPEND SOURCES "${CMAKE_SOURCE_DIR}/data/nin.icns")
     set_source_files_properties("${CMAKE_SOURCE_DIR}/data/nin.icns" PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+elseif(WIN32)
+    list(APPEND SOURCES "${CMAKE_SOURCE_DIR}/data/nin.rc")
 endif()
 
 add_executable(nin WIN32 MACOSX_BUNDLE ${SOURCES})
