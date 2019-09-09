@@ -52,7 +52,7 @@ if (SUPERBUILD)
         set(CPACK_GENERATOR "ZIP")
     elseif(APPLE)
         set(CPACK_GENERATOR "DragNDrop")
-        set(CPACK_SYSTEM_NAME "Mac")
+        set(CPACK_SYSTEM_NAME "mac")
     endif()
 
     include(CPack)
