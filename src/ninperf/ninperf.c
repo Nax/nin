@@ -11,7 +11,6 @@
 
 int main(int argc, char** argv)
 {
-    FILE* rom;
     NinState* state;
     clock_t lastFrame;
     clock_t now;
@@ -36,7 +35,7 @@ int main(int argc, char** argv)
         now = clock();
         if (now - lastFrame > CLOCKS_PER_SEC)
         {
-            printf("%d cycles/s" LF, cyc);
+            printf("%llu cycles/s" LF, (unsigned long long)cyc);
             fflush(stdout);
             cyc = 0;
             lastFrame = now;

@@ -45,9 +45,9 @@ static void _workerMain(Emulator* emu)
 
 Emulator::Emulator()
 : QObject(nullptr)
-, _state(nullptr)
 , _running(false)
 , _workerRunning(false)
+, _state(nullptr)
 {
     _audio = new Audio;
     _window = new MainWindow(*this);
@@ -76,7 +76,6 @@ void Emulator::loadRom(const QString& path)
 {
     QByteArray raw;
     QString saveFile;
-    FILE* f;
 
     closeRom();
     raw = path.toUtf8();

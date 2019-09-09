@@ -3,8 +3,8 @@
 
 RenderWidget::RenderWidget(Emulator& emu, QWidget* parent)
 : QOpenGLWidget(parent)
-, _texture(0)
 , _emu(emu)
+, _texture(0)
 {
 
 }
@@ -47,6 +47,8 @@ void RenderWidget::paintGL()
 
 void RenderWidget::resizeGL(int w, int h)
 {
+    (void)w;
+    (void)h;
     glViewport(-1, -1, 1, 1);
 }
 
