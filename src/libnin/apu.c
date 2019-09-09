@@ -68,7 +68,7 @@ static void loadEnvelope(NinEnvelope* ev, uint8_t value)
     ev->halt = !!(value & 0x20);
     ev->constant = !!(value & 0x10);
     ev->volume = value & 0xf;
-    ev->start = 1;
+    //ev->start = 1;
 }
 
 void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
