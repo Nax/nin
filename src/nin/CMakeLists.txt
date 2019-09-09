@@ -1,14 +1,12 @@
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-message(STATUS "Prefix path: ${CMAKE_PREFIX_PATH}")
-
 find_package(OpenGL REQUIRED)
 find_package(OpenAL REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets REQUIRED)
 find_package(QtDeploy REQUIRED)
+
+set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks;@executable_path/../lib")
 
 file(GLOB_RECURSE SOURCES "*.cpp")
 if (APPLE)
@@ -43,8 +41,11 @@ if (WIN32)
 endif()
 
 if (APPLE)
+    # TODO: un-hardcode this
+    set(APP "${CMAKE_INSTALL_PREFIX}/Nin.app")
     install(CODE "
-    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"${OPENAL_LIBRARY}\" \"${CMAKE_INSTALL_PREFIX}/Nin.app/Contents/Frameworks/libopenal.1.dylib\")
-    execute_process(COMMAND \"${QT_DEPLOY}\" \"${CMAKE_INSTALL_PREFIX}/Nin.app\" \"-libpath=${OPENAL_DIR}/lib\" \"-verbose=1\")
+    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E make_directory \"${APP}/Contents/lib\")
+    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"${OPENAL_LIBRARY}\" \"${APP}/Contents/lib/libopenal.1.dylib\")
+    execute_process(COMMAND \"${QT_DEPLOY}\" \"${APP}\" \"-verbose=1\")
     ")
 endif()
