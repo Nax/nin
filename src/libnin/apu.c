@@ -39,11 +39,11 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
     default:
         break;
     case 0x15:
-        if (APU.pulse[0].enabled)   value |= 0x01;
-        if (APU.pulse[1].enabled)   value |= 0x02;
-        if (APU.triangle.enabled)   value |= 0x04;
-        if (APU.noise.enabled)      value |= 0x08;
-        if (APU.dmc.enabled)        value |= 0x10;
+        if (APU.pulse[0].length)   value |= 0x01;
+        if (APU.pulse[1].length)   value |= 0x02;
+        if (APU.triangle.length)   value |= 0x04;
+        if (APU.noise.length)      value |= 0x08;
+        if (APU.dmc.enabled)       value |= 0x10;
         break;
     }
 
@@ -221,8 +221,7 @@ static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t 
     }
     else
         fTND = 0.f;
-
-    return (int16_t)((fPulse + fTND) * 32767.f);
+    return (int16_t)((fPulse + fTND) * 32000.f);
 }
 
 static void triangleClockQuarter(NinState* state)
@@ -326,11 +325,8 @@ static void pulseTick(NinState* state, unsigned c)
     if (channel->timerValue == 0)
     {
         channel->timerValue = channel->timerPeriod;
-        if (channel->length)
-        {
-            channel->seqIndex++;
-            channel->seqIndex &= 0x07;
-        }
+        channel->seqIndex++;
+        channel->seqIndex &= 0x07;
     }
     else
     {
