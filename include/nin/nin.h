@@ -1,6 +1,8 @@
 #ifndef NIN_H
 #define NIN_H
 
+#include <nin/config.h>
+
 #include <stdio.h>
 #include <stdint.h>
 

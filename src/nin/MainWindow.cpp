@@ -6,6 +6,8 @@
 #include <QByteArray>
 #include <QLayout>
 
+#include <nin/nin.h>
+
 #include "MainWindow.h"
 #include "Emulator.h"
 #include "RenderWidget.h"
@@ -19,7 +21,7 @@ MainWindow::MainWindow(Emulator& emu, QWidget* parent)
     int dx;
     int dy;
 
-    setWindowTitle("Nin");
+    setWindowTitle("Nin " NIN_VERSION);
 
     _render = new RenderWidget(emu);
     setCentralWidget(_render);
