@@ -3,6 +3,7 @@
 #include <thread>
 #include <QFileInfo>
 #include <QDir>
+#include <QApplication>
 #include "Emulator.h"
 
 static void _audioCallback(void* arg, const int16_t* samples)
@@ -51,6 +52,7 @@ Emulator::Emulator()
 {
     _audio = new Audio;
     _window = new MainWindow(*this);
+    _window->setAttribute(Qt::WA_DeleteOnClose);
     _window->show();
 
     _input = 0;
@@ -61,6 +63,7 @@ Emulator::~Emulator()
     closeRom();
     _workerRunning = false;
     _worker.join();
+    delete _audio;
 }
 
 void Emulator::closeRom()
@@ -88,6 +91,11 @@ void Emulator::loadRom(const QString& path)
         ninSetSaveFile(_state, raw.data());
         ninSetAudioCallback(_state, &_audioCallback, this);
     }
+}
+
+void Emulator::exit()
+{
+    QApplication::quit();
 }
 
 void Emulator::start()

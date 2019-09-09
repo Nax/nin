@@ -27,6 +27,7 @@ public:
     bool workerRunning();
 
 public slots:
+    void exit();
     void pause();
     void resume();
 

@@ -3,7 +3,9 @@
 
 #include <cstdint>
 #include <QMainWindow>
+#include <QPointer>
 #include "RenderWidget.h"
+#include "MemoryWindow.h"
 
 class Emulator;
 class MainWindow : public QMainWindow

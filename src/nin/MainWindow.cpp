@@ -124,26 +124,28 @@ void MainWindow::openRom()
 
 void MainWindow::openMemoryViewer()
 {
-    MemoryWindow* memoryWindow;
+    MemoryWindow* win;
 
-    memoryWindow = new MemoryWindow(_emu);
-    memoryWindow->show();
+    win = new MemoryWindow(_emu);
+    win->setAttribute(Qt::WA_DeleteOnClose);
+    win->show();
+    win->activateWindow();
 }
 
 void MainWindow::createActions()
 {
     _openRom = new QAction(tr("&Open ROM"), this);
     _openRom->setShortcut(QKeySequence::Open);
-    connect(_openRom, SIGNAL(triggered(void)), this, SLOT(openRom(void)));
+    connect(_openRom, &QAction::triggered, this, &MainWindow::openRom);
 
     _pauseEmulation = new QAction(tr("&Pause"), this);
-    connect(_pauseEmulation, SIGNAL(triggered(void)), &_emu, SLOT(pause(void)));
+    connect(_pauseEmulation, &QAction::triggered, &_emu, &Emulator::pause);
 
     _resumeEmulation = new QAction(tr("&Resume"), this);
-    connect(_resumeEmulation, SIGNAL(triggered(void)), &_emu, SLOT(resume(void)));
+    connect(_resumeEmulation, &QAction::triggered, &_emu, &Emulator::resume);
 
     _actionMemoryViewer = new QAction(tr("&Memory Viewer"), this);
-    connect(_actionMemoryViewer, SIGNAL(triggered(void)), this, SLOT(openMemoryViewer(void)));
+    connect(_actionMemoryViewer, &QAction::triggered, this, &MainWindow::openMemoryViewer);
 }
 
 void MainWindow::createMenus()

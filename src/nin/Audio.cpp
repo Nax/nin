@@ -13,7 +13,11 @@ Audio::Audio()
 
 Audio::~Audio()
 {
-
+    alDeleteSources(1, &_source);
+    alDeleteBuffers(kBufferCount, _buffers.data());
+    alcMakeContextCurrent(nullptr);
+    alcDestroyContext(_context);
+    alcCloseDevice(_device);
 }
 
 void Audio::pushSamples(const int16_t* samples)

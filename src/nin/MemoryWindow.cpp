@@ -3,7 +3,7 @@
 #include "Emulator.h"
 
 MemoryWindow::MemoryWindow(Emulator& emu, QWidget* parent)
-: QWidget(parent)
+: QWidget(parent, Qt::Window)
 , _emu(emu)
 {
     QVBoxLayout* layout;
@@ -24,7 +24,8 @@ MemoryWindow::MemoryWindow(Emulator& emu, QWidget* parent)
 
 MemoryWindow::~MemoryWindow()
 {
-
+    printf("TEST\n");
+    fflush(stdout);
 }
 
 void MemoryWindow::refresh(NinState* state)
