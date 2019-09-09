@@ -6,6 +6,7 @@
 
 #include <thread>
 #include <QString>
+#include <QtGamepad/QGamepad>
 #include <nin/nin.h>
 #include "MainWindow.h"
 #include "Audio.h"
@@ -35,6 +36,8 @@ signals:
     void gameUpdate(NinState*);
 
 private:
+    void            setupGamepad();
+
     bool            _running;
     bool            _workerRunning;
     std::thread     _worker;
@@ -42,6 +45,7 @@ private:
     uint8_t         _input;
     NinState*       _state;
     MainWindow*     _window;
+    QGamepad*       _gamepad;
 };
 
 #endif

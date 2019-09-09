@@ -4,7 +4,11 @@
 #include <QFileInfo>
 #include <QDir>
 #include <QApplication>
+#include <QDebug>
+#include <QLoggingCategory>
 #include "Emulator.h"
+
+#define DEADZONE (0.30)
 
 static void _audioCallback(void* arg, const int16_t* samples)
 {
@@ -49,12 +53,12 @@ Emulator::Emulator()
 , _running(false)
 , _workerRunning(false)
 , _state(nullptr)
+, _gamepad(nullptr)
 {
     _audio = new Audio;
     _window = new MainWindow(*this);
     _window->setAttribute(Qt::WA_DeleteOnClose);
     _window->show();
-
     _input = 0;
 }
 
@@ -101,6 +105,7 @@ void Emulator::exit()
 void Emulator::start()
 {
     // Run the first frame
+    setupGamepad();
     _running = true;
     update();
     _workerRunning = true;
@@ -144,4 +149,71 @@ void Emulator::pause()
 void Emulator::resume()
 {
     _running = true;
+}
+
+void Emulator::setupGamepad()
+{
+    QList<int> gamepads;
+    for (int i = 0; i < 1000; ++i) {
+        QApplication::processEvents();
+        gamepads = QGamepadManager::instance()->connectedGamepads();
+        if (!gamepads.isEmpty())
+            break;
+    }
+    if (gamepads.isEmpty()) {
+        printf("No gamepad detected.\n");
+        fflush(stdout);
+        return;
+    }
+
+    _gamepad = new QGamepad(*gamepads.begin(), this);
+
+    connect(_gamepad, &QGamepad::axisLeftXChanged, this, [this](double value) {
+        if (value < -DEADZONE)
+        {
+            handleInput(NIN_BUTTON_LEFT,  1);
+            handleInput(NIN_BUTTON_RIGHT, 0);
+        }
+        else if (value > DEADZONE)
+        {
+            handleInput(NIN_BUTTON_LEFT, 0);
+            handleInput(NIN_BUTTON_RIGHT, 1);
+        }
+        else
+        {
+            handleInput(NIN_BUTTON_LEFT, 0);
+            handleInput(NIN_BUTTON_RIGHT, 0);
+        }
+    });
+
+    connect(_gamepad, &QGamepad::axisLeftYChanged, this, [this](double value) {
+        if (value < -DEADZONE)
+        {
+            handleInput(NIN_BUTTON_DOWN, 0);
+            handleInput(NIN_BUTTON_UP, 1);
+        }
+        else if (value > DEADZONE)
+        {
+            handleInput(NIN_BUTTON_DOWN, 1);
+            handleInput(NIN_BUTTON_UP, 0);
+        }
+        else
+        {
+            handleInput(NIN_BUTTON_DOWN, 0);
+            handleInput(NIN_BUTTON_UP, 0);
+        }
+    });
+
+    connect(_gamepad, &QGamepad::buttonAChanged, this, [this](bool pressed) {
+        handleInput(NIN_BUTTON_A, (int)pressed);
+    });
+    connect(_gamepad, &QGamepad::buttonXChanged, this, [this](bool pressed) {
+        handleInput(NIN_BUTTON_B, (int)pressed);
+    });
+    connect(_gamepad, &QGamepad::buttonStartChanged, this, [this](bool pressed) {
+        handleInput(NIN_BUTTON_START, (int)pressed);
+    });
+    connect(_gamepad, &QGamepad::buttonSelectChanged, this, [this](bool pressed) {
+        handleInput(NIN_BUTTON_SELECT, (int)pressed);
+    });
 }
