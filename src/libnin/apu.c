@@ -68,7 +68,6 @@ static void loadEnvelope(NinEnvelope* ev, uint8_t value)
     ev->halt = !!(value & 0x20);
     ev->constant = !!(value & 0x10);
     ev->volume = value & 0xf;
-    //ev->start = 1;
 }
 
 void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
@@ -194,6 +193,10 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
             APU.dmc.enabled = 0;
         }
         break;
+    case 0x17:
+        APU.mode = !!(value & 0x80);
+        APU.frameCounter = !(APU.mode);
+        break;
     }
 }
 
@@ -201,12 +204,6 @@ static int16_t ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t 
 {
     float fPulse;
     float fTND;
-
-    //pulse1 = 0;
-    //pulse2 = 0;
-    //noise = 0;
-    //triangle = 0;
-    //dmc = 0;
 
     if (pulse1 || pulse2)
     {
@@ -462,7 +459,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
                 break;
             }
             APU.frameCounter++;
-            if (APU.frameCounter == 14914)
+            if (APU.frameCounter >= (APU.mode ? 18641 : 14915))
                 APU.frameCounter = 0;
         }
 

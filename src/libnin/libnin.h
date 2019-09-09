@@ -189,7 +189,8 @@ typedef struct {
     NinChannelPulse     pulse[2];
     NinChannelNoise     noise;
     NinChannelDMC       dmc;
-    unsigned            half:1;
+    uint8_t             half:1;
+    uint8_t             mode:1;
 } NinAPU;
 
 struct NinState_ {
