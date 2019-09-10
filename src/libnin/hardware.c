@@ -56,5 +56,18 @@ void ninApplyMapper(NinState* state, uint8_t mapperNum)
         state->mapper.mmc1.chrBank0 = 0;
         state->mapper.mmc1.chrBank1 = 1;
         break;
+    case 3:
+        /* CNROM */
+        state->prgWriteHandler = &ninPrgWriteHandlerCNROM;
+        state->prgBankCount = 0;
+        state->prgRomBank[0] = state->prgRom;
+        if (state->prgRomSize > 0x4000)
+            state->prgRomBank[1] = state->prgRom + 0x4000;
+        else
+            state->prgRomBank[1] = state->prgRom;
+        state->chrBankCount = state->chrRomSize / 0x2000;
+        state->chrBank[0] = state->chrRom;
+        state->chrBank[1] = state->chrRom + 0x1000;
+        break;
     }
 }
