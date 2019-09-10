@@ -264,6 +264,7 @@ NIN_API void        ninRunCyclesAPU(NinState* state, size_t cycles);
 /* Mapper handlers */
 NIN_API void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
 
 #endif
