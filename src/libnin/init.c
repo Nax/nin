@@ -73,7 +73,7 @@ NinState* ninCreateState(const char* path)
 
     state->backBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
     state->frontBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
-    state->audioSamples = zalloc(NIN_AUDIO_SAMPLE_SIZE * sizeof(int16_t) * 8);
+    state->audioSamples = zalloc(NIN_AUDIO_SAMPLE_SIZE * sizeof(float) * 8);
     state->audioSamplesFiltered = zalloc(NIN_AUDIO_SAMPLE_SIZE * sizeof(int16_t));
     state->ram = zalloc(RAM_SIZE);
     state->vram = zalloc(VRAM_SIZE);

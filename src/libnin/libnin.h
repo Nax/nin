@@ -199,7 +199,10 @@ struct NinState_ {
     uint8_t             controllerLatch;
     uint32_t*           backBuffer;
     uint32_t*           frontBuffer;
-    int16_t*            audioSamples;
+    float*              audioSamples;
+    float               audioSampleLoLast;
+    float               audioSampleHiLast[2];
+    float               audioSampleHiLastRaw[2];
     uint16_t            audioSamplesCount;
     int16_t*            audioSamplesFiltered;
     uint32_t            audioCycles;
