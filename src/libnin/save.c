@@ -4,6 +4,9 @@ NIN_API void ninSetSaveFile(NinState* state, const char* path)
 {
     FILE* f;
 
+    if (!state->battery)
+        return;
+
     f = fopen(path, "ab");
     if (f)
         fclose(f);

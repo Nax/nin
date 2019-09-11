@@ -97,7 +97,7 @@ uint16_t ninMemoryRead16(NinState* state, uint16_t addr)
     return lo | (hi << 8);
 }
 
-int ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
+void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
 {
     if (addr < 0x2000)
         state->ram[addr & 0x7ff] = value;
@@ -126,18 +126,13 @@ int ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
             badIO(state, addr, 1);
     }
     else
-        return state->prgWriteHandler(state, addr, value);
-    return 0;
+        state->prgWriteHandler(state, addr, value);
 }
 
-int ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
+void ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
 {
-    int tmp;
-
-    tmp = ninMemoryWrite8(state, addr, value & 0xff);
-    tmp |= ninMemoryWrite8(state, addr + 1, value >> 8);
-
-    return !!tmp;
+    ninMemoryWrite8(state, addr, value & 0xff);
+    ninMemoryWrite8(state, addr + 1, value >> 8);
 }
 
 NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)

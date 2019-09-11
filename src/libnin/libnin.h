@@ -32,7 +32,34 @@
 
 #define DEBUG_LEVEL 0
 
-typedef int (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
+typedef void (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
+
+#define MIRRORING_HORIZONTAL    0
+#define MIRRORING_VERTICAL      1
+#define MIRRORING_QUAD          2
+
+inline static void* zalloc(size_t size)
+{
+    if (size)
+        return calloc(1, size);
+    return NULL;
+}
+
+typedef struct {
+    char        magic[4];
+    uint8_t     prgRomSize;
+    uint8_t     chrRomSize;
+    uint8_t     mirroring:1;
+    uint8_t     battery:1;
+    uint8_t     trainer:1;
+    uint8_t     quadScreen:1;
+    uint8_t     mapperLo:4;
+    uint8_t     vs:1;
+    uint8_t     playChoice:1;
+    uint8_t     ines:2;
+    uint8_t     mapperHi:4;
+    uint8_t     reserved[8];
+} NinRomHeader;
 
 typedef struct {
     uint16_t    pc;
@@ -195,6 +222,9 @@ typedef struct {
 
 struct NinState_ {
     FILE*               saveFile;
+    uint16_t            mapper;
+    uint8_t             battery;
+    uint8_t             mirroring;
     uint8_t             controller;
     uint8_t             controllerLatch;
     uint32_t*           backBuffer;
@@ -218,7 +248,7 @@ struct NinState_ {
         uint8_t*        oam;
         NinSprite*      oamSprites;
     };
-    NinMapperRegs       mapper;
+    NinMapperRegs       mapperRegs;
     uint8_t             prgBankCount;
     uint8_t*            prgRom;
     uint32_t            prgRomSize;
@@ -232,6 +262,7 @@ struct NinState_ {
     uint8_t*            chrRam;
     uint32_t            chrRamSize;
     uint8_t*            chrBank[2];
+    uint32_t            trainerSize;
     uint8_t*            nametables[4];
     unsigned            nmi:1;
     uint64_t            cyc;
@@ -242,8 +273,8 @@ void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
 NIN_API uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
 NIN_API uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
-NIN_API int         ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
-NIN_API int         ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
+NIN_API void        ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
 
 NIN_API uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 NIN_API void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);

@@ -81,13 +81,19 @@ void Emulator::closeRom()
 
 void Emulator::loadRom(const QString& path)
 {
+    NinError err;
     QByteArray raw;
     QString saveFile;
 
     closeRom();
     raw = path.toUtf8();
-    _state = ninCreateState(raw.data());
-    if (_state)
+    err = ninCreateState(&_state, raw.data());
+    if (err != NIN_OK)
+    {
+        printf("Error loading rom (%d)\n", (int)err);
+        fflush(stdout);
+    }
+    else
     {
         QFileInfo info(path);
         saveFile = info.path() + "/" + info.completeBaseName() + ".sav";

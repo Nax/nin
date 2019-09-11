@@ -440,7 +440,7 @@ static float ninHiPass(NinState* state, float sample, unsigned index, float coef
     float b1;
 
     a1 = coeff;
-    b1 = (1.0 + a1) * 0.5 * gain;
+    b1 = (1.f + a1) * 0.5f * gain;
     b0 = -b1;
 
     newSample = b0 * sample + b1 * state->audioSampleHiLastRaw[index] + a1 * state->audioSampleHiLast[index];

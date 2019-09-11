@@ -12,8 +12,15 @@
 # define NIN_API
 #endif
 
-typedef struct NinState_ NinState;
+typedef enum {
+    NIN_OK = 0,
+    NIN_ERROR_IO,
+    NIN_ERROR_BAD_FILE,
+    NIN_ERROR_BAD_MAPPER,
+    NIN_ERROR_UNKNOWN_MAPPER
+} NinError;
 
+typedef struct NinState_ NinState;
 typedef void (*NINAUDIOCALLBACK)(void*, const int16_t*);
 
 #define NIN_AUDIO_SAMPLE_SIZE   1024
@@ -27,7 +34,8 @@ typedef void (*NINAUDIOCALLBACK)(void*, const int16_t*);
 #define NIN_BUTTON_LEFT     0x40
 #define NIN_BUTTON_RIGHT    0x80
 
-NIN_API NinState*       ninCreateState(const char* path);
+NIN_API NinError        ninCreateState(NinState** state, const char* path);
+NIN_API NinError        ninLoadRom(NinState* state, const char* path);
 NIN_API void            ninSetSaveFile(NinState* state, const char* path);
 NIN_API void            ninSyncSave(NinState* state);
 NIN_API void            ninDestroyState(NinState* state);

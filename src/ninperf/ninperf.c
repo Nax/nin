@@ -19,7 +19,7 @@ int main(int argc, char** argv)
     if (argc != 2)
         return 1;
 
-    state = ninCreateState(argv[1]);
+    ninCreateState(&state, argv[1]);
     if (!state)
         return 1;
 

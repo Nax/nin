@@ -8,3 +8,7 @@ list(APPEND SOURCES "${CONFIG_OUT}")
 add_library(libnin STATIC ${SOURCES})
 target_include_directories(libnin PRIVATE "${CMAKE_SOURCE_DIR}/src" PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_BINARY_DIR}/include")
 set_target_properties(libnin PROPERTIES OUTPUT_NAME nin)
+
+if (WIN32)
+    target_compile_definitions(libnin PRIVATE _CRT_SECURE_NO_WARNINGS=1)
+endif()
