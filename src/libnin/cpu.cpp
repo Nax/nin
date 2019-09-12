@@ -236,6 +236,8 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
         {
             state->nmi = 0;
             state->cyc += 7;
+            ninRunCyclesAPU(state, 7);
+            ninPpuRunCycles(state, 21);
             stackPush16(state, state->cpu.pc);
             stackPush8(state, state->cpu.p);
             state->cpu.p |= PFLAG_I;

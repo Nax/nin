@@ -41,10 +41,19 @@ static void ioWrite(NinState* state, uint8_t port, uint8_t value)
         addr = value << 8;
         //printf("DMA!! 0x%04x\n", addr);
         //getchar();
+        state->cyc++;
+        ninPpuRunCycles(state, 3);
+        ninRunCyclesAPU(state, 1);
         for (uint16_t i = 0; i < 256; ++i)
         {
             tmp = ninMemoryRead8(state, addr | i);
+            state->cyc++;
+            ninPpuRunCycles(state, 3);
+            ninRunCyclesAPU(state, 1);
             state->oam[i] = tmp;
+            state->cyc++;
+            ninPpuRunCycles(state, 3);
+            ninRunCyclesAPU(state, 1);
         }
         break;
     case 0x16:
