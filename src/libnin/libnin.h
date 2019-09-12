@@ -127,15 +127,17 @@ typedef struct {
 
 typedef struct {
     NinRuntimePPU   rt;
+    uint8_t         oamAddr;
     uint8_t         readBuf;
     uint8_t         latch;
     uint8_t         nmi;
     uint8_t         controller;
     uint8_t         scrollX;
     uint8_t         scrollY;
-    unsigned        w:1;
-    unsigned        zeroHitFlag:1;
-    unsigned        race:1;
+    uint8_t         w:1;
+    uint8_t         zeroHitFlag:1;
+    uint8_t         race0:1;
+    uint8_t         race1:1;
 } NinPPU;
 
 typedef union {
@@ -219,6 +221,7 @@ typedef struct {
     NinChannelDMC       dmc;
     uint8_t             half:1;
     uint8_t             mode:1;
+    uint8_t             irq:1;
 } NinAPU;
 
 struct NinState_ {
@@ -265,11 +268,16 @@ struct NinState_ {
     uint8_t*            chrBank[2];
     uint32_t            trainerSize;
     uint8_t*            nametables[4];
-    unsigned            nmi:1;
+    uint8_t             nmi:1;
+    uint8_t             irq:1;
+    uint8_t             irqFlags;
     uint64_t            cyc;
     uint8_t             frame:1;
     uint8_t             frameOdd:1;
 };
+
+#define IRQ_APU_FRAME   0x01
+#define IRQ_APU_DMC     0x02
 
 void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
@@ -293,6 +301,9 @@ void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 NIN_API int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 NIN_API void        ninRunFrameCPU(NinState* state);
 NIN_API void        ninRunCyclesAPU(NinState* state, size_t cycles);
+
+NIN_API void ninSetIRQ(NinState* state, uint8_t flag);
+NIN_API void ninClearIRQ(NinState* state, uint8_t flag);
 
 /* Mapper handlers */
 NIN_API void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);

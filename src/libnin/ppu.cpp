@@ -2,6 +2,8 @@
 #include <math.h>
 #include <libnin/libnin.h>
 
+#define RT state->ppu.rt
+
 NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
 {
     uint8_t value;
@@ -18,8 +20,27 @@ NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         break;
     case 0x02: // PPUSTATUS
         mask = 0xe0;
-        if ((state->ppu.nmi & NMI_OCCURED) && !state->ppu.race)
+        if (RT.scanline == 241 && RT.cycle == 0) // Pre-set race condition
+        {
+            state->nmi = 0;
+            state->ppu.race0 = 1;
+        }
+        else if (RT.scanline == 241 && RT.cycle == 1 && !state->ppu.race0) // Same-set race condition
+        {
             value |= 0x80;
+            state->nmi = 0;
+            state->ppu.race1 = 1;
+        }
+        else if (RT.scanline == 241 && RT.cycle == 2 && !state->ppu.race0) // Same-set race condition
+        {
+            value |= 0x80;
+            state->nmi = 0;
+            state->ppu.race1 = 1;
+        }
+        else if ((state->ppu.nmi & NMI_OCCURED)) // Normal operation
+        {
+            value |= 0x80;
+        }
         ninUnsetFlagNMI(state, NMI_OCCURED);
         if (state->ppu.zeroHitFlag)
             value |= 0x40;
@@ -27,7 +48,9 @@ NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         break;
     case 0x03:
         break;
-    case 0x04:
+    case 0x04: // OAMDATA
+        mask = 0xff;
+        value = state->oam[state->ppu.oamAddr];
         break;
     case 0x05:
         break;
@@ -36,7 +59,10 @@ NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
     case 0x07: // PPUDATA
         mask = 0xff;
         if ((state->ppu.rt.v & 0x3f00) == 0x3f00)
+        {
             value = ninVMemoryRead8(state, state->ppu.rt.v);
+            state->ppu.readBuf = ninVMemoryRead8(state, state->ppu.rt.v & 0x2fff);
+        }
         else
         {
             value = state->ppu.readBuf;
@@ -76,9 +102,11 @@ NIN_API void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         break;
     case 0x02:
         break;
-    case 0x03:
+    case 0x03: // OAMADDR
+        state->ppu.oamAddr = value;
         break;
-    case 0x04:
+    case 0x04: // OAMDATA
+        state->oam[state->ppu.oamAddr++] = value;
         break;
     case 0x05: // PPUSCROLL
         if (!state->ppu.w)
@@ -94,11 +122,11 @@ NIN_API void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         {
             // Fine Y
             state->ppu.rt.t &= ~(0xe000);
-            state->ppu.rt.t |= ((value & 0x07) << 12);
+            state->ppu.rt.t |= (((uint16_t)value & 0x07) << 12);
 
             // Coarse Y
             state->ppu.rt.t &= ~(0x03e0);
-            state->ppu.rt.t |= ((value >> 3) & 0x1f) << 5;
+            state->ppu.rt.t |= (((uint16_t)value >> 3) & 0x1f) << 5;
         }
         state->ppu.w ^= 1;
         break;
@@ -106,7 +134,7 @@ NIN_API void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         if (!state->ppu.w)
         {
             state->ppu.rt.t &= 0x00ff;
-            state->ppu.rt.t |= ((value << 8) & 0x3fff);
+            state->ppu.rt.t |= (((uint16_t)value << 8) & 0x3fff);
         }
         else
         {
@@ -134,8 +162,6 @@ void ninSetFlagNMI(NinState* state, uint8_t flag)
     {
         if (state->ppu.nmi == (NMI_OCCURED | NMI_OUTPUT))
             state->nmi = 1;
-        else
-            state->nmi = 0;
     }
 }
 
@@ -219,8 +245,6 @@ static const uint32_t kPalette[] = {
 };
 
 static const uint16_t kHMask = 0x041f;
-
-#define RT state->ppu.rt
 
 static void swapBuffers(NinState* state)
 {
@@ -446,7 +470,7 @@ static void scanline(NinState* state)
         {
             bgReload(state);
         }
-        if (cycle == 256)
+        if (cycle == 251)
         {
             RT.v = _incY(RT.v);
         }
@@ -455,9 +479,10 @@ static void scanline(NinState* state)
             RT.v &= ~kHMask;
             RT.v |= (RT.t & kHMask);
         }
-        if (prerender && (cycle == 304))
+        if (prerender && (cycle >= 280 && cycle <= 304))
         {
-            RT.v = RT.t;
+            RT.v &= kHMask;
+            RT.v |= (RT.t & ~kHMask);
         }
         if (prerender && cycle == 339 && state->frameOdd)
         {
@@ -478,12 +503,9 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
         if (RT.scanline == 261) scanline<true>(state);
         if (RT.scanline == 241 && RT.cycle == 1)
         {
-            ninSetFlagNMI(state, NMI_OCCURED);
-            state->ppu.race = 1;
-        }
-        if (RT.scanline == 241 && RT.cycle == 2)
-        {
-            state->ppu.race = 0;
+            if (!state->ppu.race0)
+                ninSetFlagNMI(state, NMI_OCCURED);
+            state->ppu.race0 = 0;
         }
 
         RT.cycle++;

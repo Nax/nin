@@ -44,6 +44,7 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
         if (APU.triangle.length)   value |= 0x04;
         if (APU.noise.length)      value |= 0x08;
         if (APU.dmc.enabled)       value |= 0x10;
+        ninClearIRQ(state, IRQ_APU_FRAME);
         break;
     }
 
@@ -194,7 +195,10 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         }
         break;
     case 0x17:
+        if (value & 0x40)
+            ninClearIRQ(state, IRQ_APU_FRAME);
         APU.mode = !!(value & 0x80);
+        APU.irq = ((value & 0xc0) == 0);
         APU.frameCounter = !(APU.mode);
         break;
     }
@@ -472,6 +476,8 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             default:
                 break;
             case 0:
+                if (APU.irq) ninSetIRQ(state, IRQ_APU_FRAME);
+                /* fallthrough */
             case 7456:
                 triangleClockHalf(state);
                 pulseClockHalf(state, 0);
