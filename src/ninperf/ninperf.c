@@ -30,7 +30,7 @@ int main(int argc, char** argv)
     for (;;)
     {
         ninSetInput(state, (rand() & 0xff));
-        ninRunCycles(state, 5000);
+        ninRunCycles(state, 5000, NULL);
         cyc += 5000;
         now = clock();
         if (now - lastFrame > CLOCKS_PER_SEC)

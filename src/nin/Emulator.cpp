@@ -54,6 +54,7 @@ Emulator::Emulator()
 , _workerRunning(false)
 , _state(nullptr)
 , _gamepad(nullptr)
+, _cyc(0)
 {
     _audio = new Audio;
     _window = new MainWindow(*this);
@@ -137,7 +138,7 @@ void Emulator::update()
         return;
 
     ninSetInput(_state, _input);
-    if (ninRunCycles(_state, 29781 / 4))
+    if (ninRunCycles(_state, 29781 / 4 - _cyc, &_cyc))
         _window->updateTexture((const char*)ninGetScreenBuffer(_state));
     emit gameUpdate(_state);
 }

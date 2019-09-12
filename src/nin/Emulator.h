@@ -46,6 +46,7 @@ private:
     NinState*       _state;
     MainWindow*     _window;
     QGamepad*       _gamepad;
+    size_t          _cyc;
 };
 
 #endif

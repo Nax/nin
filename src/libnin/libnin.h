@@ -135,6 +135,7 @@ typedef struct {
     uint8_t         scrollY;
     unsigned        w:1;
     unsigned        zeroHitFlag:1;
+    unsigned        race:1;
 } NinPPU;
 
 typedef union {
@@ -267,6 +268,7 @@ struct NinState_ {
     unsigned            nmi:1;
     uint64_t            cyc;
     uint8_t             frame:1;
+    uint8_t             frameOdd:1;
 };
 
 void        ninApplyMapper(NinState* state, uint8_t mapperNum);
@@ -297,5 +299,6 @@ NIN_API void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t v
 NIN_API void    ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
 
 #endif

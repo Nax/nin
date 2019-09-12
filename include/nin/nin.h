@@ -39,7 +39,7 @@ NIN_API NinError        ninLoadRom(NinState* state, const char* path);
 NIN_API void            ninSetSaveFile(NinState* state, const char* path);
 NIN_API void            ninSyncSave(NinState* state);
 NIN_API void            ninDestroyState(NinState* state);
-NIN_API int             ninRunCycles(NinState* state, size_t cycles);
+NIN_API int             ninRunCycles(NinState* state, size_t cycles, size_t* cyc);
 NIN_API const uint32_t* ninGetScreenBuffer(NinState* state);
 NIN_API void            ninSetInput(NinState* state, uint8_t input);
 NIN_API void            ninSetAudioCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg);

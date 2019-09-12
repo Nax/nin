@@ -127,6 +127,14 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
         /* CNROM */
         state->prgWriteHandler = &ninPrgWriteHandlerCNROM;
         break;
+    case 7:
+        /* AXROM */
+        state->prgRomBank[0] = state->prgRom;
+        state->prgRomBank[1] = state->prgRom + 0x4000;
+        for (int i = 0; i < 4; ++i)
+            state->nametables[i] = state->vram;
+        state->prgWriteHandler = &ninPrgWriteHandlerAXROM;
+        break;
     }
 
     return NIN_OK;

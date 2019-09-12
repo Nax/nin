@@ -18,7 +18,7 @@ NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         break;
     case 0x02: // PPUSTATUS
         mask = 0xe0;
-        if (state->ppu.nmi & NMI_OCCURED)
+        if ((state->ppu.nmi & NMI_OCCURED) && !state->ppu.race)
             value |= 0x80;
         ninUnsetFlagNMI(state, NMI_OCCURED);
         if (state->ppu.zeroHitFlag)
@@ -130,8 +130,13 @@ void ninSetFlagNMI(NinState* state, uint8_t flag)
     prev = state->ppu.nmi;
     state->ppu.nmi |= flag;
 
-    if ((prev != state->ppu.nmi) && (state->ppu.nmi == (NMI_OCCURED | NMI_OUTPUT)))
-        state->nmi = 1;
+    if (prev != state->ppu.nmi)
+    {
+        if (state->ppu.nmi == (NMI_OCCURED | NMI_OUTPUT))
+            state->nmi = 1;
+        else
+            state->nmi = 0;
+    }
 }
 
 void ninUnsetFlagNMI(NinState* state, uint8_t flag)
@@ -454,6 +459,10 @@ static void scanline(NinState* state)
         {
             RT.v = RT.t;
         }
+        if (prerender && cycle == 339 && state->frameOdd)
+        {
+            RT.cycle++;
+        }
     }
 }
 
@@ -467,7 +476,15 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     {
         if (RT.scanline < 240) scanline<false>(state);
         if (RT.scanline == 261) scanline<true>(state);
-        if (RT.scanline == 241 && RT.cycle == 1) ninSetFlagNMI(state, NMI_OCCURED);
+        if (RT.scanline == 241 && RT.cycle == 1)
+        {
+            ninSetFlagNMI(state, NMI_OCCURED);
+            state->ppu.race = 1;
+        }
+        if (RT.scanline == 241 && RT.cycle == 2)
+        {
+            state->ppu.race = 0;
+        }
 
         RT.cycle++;
         if (RT.cycle == 341)
@@ -479,6 +496,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
                 swapBuffers(state);
                 RT.scanline = 0;
                 newFrame = 1;
+                state->frameOdd ^= 1;
             }
         }
     }

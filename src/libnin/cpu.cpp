@@ -213,8 +213,8 @@ static void instruction(NinState* state)
     X("0000000000000000000000001000000000000000000000000000000000000000") { POP16(); state->cpu.pc = addr + 1; CYCLE(); CYCLE(); } /* rts */
     X("0000000010000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc - 1); CYCLE(); } /* jsr */
     X("0000000010000000000100000001000000000000000000000000000000000000") { state->cpu.pc = addr; } /* jmp */
-    X("0000100000000000000010000000000000001000000000000000100000000000") { if (!(state->cpu.p & kBranchFlags[N >> 6])) { CYCLE();  state->cpu.pc += (int8_t)tmp; } } /* branch-clear */
-    X("0000000000001000000000000000100000000000000010000000000000001000") { if ((state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); state->cpu.pc += (int8_t)tmp; } } /* branch-set */
+    X("0000100000000000000010000000000000001000000000000000100000000000") { if (!(state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); ECYCLE(state->cpu.pc, ((int8_t)tmp)); state->cpu.pc += (int8_t)tmp; } } /* branch-clear */
+    X("0000000000001000000000000000100000000000000010000000000000001000") { if ((state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); ECYCLE(state->cpu.pc, ((int8_t)tmp)); state->cpu.pc += (int8_t)tmp; } } /* branch-set */
     X("1000000000000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc + 1); PUSH8(state->cpu.p | PFLAG_1 | PFLAG_B); CYCLE(); CYCLE(); state->cpu.p |= PFLAG_I; state->cpu.pc = ninMemoryRead16(state, 0xfffe); } /* brk */
 }
 
@@ -224,9 +224,9 @@ static void instruction(NinState* state)
 #define ICASE4(n)   ICASE3(n + 0x00); ICASE3(n + 0x10); ICASE3(n + 0x20); ICASE3(n + 0x30)
 #define EXECUTE(x)  do { switch (x) { ICASE4(0x00); ICASE4(0x40); ICASE4(0x80); ICASE4(0xc0); } } while(0)
 
-NIN_API int ninRunCycles(NinState* state, size_t cycles)
+NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
 {
-    uint8_t op;
+    uint16_t op;
 
     state->frame = 0;
     state->cyc = 0;
@@ -235,6 +235,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles)
         if (state->nmi)
         {
             state->nmi = 0;
+            state->cyc += 7;
             stackPush16(state, state->cpu.pc);
             stackPush8(state, state->cpu.p);
             state->cpu.p |= PFLAG_I;
@@ -249,5 +250,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles)
         if (state->cyc >= cycles)
             break;
     }
+    if (cyclesDst)
+        *cyclesDst = state->cyc - cycles;
     return state->frame;
 }
