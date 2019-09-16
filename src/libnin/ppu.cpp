@@ -20,23 +20,16 @@ NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         break;
     case 0x02: // PPUSTATUS
         mask = 0xe0;
-        if (RT.scanline == 241 && RT.cycle == 0) // Pre-set race condition
+        if (RT.scanline == 241 && RT.cycle == 1) // Pre-set race condition
         {
-            state->nmi = 0;
             state->ppu.race0 = 1;
+            state->nmi = 0;
         }
-        else if (RT.scanline == 241 && RT.cycle == 1 && !state->ppu.race0) // Same-set race condition
+        /*else if (state->ppu.race1) // Same-set race condition
         {
             value |= 0x80;
             state->nmi = 0;
-            state->ppu.race1 = 1;
-        }
-        else if (RT.scanline == 241 && RT.cycle == 2 && !state->ppu.race0) // Same-set race condition
-        {
-            value |= 0x80;
-            state->nmi = 0;
-            state->ppu.race1 = 1;
-        }
+        }*/
         else if ((state->ppu.nmi & NMI_OCCURED)) // Normal operation
         {
             value |= 0x80;
@@ -460,17 +453,17 @@ static void scanline(NinState* state)
     if (isRendering)
     {
         if (!prerender) spriteEvaluation(state, cycle);
-        if (!prerender && cycle >= 2 && cycle <= 257)
-            emitPixel(state, cycle - 2);
         if ((cycle > 0 && cycle <= 256) || (cycle >= 321 && cycle <= 336))
         {
             bgFetch(state, cycle - 1);
         }
+        if (!prerender && cycle >= 2 && cycle <= 257)
+            emitPixel(state, cycle - 2);
         if ((cycle >= 9 && cycle <= 257 && ((cycle % 8) == 1)) || cycle == 329 || cycle == 337)
         {
             bgReload(state);
         }
-        if (cycle == 251)
+        if (cycle == 256)
         {
             RT.v = _incY(RT.v);
         }

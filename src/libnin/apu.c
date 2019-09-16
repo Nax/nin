@@ -499,47 +499,17 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
 
         APU.half ^= 1;
 
-        state->audioCycles += SAMPLE_FREQ_NUM;
-        if (state->audioCycles >= SAMPLE_FREQ_DEN)
-        {
-            state->audioCycles -= SAMPLE_FREQ_DEN;
+        /* Load the triangle sample */
+        if (state->apu.triangle.enabled && state->apu.triangle.timerPeriod >= 2)
+            triangleSample = kTriangleSequence[state->apu.triangle.seqIndex];
+        else
+            triangleSample = 0;
+        pulseSample[0] = samplePulse(state, 0);
+        pulseSample[1] = samplePulse(state, 1);
+        noiseSample = sampleNoise(state);
 
-            /* Load the triangle sample */
-            if (state->apu.triangle.enabled && state->apu.triangle.timerPeriod >= 2)
-                triangleSample = kTriangleSequence[state->apu.triangle.seqIndex];
-            else
-                triangleSample = 0;
-            pulseSample[0] = samplePulse(state, 0);
-            pulseSample[1] = samplePulse(state, 1);
-            noiseSample = sampleNoise(state);
-
-            /* Emit the sample */
-            sample = ninMix(triangleSample, pulseSample[0], pulseSample[1], noiseSample, APU.dmc.output);
-            state->audioSamples[state->audioSamplesCount++] = ninLoPass(state, sample, 0.796499627f, 1.0f);
-
-            if (state->audioSamplesCount == NIN_AUDIO_SAMPLE_SIZE * 8)
-            {
-                for (size_t i = 0; i < NIN_AUDIO_SAMPLE_SIZE; ++i)
-                {
-                    sample = 0.f;
-                    sample += state->audioSamples[i * 8 + 0];
-                    sample += state->audioSamples[i * 8 + 1];
-                    sample += state->audioSamples[i * 8 + 2];
-                    sample += state->audioSamples[i * 8 + 3];
-                    sample += state->audioSamples[i * 8 + 4];
-                    sample += state->audioSamples[i * 8 + 5];
-                    sample += state->audioSamples[i * 8 + 6];
-                    sample += state->audioSamples[i * 8 + 7];
-                    sample /= 8.f;
-
-                    sample = ninHiPass(state, sample, 0, 0.988366724189f, 1.0f);
-                    sample = ninHiPass(state, sample, 1, 0.944398374148f, 1.0f);
-                    state->audioSamplesFiltered[i] = (int16_t)(sample * 32767.f);
-                }
-                if (state->audioCallback)
-                    state->audioCallback(state->audioCallbackArg, state->audioSamplesFiltered);
-                state->audioSamplesCount = 0;
-            }
-        }
+        /* Emit the sample */
+        sample = ninMix(triangleSample, pulseSample[0], pulseSample[1], noiseSample, APU.dmc.output);
+        ninAudioPushSample(state, sample);
     }
 }

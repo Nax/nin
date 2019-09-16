@@ -100,7 +100,7 @@ void Emulator::loadRom(const QString& path)
         saveFile = info.path() + "/" + info.completeBaseName() + ".sav";
         raw = saveFile.toUtf8();
         ninSetSaveFile(_state, raw.data());
-        ninSetAudioCallback(_state, &_audioCallback, this);
+        ninAudioSetCallback(_state, &_audioCallback, this);
     }
 }
 

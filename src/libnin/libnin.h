@@ -38,6 +38,11 @@ typedef void (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8
 #define MIRRORING_VERTICAL      1
 #define MIRRORING_QUAD          2
 
+#define AUDIO_BUFFER_SIZE_SOURCE_NTSC     221
+#define AUDIO_BUFFER_SIZE_TARGET          1024
+
+#define CLOCK_RATE_NTSC     1789773
+
 inline static void* zalloc(size_t size)
 {
     if (size)
@@ -224,8 +229,19 @@ typedef struct {
     uint8_t             irq:1;
 } NinAPU;
 
+typedef struct {
+    float               samplesSrc[AUDIO_BUFFER_SIZE_SOURCE_NTSC];
+    int16_t             samplesDst[AUDIO_BUFFER_SIZE_TARGET];
+    uint16_t            samplesCursorSrc;
+    uint16_t            samplesCursorDst;
+    uint32_t            divider;
+    NINAUDIOCALLBACK    callback;
+    void*               callbackArg;
+} NinAudio;
+
 struct NinState_ {
     FILE*               saveFile;
+    NinAudio            audio;
     uint16_t            mapper;
     uint8_t             battery;
     uint8_t             mirroring;
@@ -240,8 +256,6 @@ struct NinState_ {
     uint16_t            audioSamplesCount;
     int16_t*            audioSamplesFiltered;
     uint32_t            audioCycles;
-    NINAUDIOCALLBACK    audioCallback;
-    void*               audioCallbackArg;
     NinCPU              cpu;
     NinPPU              ppu;
     NinAPU              apu;
@@ -269,6 +283,7 @@ struct NinState_ {
     uint32_t            trainerSize;
     uint8_t*            nametables[4];
     uint8_t             nmi:1;
+    uint8_t             nmi2 : 1;
     uint8_t             irq:1;
     uint8_t             irqFlags;
     uint64_t            cyc;
@@ -304,6 +319,9 @@ NIN_API void        ninRunCyclesAPU(NinState* state, size_t cycles);
 
 NIN_API void ninSetIRQ(NinState* state, uint8_t flag);
 NIN_API void ninClearIRQ(NinState* state, uint8_t flag);
+
+/* Audio */
+NIN_API void    ninAudioPushSample(NinState* state, float sample);
 
 /* Mapper handlers */
 NIN_API void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
