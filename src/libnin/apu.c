@@ -19,14 +19,6 @@ static const uint8_t kLengthCounterLookup[32] = {
     12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
 
-static const uint16_t kNoisePeriod[16] = {
-    4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068
-};
-
-static const uint8_t kDMCPeriod[] = {
-    214, 190, 170, 160, 143, 127, 113, 107, 95, 80, 71, 64, 53, 42, 36, 27
-};
-
 uint8_t ninApuRegRead(NinState* state, uint16_t reg)
 {
     uint8_t value;
@@ -129,7 +121,7 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         break;
     case 0xe: // Noise Timer
         APU.noise.mode = !!(value & 0x80);
-        APU.noise.timerPeriod = kNoisePeriod[value & 0xf];
+        APU.noise.timerPeriod = state->regionData.apuNoisePeriod[value & 0xf];
         break;
     case 0xf: // Noise Length
         if (APU.noise.enabled)
@@ -139,7 +131,7 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
     case 0x10: // DMC Config
         APU.dmc.irqEnable = !!(value & 0x80);
         APU.dmc.loop = !!(value & 0x40);
-        APU.dmc.timerPeriod = kDMCPeriod[value & 0xf];
+        APU.dmc.timerPeriod = state->regionData.apuDmcPeriod[value & 0xf];
         break;
     case 0x11: // DMC Load
         APU.dmc.output = value & 0x7f;

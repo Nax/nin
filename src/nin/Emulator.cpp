@@ -17,7 +17,7 @@ static void _audioCallback(void* arg, const int16_t* samples)
 
 void Emulator::_workerMain(Emulator* emu)
 {
-    uint64_t kDelay = emu->_frameDelay / 4;
+    uint64_t kDelay;
 
     using Clock = std::chrono::high_resolution_clock;
     using Duration = std::chrono::nanoseconds;
@@ -31,6 +31,8 @@ void Emulator::_workerMain(Emulator* emu)
     acc = 0;
     for (;;)
     {
+        kDelay = emu->_frameDelay / 4;
+
         if (!emu->workerRunning())
             return;
 

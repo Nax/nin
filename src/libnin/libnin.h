@@ -275,6 +275,8 @@ typedef struct
     uint8_t             firstVisibleScanline;
     uint8_t             vblank;
     const uint16_t*     apuFrameCycles;
+    const uint16_t*     apuNoisePeriod;
+    const uint16_t*     apuDmcPeriod;
 } NinRegionData;
 
 struct NinState_ {
