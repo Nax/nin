@@ -24,4 +24,6 @@ void ninRegionApply(NinState* state)
         r->vblank = 70;
         break;
     }
+
+    ninAudioSetFrequencySource(state, r->clockRate);
 }

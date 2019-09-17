@@ -252,11 +252,16 @@ typedef struct {
 } NinAPU;
 
 typedef struct {
-    float               samplesSrc[AUDIO_BUFFER_SIZE_SOURCE_NTSC];
+    uint8_t             windowSize;
+    float               windowSum;
+    float               hyperbolicFactors[256];
+    float               samplesSrc[256];
     int16_t             samplesDst[AUDIO_BUFFER_SIZE_TARGET];
     uint16_t            samplesCursorSrc;
     uint16_t            samplesCursorDst;
-    uint32_t            divider;
+    uint32_t            dividerNum;
+    uint32_t            dividerDen;
+    uint32_t            dividerClock;
     NINAUDIOCALLBACK    callback;
     void*               callbackArg;
 } NinAudio;
@@ -356,6 +361,7 @@ NIN_API void ninSetIRQ(NinState* state, uint8_t flag);
 NIN_API void ninClearIRQ(NinState* state, uint8_t flag);
 
 /* Audio */
+NIN_API void    ninAudioSetFrequencySource(NinState* state, uint32_t freq);
 NIN_API void    ninAudioPushSample(NinState* state, float sample);
 
 /* Region */
