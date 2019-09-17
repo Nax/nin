@@ -34,6 +34,21 @@ typedef void (*NINAUDIOCALLBACK)(void*, const int16_t*);
 #define NIN_BUTTON_LEFT     0x40
 #define NIN_BUTTON_RIGHT    0x80
 
+typedef enum {
+    NIN_REGION_NTSC     = 0,
+    NIN_REGION_PAL      = 1,
+    NIN_REGION_WORLD    = 2,
+    NIN_REGION_DENDY    = 3
+} NinRegion;
+
+typedef enum {
+    NIN_INFO_CLOCK_RATE,
+    NIN_INFO_FRAME_CYCLES,
+    NIN_INFO_FRAME_DELAY,
+} NinInfo;
+
+typedef int32_t NinInt32;
+
 NIN_API NinError        ninCreateState(NinState** state, const char* path);
 NIN_API NinError        ninLoadRom(NinState* state, const char* path);
 NIN_API void            ninSetSaveFile(NinState* state, const char* path);
@@ -44,5 +59,7 @@ NIN_API const uint32_t* ninGetScreenBuffer(NinState* state);
 NIN_API void            ninSetInput(NinState* state, uint8_t input);
 NIN_API void            ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg);
 NIN_API void            ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len);
+
+NIN_API void            ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info);
 
 #endif

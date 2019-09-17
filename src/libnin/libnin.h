@@ -51,6 +51,25 @@ inline static void* zalloc(size_t size)
 }
 
 typedef struct {
+    uint8_t reserved[8];
+} NinRomHeaderLegacy;
+
+typedef struct {
+    uint8_t     mapperEx:4;
+    uint8_t     submapper:4;
+    uint8_t     prgRomSizeHi:4;
+    uint8_t     chrRomSizeHi:4;
+    uint8_t     prgRamSizeShift:4;
+    uint8_t     prgNvramSizeShift:4;
+    uint8_t     chrRamSizeShift:4;
+    uint8_t     chrNvramSizeShift:4;
+    uint8_t     region:2;
+    uint8_t     reserved0:6;
+    uint8_t     reserved[3];
+
+} NinRomHeaderNes2;
+
+typedef struct {
     char        magic[4];
     uint8_t     prgRomSize;
     uint8_t     chrRomSize;
@@ -61,9 +80,12 @@ typedef struct {
     uint8_t     mapperLo:4;
     uint8_t     vs:1;
     uint8_t     playChoice:1;
-    uint8_t     ines:2;
+    uint8_t     magicNes2:2;
     uint8_t     mapperHi:4;
-    uint8_t     reserved[8];
+    union {
+        NinRomHeaderLegacy  ines;
+        NinRomHeaderNes2    nes2;
+    };
 } NinRomHeader;
 
 typedef struct {
@@ -239,8 +261,21 @@ typedef struct {
     void*               callbackArg;
 } NinAudio;
 
+typedef struct
+{
+    uint32_t            clockRate;
+    uint32_t            frameCycles;
+    uint32_t            frameDelay;
+    uint8_t             cycleExtraCounter;
+    uint8_t             cycleExtraIncrement;
+    uint8_t             firstVisibleScanline;
+    uint8_t             vblank;
+} NinRegionData;
+
 struct NinState_ {
     FILE*               saveFile;
+    NinRegion           region;
+    NinRegionData       regionData;
     NinAudio            audio;
     uint16_t            mapper;
     uint8_t             battery;
@@ -322,6 +357,9 @@ NIN_API void ninClearIRQ(NinState* state, uint8_t flag);
 
 /* Audio */
 NIN_API void    ninAudioPushSample(NinState* state, float sample);
+
+/* Region */
+NIN_API void    ninRegionApply(NinState* state);
 
 /* Mapper handlers */
 NIN_API void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);

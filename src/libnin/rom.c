@@ -4,9 +4,11 @@ static const char kHeaderMagic[] = { 'N', 'E', 'S', '\x1a' };
 
 NIN_API NinError ninLoadRom(NinState* state, const char* path)
 {
+    int nes2;
     FILE* f;
     NinRomHeader header;
 
+    nes2 = 0;
     /* Open the ROM */
     f = fopen(path, "rb");
     if (!f)
@@ -19,6 +21,16 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     /* Check for the iNES signature */
     if (memcmp(header.magic, kHeaderMagic, 4) != 0)
         return NIN_ERROR_BAD_FILE;
+
+    /* Check for the nes2 signature */
+    if (header.magicNes2 == 0x2)
+        nes2 = 1;
+
+    /* Load the region */
+    if (!nes2)
+        state->region = NIN_REGION_NTSC;
+    else
+        state->region = header.nes2.region;
 
     /* Load the header misc. info */
     state->mapper = (header.mapperHi << 4) | header.mapperLo;
@@ -136,6 +148,8 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
         state->prgWriteHandler = &ninPrgWriteHandlerAXROM;
         break;
     }
+
+    ninRegionApply(state);
 
     return NIN_OK;
 }

@@ -15,9 +15,9 @@ static void _audioCallback(void* arg, const int16_t* samples)
     ((Emulator*)arg)->handleAudio(samples);
 }
 
-static void _workerMain(Emulator* emu)
+void Emulator::_workerMain(Emulator* emu)
 {
-    static const uint64_t kDelay = 16639489 / 4;
+    uint64_t kDelay = emu->_frameDelay / 4;
 
     using Clock = std::chrono::high_resolution_clock;
     using Duration = std::chrono::nanoseconds;
@@ -96,6 +96,9 @@ void Emulator::loadRom(const QString& path)
     }
     else
     {
+        ninInfoQueryInteger(_state, &_frameCyles, NIN_INFO_FRAME_CYCLES);
+        ninInfoQueryInteger(_state, &_frameDelay, NIN_INFO_FRAME_DELAY);
+
         QFileInfo info(path);
         saveFile = info.path() + "/" + info.completeBaseName() + ".sav";
         raw = saveFile.toUtf8();
@@ -116,7 +119,7 @@ void Emulator::start()
     _running = true;
     update();
     _workerRunning = true;
-    _worker = std::thread(_workerMain, this);
+    _worker = std::thread(&Emulator::_workerMain, this);
 }
 
 void Emulator::handleInput(uint8_t key, int pressed)
@@ -138,7 +141,7 @@ void Emulator::update()
         return;
 
     ninSetInput(_state, _input);
-    if (ninRunCycles(_state, 29781 / 4 - _cyc, &_cyc))
+    if (ninRunCycles(_state, _frameCyles / 4 - _cyc, &_cyc))
         _window->updateTexture((const char*)ninGetScreenBuffer(_state));
     emit gameUpdate(_state);
 }

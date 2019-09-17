@@ -129,7 +129,18 @@ static constexpr bool matchPattern(const char* pattern, uint8_t value)
 }
 
 #define X(str)          if (matchPattern(str, N))
-#define CYCLE()         do { state->cyc++; ninRunCyclesAPU(state, 1); state->frame |= ninPpuRunCycles(state, 3); } while (0)
+#define CYCLE()         do {                                                        \
+    state->cyc++;                                                                   \
+    ninRunCyclesAPU(state, 1);                                                      \
+    state->frame |= ninPpuRunCycles(state, 3);                                      \
+    state->regionData.cycleExtraCounter += state->regionData.cycleExtraIncrement;   \
+    if (state->regionData.cycleExtraCounter == 5)                                   \
+    {                                                                               \
+        state->regionData.cycleExtraCounter = 0;                                    \
+        state->frame |= ninPpuRunCycles(state, 1);                                  \
+    }                                                                               \
+} while (0)
+
 #define READ(x)         do { tmp = ninMemoryRead8(state, (x)); } while (0)
 #define PUSH8(x)        do { stackPush8(state, (x)); CYCLE(); } while (0)
 #define PUSH16(x)       do { PUSH8((x) >> 8); PUSH8((x) & 0xff); } while (0)

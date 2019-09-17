@@ -506,7 +506,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
         {
             RT.cycle = 0;
             RT.scanline++;
-            if (RT.scanline == 262)
+            if (RT.scanline == 242 + state->regionData.vblank)
             {
                 swapBuffers(state);
                 RT.scanline = 0;

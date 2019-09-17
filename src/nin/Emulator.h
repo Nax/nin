@@ -38,6 +38,8 @@ signals:
 private:
     void            setupGamepad();
 
+    static void _workerMain(Emulator* emu);
+
     bool            _running;
     bool            _workerRunning;
     std::thread     _worker;
@@ -46,6 +48,8 @@ private:
     NinState*       _state;
     MainWindow*     _window;
     QGamepad*       _gamepad;
+    NinInt32        _frameCyles;
+    NinInt32        _frameDelay;
     size_t          _cyc;
 };
 
