@@ -246,7 +246,6 @@ typedef struct {
     NinChannelPulse     pulse[2];
     NinChannelNoise     noise;
     NinChannelDMC       dmc;
-    uint8_t             half:1;
     uint8_t             mode:1;
     uint8_t             irq:1;
 } NinAPU;
@@ -275,6 +274,7 @@ typedef struct
     uint8_t             cycleExtraIncrement;
     uint8_t             firstVisibleScanline;
     uint8_t             vblank;
+    const uint16_t*     apuFrameCycles;
 } NinRegionData;
 
 struct NinState_ {

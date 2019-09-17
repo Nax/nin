@@ -1,8 +1,6 @@
 #include <libnin/libnin.h>
 
 #define APU                         state->apu
-#define SAMPLE_FREQ_NUM             115
-#define SAMPLE_FREQ_DEN             536
 
 static const uint8_t kTriangleSequence[32] = {
     15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
@@ -464,40 +462,43 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
     {
         triangleTick(state);
 
-        if (!APU.half)
+        if (!(APU.frameCounter & 0x1))
         {
             pulseTick(state, 0);
             pulseTick(state, 1);
             noiseTick(state);
             dmcTick(state);
-
-            switch (APU.frameCounter)
-            {
-            default:
-                break;
-            case 0:
-                if (APU.irq) ninSetIRQ(state, IRQ_APU_FRAME);
-                /* fallthrough */
-            case 7456:
-                triangleClockHalf(state);
-                pulseClockHalf(state, 0);
-                pulseClockHalf(state, 1);
-                noiseClockHalf(state);
-                /* fallthrough */
-            case 3728:
-            case 11185:
-                triangleClockQuarter(state);
-                envelopeTick(&APU.pulse[0].envelope);
-                envelopeTick(&APU.pulse[1].envelope);
-                envelopeTick(&APU.noise.envelope);
-                break;
-            }
-            APU.frameCounter++;
-            if (APU.frameCounter >= (APU.mode ? 18641 : 14915))
-                APU.frameCounter = 0;
         }
 
-        APU.half ^= 1;
+        if (APU.frameCounter == state->regionData.apuFrameCycles[0]
+            || APU.frameCounter == state->regionData.apuFrameCycles[1]
+            || APU.frameCounter == state->regionData.apuFrameCycles[2]
+            || APU.frameCounter == state->regionData.apuFrameCycles[3])
+        {
+            triangleClockQuarter(state);
+            envelopeTick(&APU.pulse[0].envelope);
+            envelopeTick(&APU.pulse[1].envelope);
+            envelopeTick(&APU.noise.envelope);
+        }
+
+        if (APU.frameCounter == state->regionData.apuFrameCycles[1]
+            || APU.frameCounter == state->regionData.apuFrameCycles[3])
+        {
+            triangleClockHalf(state);
+            pulseClockHalf(state, 0);
+            pulseClockHalf(state, 1);
+            noiseClockHalf(state);
+        }
+
+        if (APU.frameCounter == state->regionData.apuFrameCycles[3 + APU.mode])
+        {
+            if (APU.irq) ninSetIRQ(state, IRQ_APU_FRAME);
+            APU.frameCounter = 0;
+        }
+        else
+        {
+            APU.frameCounter++;;
+        }
 
         /* Load the triangle sample */
         if (state->apu.triangle.enabled && state->apu.triangle.timerPeriod >= 2)
