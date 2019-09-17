@@ -189,7 +189,7 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
             ninClearIRQ(state, IRQ_APU_FRAME);
         APU.mode = !!(value & 0x80);
         APU.irq = ((value & 0xc0) == 0);
-        APU.frameCounter = !(APU.mode);
+        APU.frameCounter = 0;
         break;
     }
 }
@@ -473,8 +473,8 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             envelopeTick(&APU.noise.envelope);
         }
 
-        if (APU.frameCounter == state->regionData.apuFrameCycles[1]
-            || APU.frameCounter == state->regionData.apuFrameCycles[3])
+        if (APU.frameCounter == state->regionData.apuFrameCycles[0]
+            || APU.frameCounter == state->regionData.apuFrameCycles[2])
         {
             triangleClockHalf(state);
             pulseClockHalf(state, 0);
@@ -488,9 +488,8 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
             APU.frameCounter = 0;
         }
         else
-        {
             APU.frameCounter++;;
-        }
+ 
 
         /* Load the triangle sample */
         if (state->apu.triangle.enabled && state->apu.triangle.timerPeriod >= 2)
