@@ -7,5 +7,6 @@ if (WIN32)
 endif()
 
 add_subdirectory(libnin)
+add_subdirectory(libnindb)
 add_subdirectory(nin)
 add_subdirectory(ninperf)
