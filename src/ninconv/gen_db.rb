@@ -13,7 +13,8 @@ Game = Struct.new(
   :chr_ram_size
 ) do
   def serialize
-    %Q[{ "#{name}", #{"0x%08x" % crc32}, #{region}, #{mapper}, #{mirror}, #{battery}, #{"0x%0x" % prg_rom_size}, #{"0x%0x" % prg_ram_size}, #{"0x%0x" % chr_rom_size}, #{"0x%0x" % chr_ram_size} },]
+    n = name.tr('"', '')
+    %Q[{ "#{n}", #{"0x%08x" % crc32}, #{region}, #{mapper}, #{mirror}, #{battery}, #{"0x%0x" % prg_rom_size}, #{"0x%0x" % prg_ram_size}, #{"0x%0x" % chr_rom_size}, #{"0x%0x" % chr_ram_size} },]
   end
 end
 
