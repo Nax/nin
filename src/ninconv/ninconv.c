@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdint.h>
+#include <locale.h>
 #include "ninconv.h"
 
 #if defined(WIN32) || defined(_WIN32)
@@ -78,7 +79,7 @@ static void writeHeader(FILE* f, const NinDbGame* game)
     header[ 3] = 0x1a;
     header[ 4] = (game->prgRomSize / 0x4000) & 0xff;
     header[ 5] = (game->chrRomSize / 0x2000) & 0xff;
-    header[ 6] = (game->mirror ? 0x00 : 0x01) | (game->battery ? 0x02 : 0x00) | ((game->mapper & 0xf) << 4);
+    header[ 6] = (game->mirror ? 0x01 : 0x00) | (game->battery ? 0x02 : 0x00) | ((game->mapper & 0xf) << 4);
     header[ 7] = 0x08 | (game->mapper & 0xf0);
     header[ 8] = ((game->mapper & 0xf00) >> 8);
     header[ 9] = (((game->prgRomSize / 0x4000) >> 8) & 0x0f) | ((((game->chrRomSize / 0x2000) >> 8) & 0xf) << 4);
@@ -183,6 +184,9 @@ static int massConv(const char* inDir, const char* outDir)
 
 int main(int argc, char** argv)
 {
+#if OS_WIN32
+    setlocale(LC_ALL, ".65001");
+#endif
     if (argc < 3)
     {
         printf("usage: ninconv <indir> <outdir>\n");

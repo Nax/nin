@@ -34,11 +34,11 @@ db.root.css('game').each do |g|
     region = g.attr('region')
     rev = c.attr('revision')
     game.name = name + " (" + region + ")"
-    game.name.tr!('.', '')
+    game.name.tr!('.<>:|?*', '')
     if (rev)
       game.name += " (Rev " + rev + ")"
     end
-    game.name.tr!('/', '-')
+    game.name.tr!('\\/', '-')
     game.crc32 = c.attr('crc').to_s.to_i(16)
     game.region = 0
     if c.attr('system').include?('PAL')
@@ -50,7 +50,7 @@ db.root.css('game').each do |g|
 
     game.mirror = 0
     game.mapper = board.attr('mapper').to_i
-    if pad && pad.attr("h") == 1
+    if pad && pad.attr("h") == "1"
       game.mirror = 1
     end
 
