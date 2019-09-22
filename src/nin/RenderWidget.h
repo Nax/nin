@@ -1,6 +1,7 @@
 #ifndef RENDER_WIDGET_H
 #define RENDER_WIDGET_H
 
+#include <mutex>
 #include <cstdint>
 #include <QWidget>
 #include <QOpenGLWidget>
@@ -21,8 +22,10 @@ public:
     void updateTexture(const char* texture);
 
 private:
-    Emulator&   _emu;
-    GLuint      _texture;
+    Emulator&       _emu;
+    std::mutex      _mutex;
+    GLuint          _texture;
+    char            _rawTexture[256 * 240 * 4];
 };
 
 #endif

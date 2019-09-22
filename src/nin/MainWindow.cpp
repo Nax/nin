@@ -47,29 +47,29 @@ void MainWindow::keyPressEvent(QKeyEvent* event)
     switch (event->key())
     {
     case Qt::Key_Z:
-        _emu.handleInput(NIN_BUTTON_A, 1);
+        _emu.inputKeyPress(NIN_BUTTON_A);
         break;
     case Qt::Key_X:
-        _emu.handleInput(NIN_BUTTON_B, 1);
+        _emu.inputKeyPress(NIN_BUTTON_B);
         break;
     case Qt::Key_Enter:
     case Qt::Key_Return:
-        _emu.handleInput(NIN_BUTTON_START, 1);
+        _emu.inputKeyPress(NIN_BUTTON_START);
         break;
     case Qt::Key_Space:
-        _emu.handleInput(NIN_BUTTON_SELECT, 1);
+        _emu.inputKeyPress(NIN_BUTTON_SELECT);
         break;
     case Qt::Key_Left:
-        _emu.handleInput(NIN_BUTTON_LEFT, 1);
+        _emu.inputKeyPress(NIN_BUTTON_LEFT);
         break;
     case Qt::Key_Right:
-        _emu.handleInput(NIN_BUTTON_RIGHT, 1);
+        _emu.inputKeyPress(NIN_BUTTON_RIGHT);
         break;
     case Qt::Key_Up:
-        _emu.handleInput(NIN_BUTTON_UP, 1);
+        _emu.inputKeyPress(NIN_BUTTON_UP);
         break;
     case Qt::Key_Down:
-        _emu.handleInput(NIN_BUTTON_DOWN, 1);
+        _emu.inputKeyPress(NIN_BUTTON_DOWN);
         break;
     }
 }
@@ -79,29 +79,29 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
     switch (event->key())
     {
     case Qt::Key_Z:
-        _emu.handleInput(NIN_BUTTON_A, 0);
+        _emu.inputKeyRelease(NIN_BUTTON_A);
         break;
     case Qt::Key_X:
-        _emu.handleInput(NIN_BUTTON_B, 0);
+        _emu.inputKeyRelease(NIN_BUTTON_B);
         break;
     case Qt::Key_Enter:
     case Qt::Key_Return:
-        _emu.handleInput(NIN_BUTTON_START, 0);
+        _emu.inputKeyRelease(NIN_BUTTON_START);
         break;
     case Qt::Key_Space:
-        _emu.handleInput(NIN_BUTTON_SELECT, 0);
+        _emu.inputKeyRelease(NIN_BUTTON_SELECT);
         break;
     case Qt::Key_Left:
-        _emu.handleInput(NIN_BUTTON_LEFT, 0);
+        _emu.inputKeyRelease(NIN_BUTTON_LEFT);
         break;
     case Qt::Key_Right:
-        _emu.handleInput(NIN_BUTTON_RIGHT, 0);
+        _emu.inputKeyRelease(NIN_BUTTON_RIGHT);
         break;
     case Qt::Key_Up:
-        _emu.handleInput(NIN_BUTTON_UP, 0);
+        _emu.inputKeyRelease(NIN_BUTTON_UP);
         break;
     case Qt::Key_Down:
-        _emu.handleInput(NIN_BUTTON_DOWN, 0);
+        _emu.inputKeyRelease(NIN_BUTTON_DOWN);
         break;
     }
 }
@@ -109,7 +109,7 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
 void MainWindow::updateTexture(const char* texture)
 {
     _render->updateTexture(texture);
-    _render->update();
+    //_render->update();
 }
 
 void MainWindow::openRom()

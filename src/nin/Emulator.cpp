@@ -1,79 +1,187 @@
-#include <cstdio>
-#include <chrono>
-#include <thread>
+#include <stdio.h>
 #include <QFileInfo>
-#include <QDir>
 #include <QApplication>
-#include <QDebug>
-#include <QLoggingCategory>
 #include "Emulator.h"
+#include "MainWindow.h"
+#include "Audio.h"
 
 #define DEADZONE (0.30)
 
-static void _audioCallback(void* arg, const int16_t* samples)
-{
-    ((Emulator*)arg)->handleAudio(samples);
-}
-
-void Emulator::_workerMain(Emulator* emu)
-{
-    uint64_t kDelay;
-
-    using Clock = std::chrono::high_resolution_clock;
-    using Duration = std::chrono::nanoseconds;
-    using TimePoint = std::chrono::time_point<Clock, Duration>;
-
-    TimePoint prev;
-    TimePoint now;
-    uint64_t acc;
-
-    prev = Clock::now();
-    acc = 0;
-    for (;;)
-    {
-        kDelay = emu->_frameDelay / 4;
-
-        if (!emu->workerRunning())
-            return;
-
-        now = Clock::now();
-        acc += (now - prev).count();
-        prev = now;
-
-        while (acc >= kDelay)
-        {
-            QMetaObject::invokeMethod(emu, &Emulator::update);
-            acc -= kDelay;
-        }
-
-        std::this_thread::sleep_for(std::chrono::nanoseconds(kDelay - acc));
-    }
-}
-
 Emulator::Emulator()
-: QObject(nullptr)
-, _running(false)
-, _workerRunning(false)
-, _state(nullptr)
-, _gamepad(nullptr)
-, _cyc(0)
+: _state(nullptr)
+, _workerState(WorkerState::Idle)
+, _input(0)
 {
+    _thread = std::thread(&Emulator::workerMain, this);
+
+    _mainWindow = new MainWindow(*this);
+    _mainWindow->setAttribute(Qt::WA_DeleteOnClose);
+    _mainWindow->show();
+
     _audio = new Audio;
-    _window = new MainWindow(*this);
-    _window->setAttribute(Qt::WA_DeleteOnClose);
-    _window->show();
-    _input = 0;
+
+    setupGamepad();
 }
 
 Emulator::~Emulator()
 {
-    closeRom();
-    _workerRunning = false;
-    _worker.join();
-    delete _audio;
+    std::unique_lock lock(_mutex);
+
+    _workerState = WorkerState::Stopping;
+    lock.unlock();
+    _cv.notify_one();
+
+    _thread.join();
+}
+
+void Emulator::loadRom(const QString& path)
+{
+    QByteArray raw;
+    QString saveFile;
+    NinError err;
+    NinInt32 frameCycles;
+    NinInt32 frameDelay;
+
+    std::unique_lock lock(_mutex);
+
+    closeRomRaw();
+    raw = path.toUtf8();
+    err = ninCreateState(&_state, raw.data());
+    if (err != NIN_OK)
+    {
+        printf("Error loading rom (%d)\n", (int)err);
+        fflush(stdout);
+        _workerState = WorkerState::Idle;
+    }
+    else
+    {
+        ninInfoQueryInteger(_state, &frameCycles, NIN_INFO_FRAME_CYCLES);
+        ninInfoQueryInteger(_state, &frameDelay, NIN_INFO_FRAME_DELAY);
+
+        _frameCycles = frameCycles;
+        _frameDelay = frameDelay;
+        _cyc = 0;
+        _accumulator = 0;
+
+        QFileInfo info(path);
+        saveFile = info.path() + "/" + info.completeBaseName() + ".sav";
+        raw = saveFile.toUtf8();
+        ninSetSaveFile(_state, raw.data());
+        ninAudioSetCallback(_state, (NINAUDIOCALLBACK)&audioCallback, this);
+        _workerState = WorkerState::Starting;
+    }
+
+    lock.unlock();
+    _cv.notify_one();
 }
 
 void Emulator::closeRom()
+{
+    std::unique_lock lock(_mutex);
+
+    closeRomRaw();
+    _workerState = WorkerState::Idle;
+
+    lock.unlock();
+    _cv.notify_one();
+}
+
+void Emulator::pause()
+{
+    std::unique_lock lock(_mutex);
+
+    if (_workerState == WorkerState::Running)
+    {
+        _workerState = WorkerState::Paused;
+        lock.unlock();
+        _cv.notify_one();
+    }
+}
+
+void Emulator::resume()
+{
+    std::unique_lock lock(_mutex);
+
+    if (_workerState == WorkerState::Paused)
+    {
+        _workerState = WorkerState::Starting;
+        lock.unlock();
+        _cv.notify_one();
+    }
+}
+
+void Emulator::inputKeyPress(uint8_t key)
+{
+    _input |= key;
+}
+
+void Emulator::inputKeyRelease(uint8_t key)
+{
+    _input &= ~key;
+}
+
+void Emulator::workerMain()
+{
+    TimePoint prev;
+    TimePoint now;
+    uint64_t dt;
+    uint64_t delay;
+
+    std::unique_lock lock(_mutex);
+
+    prev = Clock::now();
+    _accumulator = 0;
+
+    for (;;)
+    {
+        now = Clock::now();
+        dt = (now - prev).count();
+        prev = now;
+
+        switch (_workerState)
+        {
+        case WorkerState::Idle:
+        case WorkerState::Paused:
+            _cv.wait(lock);
+            break;
+        case WorkerState::Starting:
+            workerUpdate();
+            _accumulator = 0;
+            now = Clock::now();
+            prev = now;
+            _workerState = WorkerState::Running;
+            break;
+        case WorkerState::Running:
+            _accumulator += dt;
+            delay = _frameDelay / 4;
+            while (_accumulator >= delay)
+            {
+                _accumulator -= delay;
+                workerUpdate();
+            }
+            _cv.wait_for(lock, std::chrono::nanoseconds(delay - _accumulator));
+            break;
+        case WorkerState::Stopping:
+            return;
+        }
+    }
+}
+
+void Emulator::workerUpdate()
+{
+    size_t cyc;
+
+    cyc = _cyc;
+    ninSetInput(_state, _input);
+    if (ninRunCycles(_state, _frameCycles / 4 - cyc, &cyc))
+    {
+        _mainWindow->updateTexture((const char*)ninGetScreenBuffer(_state));
+    }
+    _cyc = cyc;
+    //emit gameUpdate(_state);
+}
+
+void Emulator::closeRomRaw()
 {
     if (_state)
     {
@@ -82,85 +190,9 @@ void Emulator::closeRom()
     }
 }
 
-void Emulator::loadRom(const QString& path)
+void Emulator::audioCallback(Emulator* emu, const int16_t* samples)
 {
-    NinError err;
-    QByteArray raw;
-    QString saveFile;
-
-    closeRom();
-    raw = path.toUtf8();
-    err = ninCreateState(&_state, raw.data());
-    if (err != NIN_OK)
-    {
-        printf("Error loading rom (%d)\n", (int)err);
-        fflush(stdout);
-    }
-    else
-    {
-        ninInfoQueryInteger(_state, &_frameCyles, NIN_INFO_FRAME_CYCLES);
-        ninInfoQueryInteger(_state, &_frameDelay, NIN_INFO_FRAME_DELAY);
-
-        QFileInfo info(path);
-        saveFile = info.path() + "/" + info.completeBaseName() + ".sav";
-        raw = saveFile.toUtf8();
-        ninSetSaveFile(_state, raw.data());
-        ninAudioSetCallback(_state, &_audioCallback, this);
-    }
-}
-
-void Emulator::exit()
-{
-    QApplication::quit();
-}
-
-void Emulator::start()
-{
-    // Run the first frame
-    setupGamepad();
-    _running = true;
-    update();
-    _workerRunning = true;
-    _worker = std::thread(&Emulator::_workerMain, this);
-}
-
-void Emulator::handleInput(uint8_t key, int pressed)
-{
-    if (pressed)
-        _input |= key;
-    else
-        _input &= ~key;
-}
-
-void Emulator::handleAudio(const int16_t* samples)
-{
-    _audio->pushSamples(samples);
-}
-
-void Emulator::update()
-{
-    if (!_state || !_running)
-        return;
-
-    ninSetInput(_state, _input);
-    if (ninRunCycles(_state, _frameCyles / 4 - _cyc, &_cyc))
-        _window->updateTexture((const char*)ninGetScreenBuffer(_state));
-    emit gameUpdate(_state);
-}
-
-bool Emulator::workerRunning()
-{
-    return _workerRunning;
-}
-
-void Emulator::pause()
-{
-    _running = false;
-}
-
-void Emulator::resume()
-{
-    _running = true;
+    emu->_audio->pushSamples(samples);
 }
 
 void Emulator::setupGamepad()
@@ -183,49 +215,61 @@ void Emulator::setupGamepad()
     connect(_gamepad, &QGamepad::axisLeftXChanged, this, [this](double value) {
         if (value < -DEADZONE)
         {
-            handleInput(NIN_BUTTON_LEFT,  1);
-            handleInput(NIN_BUTTON_RIGHT, 0);
+            inputKeyPress(NIN_BUTTON_LEFT);
+            inputKeyRelease(NIN_BUTTON_RIGHT);
         }
         else if (value > DEADZONE)
         {
-            handleInput(NIN_BUTTON_LEFT, 0);
-            handleInput(NIN_BUTTON_RIGHT, 1);
+            inputKeyRelease(NIN_BUTTON_LEFT);
+            inputKeyPress(NIN_BUTTON_RIGHT);
         }
         else
         {
-            handleInput(NIN_BUTTON_LEFT, 0);
-            handleInput(NIN_BUTTON_RIGHT, 0);
+            inputKeyRelease(NIN_BUTTON_LEFT);
+            inputKeyRelease(NIN_BUTTON_RIGHT);
         }
     });
 
     connect(_gamepad, &QGamepad::axisLeftYChanged, this, [this](double value) {
         if (value < -DEADZONE)
         {
-            handleInput(NIN_BUTTON_DOWN, 0);
-            handleInput(NIN_BUTTON_UP, 1);
+            inputKeyRelease(NIN_BUTTON_DOWN);
+            inputKeyPress(NIN_BUTTON_UP);
         }
         else if (value > DEADZONE)
         {
-            handleInput(NIN_BUTTON_DOWN, 1);
-            handleInput(NIN_BUTTON_UP, 0);
+            inputKeyPress(NIN_BUTTON_DOWN);
+            inputKeyRelease(NIN_BUTTON_UP);
         }
         else
         {
-            handleInput(NIN_BUTTON_DOWN, 0);
-            handleInput(NIN_BUTTON_UP, 0);
+            inputKeyRelease(NIN_BUTTON_DOWN);
+            inputKeyRelease(NIN_BUTTON_UP);
         }
     });
 
     connect(_gamepad, &QGamepad::buttonAChanged, this, [this](bool pressed) {
-        handleInput(NIN_BUTTON_A, (int)pressed);
+        if (pressed)
+            inputKeyPress(NIN_BUTTON_A);
+        else
+            inputKeyRelease(NIN_BUTTON_A);
     });
     connect(_gamepad, &QGamepad::buttonXChanged, this, [this](bool pressed) {
-        handleInput(NIN_BUTTON_B, (int)pressed);
+        if (pressed)
+            inputKeyPress(NIN_BUTTON_B);
+        else
+            inputKeyRelease(NIN_BUTTON_B);
     });
     connect(_gamepad, &QGamepad::buttonStartChanged, this, [this](bool pressed) {
-        handleInput(NIN_BUTTON_START, (int)pressed);
+        if (pressed)
+            inputKeyPress(NIN_BUTTON_START);
+        else
+            inputKeyRelease(NIN_BUTTON_START);
     });
     connect(_gamepad, &QGamepad::buttonSelectChanged, this, [this](bool pressed) {
-        handleInput(NIN_BUTTON_SELECT, (int)pressed);
+        if (pressed)
+            inputKeyPress(NIN_BUTTON_SELECT);
+        else
+            inputKeyRelease(NIN_BUTTON_SELECT);
     });
 }

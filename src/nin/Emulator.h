@@ -1,16 +1,18 @@
 #ifndef EMULATOR_H
 #define EMULATOR_H
 
-#include <al.h>
-#include <alc.h>
-
+#include <atomic>
 #include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <chrono>
+#include <QObject>
 #include <QString>
-#include <QtGamepad/QGamepad>
+#include <QGamepad>
 #include <nin/nin.h>
-#include "MainWindow.h"
-#include "Audio.h"
 
+class MainWindow;
+class Audio;
 class Emulator : public QObject
 {
     Q_OBJECT;
@@ -21,36 +23,51 @@ public:
 
     void loadRom(const QString& path);
     void closeRom();
-    void start();
-    void handleInput(uint8_t key, int pressed);
-    void handleAudio(const int16_t* samples);
-    void update();
-    bool workerRunning();
 
-public slots:
-    void exit();
     void pause();
     void resume();
 
-signals:
-    void gameUpdate(NinState*);
+    void inputKeyPress(uint8_t key);
+    void inputKeyRelease(uint8_t key);
 
 private:
-    void            setupGamepad();
+    void workerMain();
+    void workerUpdate();
 
-    static void _workerMain(Emulator* emu);
+    void closeRomRaw();
+    void setupGamepad();
 
-    bool            _running;
-    bool            _workerRunning;
-    std::thread     _worker;
-    Audio*          _audio;
-    uint8_t         _input;
-    NinState*       _state;
-    MainWindow*     _window;
-    QGamepad*       _gamepad;
-    NinInt32        _frameCyles;
-    NinInt32        _frameDelay;
-    size_t          _cyc;
+    static void audioCallback(Emulator* emu, const int16_t* samples);
+
+    enum class WorkerState
+    {
+        Idle,
+        Paused,
+        Starting,
+        Running,
+        Stopping
+    };
+
+    using Clock = std::chrono::high_resolution_clock;
+    using Duration = std::chrono::nanoseconds;
+    using TimePoint = std::chrono::time_point<Clock, Duration>;
+
+    std::thread                 _thread;
+    std::mutex                  _mutex;
+    std::condition_variable     _cv;
+    std::atomic<WorkerState>    _workerState;
+
+    std::atomic_size_t          _frameCycles;
+    std::atomic_size_t          _frameDelay;
+    std::atomic_size_t          _cyc;
+    std::atomic_uint8_t         _input;
+    std::atomic_uint64_t        _accumulator;
+
+    NinState*   _state;
+
+    MainWindow* _mainWindow;
+    Audio*      _audio;
+    QGamepad*   _gamepad;
 };
 
 #endif

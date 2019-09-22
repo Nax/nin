@@ -10,7 +10,7 @@ int main(int argc, char** argv)
     emu = new Emulator;
     if (argc > 1)
         emu->loadRom(argv[1]);
-    emu->start();
+    //emu->start();
     ret = app.exec();
     delete emu;
     return ret;

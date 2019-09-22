@@ -6,7 +6,7 @@ RenderWidget::RenderWidget(Emulator& emu, QWidget* parent)
 , _emu(emu)
 , _texture(0)
 {
-
+    memset(_rawTexture, 0, 256 * 240 * 4);
 }
 
 RenderWidget::~RenderWidget()
@@ -32,6 +32,11 @@ void RenderWidget::paintGL()
     glClearColor(0.f, 0.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
     glBindTexture(GL_TEXTURE_2D, _texture);
+
+    _mutex.lock();
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 256, 240, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, _rawTexture);
+    _mutex.unlock();
+
     glColor4f(1.f, 1.f, 1.f, 1.f);
     glBegin(GL_QUADS);
     glTexCoord2f(0.f, 1.f);
@@ -54,8 +59,8 @@ void RenderWidget::resizeGL(int w, int h)
 
 void RenderWidget::updateTexture(const char* texture)
 {
-    makeCurrent();
-    glBindTexture(GL_TEXTURE_2D, _texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 256, 240, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, texture);
+    std::unique_lock lock(_mutex);
+
+    memcpy(_rawTexture, texture, 256 * 240 * 4);
     QOpenGLWidget::update();
 }
