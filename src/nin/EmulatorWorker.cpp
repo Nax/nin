@@ -1,29 +1,18 @@
 #include <stdio.h>
 #include <QFileInfo>
 #include <QApplication>
-#include "Emulator.h"
-#include "MainWindow.h"
-#include "Audio.h"
+#include "EmulatorWorker.h"
 
-#define DEADZONE (0.30)
-
-Emulator::Emulator()
-: _state(nullptr)
+EmulatorWorker::EmulatorWorker(QObject* parent)
+: QObject(parent)
+, _state(nullptr)
 , _workerState(WorkerState::Idle)
 , _input(0)
 {
-    _thread = std::thread(&Emulator::workerMain, this);
-
-    _mainWindow = new MainWindow(*this);
-    _mainWindow->setAttribute(Qt::WA_DeleteOnClose);
-    _mainWindow->show();
-
-    _audio = new Audio;
-
-    setupGamepad();
+    _thread = std::thread(&EmulatorWorker::workerMain, this);
 }
 
-Emulator::~Emulator()
+EmulatorWorker::~EmulatorWorker()
 {
     std::unique_lock lock(_mutex);
 
@@ -34,7 +23,7 @@ Emulator::~Emulator()
     _thread.join();
 }
 
-void Emulator::loadRom(const QString& path)
+void EmulatorWorker::loadRom(const QString& path)
 {
     QByteArray raw;
     QString saveFile;
@@ -75,7 +64,7 @@ void Emulator::loadRom(const QString& path)
     _cv.notify_one();
 }
 
-void Emulator::closeRom()
+void EmulatorWorker::closeRom()
 {
     std::unique_lock lock(_mutex);
 
@@ -86,7 +75,7 @@ void Emulator::closeRom()
     _cv.notify_one();
 }
 
-void Emulator::pause()
+void EmulatorWorker::pause()
 {
     std::unique_lock lock(_mutex);
 
@@ -98,7 +87,7 @@ void Emulator::pause()
     }
 }
 
-void Emulator::resume()
+void EmulatorWorker::resume()
 {
     std::unique_lock lock(_mutex);
 
@@ -110,17 +99,17 @@ void Emulator::resume()
     }
 }
 
-void Emulator::inputKeyPress(uint8_t key)
+void EmulatorWorker::inputKeyPress(uint8_t key)
 {
     _input |= key;
 }
 
-void Emulator::inputKeyRelease(uint8_t key)
+void EmulatorWorker::inputKeyRelease(uint8_t key)
 {
     _input &= ~key;
 }
 
-void Emulator::workerMain()
+void EmulatorWorker::workerMain()
 {
     TimePoint prev;
     TimePoint now;
@@ -167,7 +156,7 @@ void Emulator::workerMain()
     }
 }
 
-void Emulator::workerUpdate()
+void EmulatorWorker::workerUpdate()
 {
     size_t cyc;
 
@@ -175,13 +164,13 @@ void Emulator::workerUpdate()
     ninSetInput(_state, _input);
     if (ninRunCycles(_state, _frameCycles / 4 - cyc, &cyc))
     {
-        _mainWindow->updateTexture((const char*)ninGetScreenBuffer(_state));
+        emit frame((const char*)ninGetScreenBuffer(_state));
     }
     _cyc = cyc;
-    //emit gameUpdate(_state);
+    emit update(_state);
 }
 
-void Emulator::closeRomRaw()
+void EmulatorWorker::closeRomRaw()
 {
     if (_state)
     {
@@ -190,86 +179,7 @@ void Emulator::closeRomRaw()
     }
 }
 
-void Emulator::audioCallback(Emulator* emu, const int16_t* samples)
+void EmulatorWorker::audioCallback(EmulatorWorker* emu, const int16_t* samples)
 {
-    emu->_audio->pushSamples(samples);
-}
-
-void Emulator::setupGamepad()
-{
-    QList<int> gamepads;
-    for (int i = 0; i < 1000; ++i) {
-        QApplication::processEvents();
-        gamepads = QGamepadManager::instance()->connectedGamepads();
-        if (!gamepads.isEmpty())
-            break;
-    }
-    if (gamepads.isEmpty()) {
-        printf("No gamepad detected.\n");
-        fflush(stdout);
-        return;
-    }
-
-    _gamepad = new QGamepad(*gamepads.begin(), this);
-
-    connect(_gamepad, &QGamepad::axisLeftXChanged, this, [this](double value) {
-        if (value < -DEADZONE)
-        {
-            inputKeyPress(NIN_BUTTON_LEFT);
-            inputKeyRelease(NIN_BUTTON_RIGHT);
-        }
-        else if (value > DEADZONE)
-        {
-            inputKeyRelease(NIN_BUTTON_LEFT);
-            inputKeyPress(NIN_BUTTON_RIGHT);
-        }
-        else
-        {
-            inputKeyRelease(NIN_BUTTON_LEFT);
-            inputKeyRelease(NIN_BUTTON_RIGHT);
-        }
-    });
-
-    connect(_gamepad, &QGamepad::axisLeftYChanged, this, [this](double value) {
-        if (value < -DEADZONE)
-        {
-            inputKeyRelease(NIN_BUTTON_DOWN);
-            inputKeyPress(NIN_BUTTON_UP);
-        }
-        else if (value > DEADZONE)
-        {
-            inputKeyPress(NIN_BUTTON_DOWN);
-            inputKeyRelease(NIN_BUTTON_UP);
-        }
-        else
-        {
-            inputKeyRelease(NIN_BUTTON_DOWN);
-            inputKeyRelease(NIN_BUTTON_UP);
-        }
-    });
-
-    connect(_gamepad, &QGamepad::buttonAChanged, this, [this](bool pressed) {
-        if (pressed)
-            inputKeyPress(NIN_BUTTON_A);
-        else
-            inputKeyRelease(NIN_BUTTON_A);
-    });
-    connect(_gamepad, &QGamepad::buttonXChanged, this, [this](bool pressed) {
-        if (pressed)
-            inputKeyPress(NIN_BUTTON_B);
-        else
-            inputKeyRelease(NIN_BUTTON_B);
-    });
-    connect(_gamepad, &QGamepad::buttonStartChanged, this, [this](bool pressed) {
-        if (pressed)
-            inputKeyPress(NIN_BUTTON_START);
-        else
-            inputKeyRelease(NIN_BUTTON_START);
-    });
-    connect(_gamepad, &QGamepad::buttonSelectChanged, this, [this](bool pressed) {
-        if (pressed)
-            inputKeyPress(NIN_BUTTON_SELECT);
-        else
-            inputKeyRelease(NIN_BUTTON_SELECT);
-    });
+    emit emu->audio(samples);
 }

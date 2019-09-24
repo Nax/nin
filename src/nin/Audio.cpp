@@ -1,7 +1,8 @@
 #include <nin/nin.h>
 #include "Audio.h"
 
-Audio::Audio()
+Audio::Audio(QObject* parent)
+: QObject(parent)
 {
     _device = alcOpenDevice(nullptr);
     _context = alcCreateContext(_device, nullptr);

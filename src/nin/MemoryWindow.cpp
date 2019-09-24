@@ -1,10 +1,8 @@
 #include <QVboxLayout>
 #include "MemoryWindow.h"
-#include "Emulator.h"
 
-MemoryWindow::MemoryWindow(Emulator& emu, QWidget* parent)
+MemoryWindow::MemoryWindow(QWidget* parent)
 : QWidget(parent, Qt::Window)
-, _emu(emu)
 {
     QVBoxLayout* layout;
 
@@ -18,8 +16,6 @@ MemoryWindow::MemoryWindow(Emulator& emu, QWidget* parent)
     _hexView->repaint();
 
     layout->addWidget(_hexView);
-
-    connect(&emu, SIGNAL(gameUpdate(NinState*)), this, SLOT(refresh(NinState*)));
 }
 
 MemoryWindow::~MemoryWindow()

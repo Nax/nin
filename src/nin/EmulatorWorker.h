@@ -1,5 +1,5 @@
-#ifndef EMULATOR_H
-#define EMULATOR_H
+#ifndef EMULATOR_WORKER_H
+#define EMULATOR_WORKER_H
 
 #include <atomic>
 #include <thread>
@@ -8,18 +8,15 @@
 #include <chrono>
 #include <QObject>
 #include <QString>
-#include <QGamepad>
 #include <nin/nin.h>
 
-class MainWindow;
-class Audio;
-class Emulator : public QObject
+class EmulatorWorker : public QObject
 {
     Q_OBJECT;
 
 public:
-    Emulator();
-    virtual ~Emulator();
+    explicit EmulatorWorker(QObject* parent = nullptr);
+    virtual ~EmulatorWorker();
 
     void loadRom(const QString& path);
     void closeRom();
@@ -30,14 +27,18 @@ public:
     void inputKeyPress(uint8_t key);
     void inputKeyRelease(uint8_t key);
 
+signals:
+    void frame(const char* texture);
+    void audio(const int16_t* samples);
+    void update(NinState* state);
+
 private:
     void workerMain();
     void workerUpdate();
 
     void closeRomRaw();
-    void setupGamepad();
 
-    static void audioCallback(Emulator* emu, const int16_t* samples);
+    static void audioCallback(EmulatorWorker* emu, const int16_t* samples);
 
     enum class WorkerState
     {
@@ -64,10 +65,6 @@ private:
     std::atomic_uint64_t        _accumulator;
 
     NinState*   _state;
-
-    MainWindow* _mainWindow;
-    Audio*      _audio;
-    QGamepad*   _gamepad;
 };
 
 #endif

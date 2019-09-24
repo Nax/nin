@@ -4,16 +4,18 @@
 #include <cstdint>
 #include <QMainWindow>
 #include <QPointer>
+#include <QGamepad>
+
 #include "RenderWidget.h"
 #include "MemoryWindow.h"
 
-class Emulator;
+class EmulatorWorker;
+class Audio;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT;
 public:
-    explicit MainWindow(Emulator& emu, QWidget* parent = nullptr);
-    virtual ~MainWindow();
+    explicit MainWindow(QWidget* parent = nullptr);
 
     virtual void keyPressEvent(QKeyEvent* event) override;
     virtual void keyReleaseEvent(QKeyEvent* event) override;
@@ -27,9 +29,13 @@ private slots:
 private:
     void createActions();
     void createMenus();
+    void setupGamepad();
 
-    Emulator&       _emu;
+    EmulatorWorker* _emu;
+    Audio*          _audio;
     RenderWidget*   _render;
+
+    QGamepad*   _gamepad;
 
     QAction* _openRom;
     QAction* _pauseEmulation;

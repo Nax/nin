@@ -1,9 +1,7 @@
 #include "RenderWidget.h"
-#include "Emulator.h"
 
-RenderWidget::RenderWidget(Emulator& emu, QWidget* parent)
+RenderWidget::RenderWidget(QWidget* parent)
 : QOpenGLWidget(parent)
-, _emu(emu)
 , _texture(0)
 {
     memset(_rawTexture, 0, 256 * 240 * 4);

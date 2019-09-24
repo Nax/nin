@@ -1,17 +1,22 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
+#include <QObject>
+
 #include <cstdint>
 #include <vector>
 #include <al.h>
 #include <alc.h>
 
-class Audio
+class Audio : public QObject
 {
+    Q_OBJECT;
+
 public:
-    Audio();
+    explicit Audio(QObject* parent = nullptr);
     ~Audio();
 
+public slots:
     void pushSamples(const int16_t* samples);
 
 private:
