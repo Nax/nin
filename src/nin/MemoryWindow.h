@@ -14,9 +14,8 @@ class MemoryWindow : public QWidget
 
 public:
     explicit MemoryWindow(QWidget* parent = nullptr);
-    virtual ~MemoryWindow();
 
-private slots:
+public slots:
     void refresh(NinState* state);
 
 private:

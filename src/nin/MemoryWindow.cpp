@@ -18,12 +18,6 @@ MemoryWindow::MemoryWindow(QWidget* parent)
     layout->addWidget(_hexView);
 }
 
-MemoryWindow::~MemoryWindow()
-{
-    printf("TEST\n");
-    fflush(stdout);
-}
-
 void MemoryWindow::refresh(NinState* state)
 {
     ninDumpMemory(state, _hexView->buffer(), 0, 0x10000);

@@ -112,10 +112,11 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
     }
 }
 
-void MainWindow::updateTexture(const char* texture)
+void MainWindow::closeEvent(QCloseEvent* event)
 {
-    _render->updateTexture(texture);
-    //_render->update();
+    if (!_memoryViewer.isNull())
+        _memoryViewer->close();
+    QMainWindow::closeEvent(event);
 }
 
 void MainWindow::openRom()
@@ -132,25 +133,31 @@ void MainWindow::openMemoryViewer()
 {
     MemoryWindow* win;
 
-    win = new MemoryWindow();
-    win->setAttribute(Qt::WA_DeleteOnClose);
-    win->show();
-    win->activateWindow();
+    if (_memoryViewer.isNull())
+    {
+        win = new MemoryWindow;
+        win->setAttribute(Qt::WA_DeleteOnClose);
+        connect(_emu, SIGNAL(update(NinState*)), win, SLOT(refresh(NinState*)));
+        win->show();
+        _memoryViewer = win;
+    }
+    else
+        _memoryViewer->activateWindow();
 }
 
 void MainWindow::createActions()
 {
-    _openRom = new QAction(tr("&Open ROM"), this);
+    _openRom = new QAction(tr("Open ROM"), this);
     _openRom->setShortcut(QKeySequence::Open);
     connect(_openRom, &QAction::triggered, this, &MainWindow::openRom);
 
-    _pauseEmulation = new QAction(tr("&Pause"), this);
+    _pauseEmulation = new QAction(tr("Pause"), this);
     connect(_pauseEmulation, &QAction::triggered, _emu, &EmulatorWorker::pause);
 
-    _resumeEmulation = new QAction(tr("&Resume"), this);
+    _resumeEmulation = new QAction(tr("Resume"), this);
     connect(_resumeEmulation, &QAction::triggered, _emu, &EmulatorWorker::resume);
 
-    _actionMemoryViewer = new QAction(tr("&Memory Viewer"), this);
+    _actionMemoryViewer = new QAction(tr("Memory Viewer"), this);
     connect(_actionMemoryViewer, &QAction::triggered, this, &MainWindow::openMemoryViewer);
 }
 

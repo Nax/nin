@@ -11,16 +11,17 @@
 
 class EmulatorWorker;
 class Audio;
+class MemoryWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT;
+
 public:
     explicit MainWindow(QWidget* parent = nullptr);
 
     virtual void keyPressEvent(QKeyEvent* event) override;
     virtual void keyReleaseEvent(QKeyEvent* event) override;
-
-    void updateTexture(const char* texture);
+    virtual void closeEvent(QCloseEvent* event) override;
 
 private slots:
     void openRom();
@@ -34,6 +35,8 @@ private:
     EmulatorWorker* _emu;
     Audio*          _audio;
     RenderWidget*   _render;
+
+    QPointer<MemoryWindow> _memoryViewer;
 
     QGamepad*   _gamepad;
 
