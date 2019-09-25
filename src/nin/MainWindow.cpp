@@ -193,7 +193,7 @@ void MainWindow::updateRecentFiles()
     int count;
 
     files = settings.value("recentFiles").toStringList();
-    count = qMin((int)files.size(), MaxRecentFiles);
+    count = qMin((int)files.size(), (int)MaxRecentFiles);
 
     for (int i = 0; i < count; ++i) {
         QString text = tr("&%1. %2").arg(i + 1).arg(QFileInfo(files[i]).fileName());

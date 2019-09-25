@@ -38,7 +38,7 @@ private:
 
     void openRom(const QString& filename);
 
-    static const int MaxRecentFiles = 9;
+    enum { MaxRecentFiles = 9 };
 
     EmulatorWorker* _emu;
     Audio*          _audio;
