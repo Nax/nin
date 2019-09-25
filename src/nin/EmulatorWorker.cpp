@@ -23,13 +23,14 @@ EmulatorWorker::~EmulatorWorker()
     _thread.join();
 }
 
-void EmulatorWorker::loadRom(const QString& path)
+bool EmulatorWorker::loadRom(const QString& path)
 {
     QByteArray raw;
     QString saveFile;
     NinError err;
     NinInt32 frameCycles;
     NinInt32 frameDelay;
+    bool success;
 
     std::unique_lock lock(_mutex);
 
@@ -41,6 +42,7 @@ void EmulatorWorker::loadRom(const QString& path)
         printf("Error loading rom (%d)\n", (int)err);
         fflush(stdout);
         _workerState = WorkerState::Idle;
+        success = false;
     }
     else
     {
@@ -58,10 +60,13 @@ void EmulatorWorker::loadRom(const QString& path)
         ninSetSaveFile(_state, raw.data());
         ninAudioSetCallback(_state, (NINAUDIOCALLBACK)&audioCallback, this);
         _workerState = WorkerState::Starting;
+        success = true;
     }
 
     lock.unlock();
     _cv.notify_one();
+
+    return success;
 }
 
 void EmulatorWorker::closeRom()

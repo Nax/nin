@@ -18,7 +18,7 @@ public:
     explicit EmulatorWorker(QObject* parent = nullptr);
     virtual ~EmulatorWorker();
 
-    void loadRom(const QString& path);
+    bool loadRom(const QString& path);
     void closeRom();
 
     void pause();

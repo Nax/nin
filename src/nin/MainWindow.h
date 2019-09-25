@@ -5,6 +5,7 @@
 #include <QMainWindow>
 #include <QPointer>
 #include <QGamepad>
+#include <QString>
 
 #include "RenderWidget.h"
 #include "MemoryWindow.h"
@@ -24,13 +25,20 @@ public:
     virtual void closeEvent(QCloseEvent* event) override;
 
 private slots:
-    void openRom();
+    void openFile();
+    void openRecentFile();
     void openMemoryViewer();
 
 private:
     void createActions();
     void createMenus();
+    void updateRecentFiles();
+    void addToRecentFiles(const QString& filename);
     void setupGamepad();
+
+    void openRom(const QString& filename);
+
+    static const int MaxRecentFiles = 9;
 
     EmulatorWorker* _emu;
     Audio*          _audio;
@@ -40,7 +48,9 @@ private:
 
     QGamepad*   _gamepad;
 
-    QAction* _openRom;
+    QAction* _actionOpenFile;
+    QAction* _actionOpenRecentFile[MaxRecentFiles];
+    QAction* _actionExit;
     QAction* _pauseEmulation;
     QAction* _resumeEmulation;
     QAction* _actionMemoryViewer;

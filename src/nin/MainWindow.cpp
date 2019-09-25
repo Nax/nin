@@ -1,12 +1,4 @@
-#include <QKeyEvent>
-#include <QAction>
-#include <QMenuBar>
-#include <QMenu>
-#include <QFileDialog>
-#include <QByteArray>
-#include <QLayout>
-#include <QApplication>
-
+#include <QtWidgets>
 #include <nin/nin.h>
 
 #include "MainWindow.h"
@@ -35,6 +27,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     createActions();
     createMenus();
+    updateRecentFiles();
 
     layout()->update();
     layout()->activate();
@@ -119,14 +112,17 @@ void MainWindow::closeEvent(QCloseEvent* event)
     QMainWindow::closeEvent(event);
 }
 
-void MainWindow::openRom()
+void MainWindow::openFile()
 {
-    QString filename = QFileDialog::getOpenFileName(this, tr("&Open ROM"), "", "*.nes");
-    if (!filename.isEmpty())
-    {
-        QByteArray rawFilename = filename.toUtf8();
-        _emu->loadRom(rawFilename.data());
-    }
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open ROM"), "", "*.nes");
+    openRom(filename);
+}
+
+void MainWindow::openRecentFile()
+{
+    QAction* action = qobject_cast<QAction*>(sender());
+    if (action)
+        openRom(action->data().toString());
 }
 
 void MainWindow::openMemoryViewer()
@@ -147,9 +143,20 @@ void MainWindow::openMemoryViewer()
 
 void MainWindow::createActions()
 {
-    _openRom = new QAction(tr("Open ROM"), this);
-    _openRom->setShortcut(QKeySequence::Open);
-    connect(_openRom, &QAction::triggered, this, &MainWindow::openRom);
+    _actionOpenFile = new QAction(tr("&Open..."), this);
+    _actionOpenFile->setShortcut(QKeySequence::Open);
+    connect(_actionOpenFile, &QAction::triggered, this, &MainWindow::openFile);
+
+    for (size_t i = 0; i < MaxRecentFiles; ++i)
+    {
+        _actionOpenRecentFile[i] = new QAction(this);
+        _actionOpenRecentFile[i]->setVisible(false);
+        connect(_actionOpenRecentFile[i], &QAction::triggered, this, &MainWindow::openRecentFile);
+    }
+
+    _actionExit = new QAction(tr("E&xit"), this);
+    _actionExit->setShortcut(QKeySequence::Quit);
+    connect(_actionExit, &QAction::triggered, this, &QWidget::close);
 
     _pauseEmulation = new QAction(tr("Pause"), this);
     connect(_pauseEmulation, &QAction::triggered, _emu, &EmulatorWorker::pause);
@@ -164,7 +171,12 @@ void MainWindow::createActions()
 void MainWindow::createMenus()
 {
     _fileMenu = menuBar()->addMenu(tr("&File"));
-    _fileMenu->addAction(_openRom);
+    _fileMenu->addAction(_actionOpenFile);
+    _fileMenu->addSeparator();
+    for (size_t i = 0; i < MaxRecentFiles; ++i)
+        _fileMenu->addAction(_actionOpenRecentFile[i]);
+    _fileMenu->addSeparator();
+    _fileMenu->addAction(_actionExit);
 
     _emulationMenu = menuBar()->addMenu(tr("&Emulation"));
     _emulationMenu->addAction(_pauseEmulation);
@@ -172,6 +184,38 @@ void MainWindow::createMenus()
 
     _windowMenu = menuBar()->addMenu(tr("&Window"));
     _windowMenu->addAction(_actionMemoryViewer);
+}
+
+void MainWindow::updateRecentFiles()
+{
+    QSettings settings;
+    QStringList files;
+    int count;
+
+    files = settings.value("recentFiles").toStringList();
+    count = qMin((int)files.size(), MaxRecentFiles);
+
+    for (int i = 0; i < count; ++i) {
+        QString text = tr("&%1. %2").arg(i + 1).arg(QFileInfo(files[i]).fileName());
+        _actionOpenRecentFile[i]->setText(text);
+        _actionOpenRecentFile[i]->setData(files[i]);
+        _actionOpenRecentFile[i]->setVisible(true);
+    }
+}
+
+void MainWindow::addToRecentFiles(const QString& filename)
+{
+    QSettings settings;
+    QStringList files;
+
+    files = settings.value("recentFiles").toStringList();
+    files.removeAll(filename);
+    files.prepend(filename);
+    while (files.size() > MaxRecentFiles)
+        files.removeLast();
+
+    settings.setValue("recentFiles", files);
+    updateRecentFiles();
 }
 
 void MainWindow::setupGamepad()
@@ -251,4 +295,14 @@ void MainWindow::setupGamepad()
         else
             _emu->inputKeyRelease(NIN_BUTTON_SELECT);
     });
+}
+
+void MainWindow::openRom(const QString& filename)
+{
+    if (!filename.isEmpty())
+    {
+        QByteArray rawFilename = filename.toUtf8();
+        if (_emu->loadRom(rawFilename.data()))
+            addToRecentFiles(filename);
+    }
 }
