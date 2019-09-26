@@ -6,6 +6,7 @@
 #include "Audio.h"
 #include "RenderWidget.h"
 #include "MemoryWindow.h"
+#include "AudioVisualizerWindow.h"
 
 #define DEADZONE (0.30)
 
@@ -107,8 +108,10 @@ void MainWindow::keyReleaseEvent(QKeyEvent* event)
 
 void MainWindow::closeEvent(QCloseEvent* event)
 {
-    if (!_memoryViewer.isNull())
-        _memoryViewer->close();
+    if (!_windowMemoryViewer.isNull())
+        _windowMemoryViewer->close();
+    if (!_windowAudioVisualizer.isNull())
+        _windowAudioVisualizer->close();
     QMainWindow::closeEvent(event);
 }
 
@@ -125,20 +128,36 @@ void MainWindow::openRecentFile()
         openRom(action->data().toString());
 }
 
-void MainWindow::openMemoryViewer()
+void MainWindow::openWindowMemoryViewer()
 {
     MemoryWindow* win;
 
-    if (_memoryViewer.isNull())
+    if (_windowMemoryViewer.isNull())
     {
         win = new MemoryWindow;
         win->setAttribute(Qt::WA_DeleteOnClose);
         connect(_emu, SIGNAL(update(NinState*)), win, SLOT(refresh(NinState*)));
         win->show();
-        _memoryViewer = win;
+        _windowMemoryViewer = win;
     }
     else
-        _memoryViewer->activateWindow();
+        _windowMemoryViewer->activateWindow();
+}
+
+void MainWindow::openWindowAudioVisualizer()
+{
+    AudioVisualizerWindow* win;
+
+    if (_windowAudioVisualizer.isNull())
+    {
+        win = new AudioVisualizerWindow;
+        win->setAttribute(Qt::WA_DeleteOnClose);
+        connect(_emu, SIGNAL(audio(const int16_t*)), win, SLOT(refresh(const int16_t*)));
+        win->show();
+        _windowAudioVisualizer = win;
+    }
+    else
+        _windowAudioVisualizer->activateWindow();
 }
 
 void MainWindow::createActions()
@@ -165,7 +184,11 @@ void MainWindow::createActions()
     connect(_resumeEmulation, &QAction::triggered, _emu, &EmulatorWorker::resume);
 
     _actionMemoryViewer = new QAction(tr("Memory Viewer"), this);
-    connect(_actionMemoryViewer, &QAction::triggered, this, &MainWindow::openMemoryViewer);
+    connect(_actionMemoryViewer, &QAction::triggered, this, &MainWindow::openWindowMemoryViewer);
+
+    _actionAudioVisualizer = new QAction(tr("Audio Visualizer"), this);
+    connect(_actionAudioVisualizer, &QAction::triggered, this, &MainWindow::openWindowAudioVisualizer);
+
 }
 
 void MainWindow::createMenus()
@@ -184,6 +207,7 @@ void MainWindow::createMenus()
 
     _windowMenu = menuBar()->addMenu(tr("&Window"));
     _windowMenu->addAction(_actionMemoryViewer);
+    _windowMenu->addAction(_actionAudioVisualizer);
 }
 
 void MainWindow::updateRecentFiles()

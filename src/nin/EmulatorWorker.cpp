@@ -87,6 +87,7 @@ void EmulatorWorker::pause()
     if (_workerState == WorkerState::Running)
     {
         _workerState = WorkerState::Paused;
+        emit update(_state);
         lock.unlock();
         _cv.notify_one();
     }
@@ -170,9 +171,9 @@ void EmulatorWorker::workerUpdate()
     if (ninRunCycles(_state, _frameCycles / 4 - cyc, &cyc))
     {
         emit frame((const char*)ninGetScreenBuffer(_state));
+        emit update(_state);
     }
     _cyc = cyc;
-    emit update(_state);
 }
 
 void EmulatorWorker::closeRomRaw()

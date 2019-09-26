@@ -13,6 +13,7 @@
 class EmulatorWorker;
 class Audio;
 class MemoryWindow;
+class AudioVisualizerWindow;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT;
@@ -27,7 +28,9 @@ public:
 private slots:
     void openFile();
     void openRecentFile();
-    void openMemoryViewer();
+
+    void openWindowMemoryViewer();
+    void openWindowAudioVisualizer();
 
 private:
     void createActions();
@@ -44,7 +47,8 @@ private:
     Audio*          _audio;
     RenderWidget*   _render;
 
-    QPointer<MemoryWindow> _memoryViewer;
+    QPointer<MemoryWindow>              _windowMemoryViewer;
+    QPointer<AudioVisualizerWindow>     _windowAudioVisualizer;
 
     QGamepad*   _gamepad;
 
@@ -54,6 +58,7 @@ private:
     QAction* _pauseEmulation;
     QAction* _resumeEmulation;
     QAction* _actionMemoryViewer;
+    QAction* _actionAudioVisualizer;
 
     QMenu* _fileMenu;
     QMenu* _emulationMenu;
