@@ -199,6 +199,12 @@ static float ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t no
     float fPulse;
     float fTND;
 
+    //triangle = 0;
+    //pulse1 = 0;
+    //pulse2 = 0;
+    //dmc = 0;
+    //noise = 0;
+
     if (pulse1 || pulse2)
     {
         fPulse = 95.88f / ((8128.f / ((float)pulse1 + (float)pulse2)) + 100.f);
@@ -333,7 +339,7 @@ uint8_t samplePulse(NinState* state, unsigned c)
     NinChannelPulse* channel;
 
     channel = &APU.pulse[c];
-    if (!channel->enabled || channel->timerValue < 8 || !channel->length || channel->sweepTarget >= 0x800)
+    if (!channel->enabled || channel->timerPeriod < 8 || !channel->length || channel->sweepTarget >= 0x800)
         return 0;
     return (channel->duty & (1 << channel->seqIndex)) ? sampleEnvelope(&channel->envelope) : 0;
 }

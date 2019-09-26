@@ -1,6 +1,8 @@
 #include <math.h>
 #include <libnin/libnin.h>
 
+#define DOWNSAMPLE_QUALITY 3
+
 #ifndef PI
 # define PI (3.141592653589793)
 #endif
@@ -16,11 +18,11 @@ static double hyperbolicFactor(double x)
 
     if (x < 0.0)
         x = -x;
-    if (x > 3.0)
+    if (x > (double)DOWNSAMPLE_QUALITY)
         return 0.0;
 
     pix = PI * x;
-    return sinc(pix) * sinc(pix / 3.0);
+    return sinc(pix) * sinc(pix / (double)DOWNSAMPLE_QUALITY);
 }
 
 NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
@@ -33,7 +35,7 @@ NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
     float tmp;
 
     hyperbolicStep = 48000.0 / (double)freq;
-    windowBranchLen = (uint8_t)round(3.0 / hyperbolicStep);
+    windowBranchLen = (uint8_t)round((double)DOWNSAMPLE_QUALITY / hyperbolicStep);
     acc = 0;
     for (uint8_t i = 1; i <= windowBranchLen; ++i)
     {
@@ -87,6 +89,8 @@ NIN_API void ninAudioPushSample(NinState* state, float sample)
         acc /= audio->windowSum;
 
         audio->samplesDst[audio->samplesCursorDst++] = (int16_t)(acc * 30000.f);
+        // DEBUG
+        //audio->samplesDst[audio->samplesCursorDst++] = (int16_t)(sample * 30000.f);
         if (audio->samplesCursorDst >= AUDIO_BUFFER_SIZE_TARGET)
         {
             audio->samplesCursorDst = 0;
