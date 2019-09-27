@@ -88,7 +88,7 @@ NIN_API void ninAudioPushSample(NinState* state, float sample)
         }
         acc /= audio->windowSum;
 
-        audio->samplesDst[audio->samplesCursorDst++] = (int16_t)(acc * 30000.f);
+        audio->samplesDst[audio->samplesCursorDst++] = (int16_t)(acc * 32000.f);
         // DEBUG
         //audio->samplesDst[audio->samplesCursorDst++] = (int16_t)(sample * 30000.f);
         if (audio->samplesCursorDst >= AUDIO_BUFFER_SIZE_TARGET)

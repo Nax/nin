@@ -2,6 +2,7 @@
 
 AudioVisualizer::AudioVisualizer(QWidget* parent)
 : QOpenGLWidget(parent)
+, _dirty(false)
 {
     memset(_samples, 0, 1024 * 2);
     setMinimumSize(512, 64);
@@ -31,6 +32,7 @@ void AudioVisualizer::paintGL()
             sample = ((float)_samples[i]) / 32768.f;
             glVertex2f(x, sample);
         }
+        _dirty = false;
     }
     glEnd();
 }
@@ -46,5 +48,9 @@ void AudioVisualizer::pushSamples(const int16_t* samples)
 {
     std::unique_lock lock(_mutex);
 
-    memcpy(_samples, samples, 2048);
+    if (!_dirty)
+    {
+        memcpy(_samples, samples, 2048);
+        _dirty = true;
+    }
 }

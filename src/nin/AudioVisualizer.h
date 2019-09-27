@@ -22,6 +22,7 @@ public:
 private:
     std::mutex      _mutex;
     int16_t         _samples[1024];
+    bool            _dirty;
 };
 
 #endif

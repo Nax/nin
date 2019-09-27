@@ -498,10 +498,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
  
 
         /* Load the triangle sample */
-        if (state->apu.triangle.enabled && state->apu.triangle.timerPeriod >= 2)
-            triangleSample = kTriangleSequence[state->apu.triangle.seqIndex];
-        else
-            triangleSample = 0;
+        triangleSample = kTriangleSequence[state->apu.triangle.seqIndex];
         pulseSample[0] = samplePulse(state, 0);
         pulseSample[1] = samplePulse(state, 1);
         noiseSample = sampleNoise(state);
