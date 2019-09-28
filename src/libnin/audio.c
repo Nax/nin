@@ -36,12 +36,12 @@ static float filterDC(NinState* state, float v)
     float tmp;
 
     tmp = v - audio->dcMean;
-    audio->dcMean = lerp(audio->dcMean, v, 1e-5f);
+    audio->dcMean = lerp(audio->dcMean, v, 4e-5f);
 
     return tmp;
 }
 
-NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
+static void ninAudioComputeCoefficients(NinState* state)
 {
     NinAudio* audio = &state->audio;
 
@@ -50,7 +50,10 @@ NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
     double acc;
     float tmp;
 
-    hyperbolicStep = 48000.0 / (double)freq;
+    if (!audio->dividerNum || !audio->dividerDen)
+        return;
+
+    hyperbolicStep = (double)audio->dividerNum / (double)audio->dividerDen;
     windowBranchLen = (uint8_t)round((double)DOWNSAMPLE_QUALITY / hyperbolicStep);
     acc = 0;
     for (uint8_t i = 1; i <= windowBranchLen; ++i)
@@ -65,8 +68,22 @@ NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
 
     audio->windowSize = windowBranchLen * 2 + 1;
     audio->windowSum = (float)acc;
-    audio->dividerNum = 48000;
+}
+
+NIN_API void ninAudioSetFrequency(NinState* state, uint32_t freq)
+{
+    NinAudio* audio = &state->audio;
+
+    audio->dividerNum = freq;
+    ninAudioComputeCoefficients(state);
+}
+
+NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
+{
+    NinAudio* audio = &state->audio;
+
     audio->dividerDen = freq;
+    ninAudioComputeCoefficients(state);
 }
 
 NIN_API void ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg)

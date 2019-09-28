@@ -27,6 +27,8 @@ public:
     void inputKeyPress(uint8_t key);
     void inputKeyRelease(uint8_t key);
 
+    void setAudioFrequency(uint32_t freq);
+
 signals:
     void frame(const char* texture);
     void audio(const float* samples);
@@ -63,6 +65,8 @@ private:
     std::atomic_size_t          _cyc;
     std::atomic_uint8_t         _input;
     std::atomic_uint64_t        _accumulator;
+
+    std::atomic_uint32_t        _audioFrequency;
 
     NinState*   _state;
 };

@@ -15,7 +15,9 @@ class Audio : public QObject
 
 public:
     explicit Audio(QObject* parent = nullptr);
-    ~Audio();
+    virtual ~Audio();
+
+    uint32_t frequency() const;
 
 public slots:
     void pushSamples(const float* samples);
@@ -27,6 +29,7 @@ private:
     ALCcontext*         _context;
     ALuint              _source;
     std::vector<ALuint> _buffers;
+    uint32_t            _frequency;
 };
 
 #endif

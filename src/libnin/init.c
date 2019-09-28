@@ -6,8 +6,6 @@ static void initCPU(NinState* state)
     state->cpu.pc = ninMemoryRead16(state, 0xfffc);
     state->cpu.regs[REG_S] = 0xfd;
     state->cyc = 7;
-    state->apu.noise.feedback = 1;
-    state->apu.dmc.address = 0x8000;
 }
 
 NIN_API NinError ninCreateState(NinState** dst, const char* path)
@@ -22,6 +20,10 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     state->vram = zalloc(VRAM_SIZE);
     state->palettes = zalloc(0x20);
     state->oam = zalloc(256);
+
+    state->apu.noise.feedback = 1;
+    state->apu.dmc.address = 0x8000;
+    state->audio.dividerNum = 48000;
 
     if ((err = ninLoadRom(state, path)) != NIN_OK)
     {

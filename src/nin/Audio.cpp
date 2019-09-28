@@ -4,9 +4,15 @@
 Audio::Audio(QObject* parent)
 : QObject(parent)
 {
+    ALCint nativeFrequency;
+
     _device = alcOpenDevice(nullptr);
     _context = alcCreateContext(_device, nullptr);
     alcMakeContextCurrent(_context);
+
+    alcGetIntegerv(_device, ALC_FREQUENCY, 1, &nativeFrequency);
+    _frequency = nativeFrequency;
+
     _buffers.resize(kBufferCount);
     alGenBuffers(kBufferCount, _buffers.data());
     alGenSources(1, &_source);
@@ -19,6 +25,11 @@ Audio::~Audio()
     alcMakeContextCurrent(nullptr);
     alcDestroyContext(_context);
     alcCloseDevice(_device);
+}
+
+uint32_t Audio::frequency() const
+{
+    return _frequency;
 }
 
 void Audio::pushSamples(const float* samples)
@@ -44,7 +55,7 @@ void Audio::pushSamples(const float* samples)
     buffer = _buffers.back();
     _buffers.pop_back();
 
-    alBufferData(buffer, AL_FORMAT_MONO_FLOAT32, samples, NIN_AUDIO_SAMPLE_SIZE * sizeof(*samples), 48000);
+    alBufferData(buffer, AL_FORMAT_MONO_FLOAT32, samples, NIN_AUDIO_SAMPLE_SIZE * sizeof(*samples), _frequency);
     alSourceQueueBuffers(_source, 1, &buffer);
     alGetSourcei(_source, AL_SOURCE_STATE, &attr);
     if (attr != AL_PLAYING)

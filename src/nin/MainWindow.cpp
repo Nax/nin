@@ -17,8 +17,9 @@ MainWindow::MainWindow(QWidget* parent)
     int dx;
     int dy;
 
-    _emu = new EmulatorWorker(this);
     _audio = new Audio(this);
+    _emu = new EmulatorWorker(this);
+    _emu->setAudioFrequency(/*_audio->frequency()*/ 48000);
 
     setWindowTitle("Nin " NIN_VERSION);
 

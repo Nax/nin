@@ -57,6 +57,7 @@ NIN_API void            ninDestroyState(NinState* state);
 NIN_API int             ninRunCycles(NinState* state, size_t cycles, size_t* cyc);
 NIN_API const uint32_t* ninGetScreenBuffer(NinState* state);
 NIN_API void            ninSetInput(NinState* state, uint8_t input);
+NIN_API void            ninAudioSetFrequency(NinState* state, uint32_t frequency);
 NIN_API void            ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg);
 NIN_API void            ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len);
 

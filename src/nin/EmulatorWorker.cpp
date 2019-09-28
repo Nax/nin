@@ -8,6 +8,7 @@ EmulatorWorker::EmulatorWorker(QObject* parent)
 , _state(nullptr)
 , _workerState(WorkerState::Idle)
 , _input(0)
+, _audioFrequency(48000)
 {
     _thread = std::thread(&EmulatorWorker::workerMain, this);
 }
@@ -59,6 +60,7 @@ bool EmulatorWorker::loadRom(const QString& path)
         raw = saveFile.toUtf8();
         ninSetSaveFile(_state, raw.data());
         ninAudioSetCallback(_state, &audioCallback, this);
+        ninAudioSetFrequency(_state, _audioFrequency);
         _workerState = WorkerState::Starting;
         success = true;
     }
@@ -113,6 +115,11 @@ void EmulatorWorker::inputKeyPress(uint8_t key)
 void EmulatorWorker::inputKeyRelease(uint8_t key)
 {
     _input &= ~key;
+}
+
+void EmulatorWorker::setAudioFrequency(uint32_t freq)
+{
+    _audioFrequency = freq;
 }
 
 void EmulatorWorker::workerMain()
