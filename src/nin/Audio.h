@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <vector>
 #include <al.h>
+#include <alext.h>
 #include <alc.h>
 
 class Audio : public QObject
@@ -17,7 +18,7 @@ public:
     ~Audio();
 
 public slots:
-    void pushSamples(const int16_t* samples);
+    void pushSamples(const float* samples);
 
 private:
     static const unsigned kBufferCount = 4;

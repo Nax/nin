@@ -29,7 +29,7 @@ public:
 
 signals:
     void frame(const char* texture);
-    void audio(const int16_t* samples);
+    void audio(const float* samples);
     void update(NinState* state);
 
 private:
@@ -38,7 +38,7 @@ private:
 
     void closeRomRaw();
 
-    static void audioCallback(EmulatorWorker* emu, const int16_t* samples);
+    static void audioCallback(void* emu, const float* samples);
 
     enum class WorkerState
     {

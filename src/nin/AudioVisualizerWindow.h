@@ -7,7 +7,7 @@
 #include <nin/nin.h>
 #include "HexView.h"
 
-class AudioVisualizer;
+class SignalVisualizer;
 class AudioVisualizerWindow : public QWidget
 {
     Q_OBJECT;
@@ -16,10 +16,11 @@ public:
     explicit AudioVisualizerWindow(QWidget* parent = nullptr);
 
 public slots:
-    void refresh(const int16_t* samples);
+    void refresh(const float* samples);
 
 private:
-    AudioVisualizer* _audioVisualizer;
+    SignalVisualizer* _timeDomainVisualizer;
+    SignalVisualizer* _freqDomainVisualizer;
 };
 
 #endif

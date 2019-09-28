@@ -58,7 +58,7 @@ bool EmulatorWorker::loadRom(const QString& path)
         saveFile = info.path() + "/" + info.completeBaseName() + ".sav";
         raw = saveFile.toUtf8();
         ninSetSaveFile(_state, raw.data());
-        ninAudioSetCallback(_state, (NINAUDIOCALLBACK)&audioCallback, this);
+        ninAudioSetCallback(_state, &audioCallback, this);
         _workerState = WorkerState::Starting;
         success = true;
     }
@@ -185,7 +185,7 @@ void EmulatorWorker::closeRomRaw()
     }
 }
 
-void EmulatorWorker::audioCallback(EmulatorWorker* emu, const int16_t* samples)
+void EmulatorWorker::audioCallback(void* emu, const float* samples)
 {
-    emit emu->audio(samples);
+    emit ((EmulatorWorker*)emu)->audio(samples);
 }

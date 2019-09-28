@@ -21,7 +21,7 @@ typedef enum {
 } NinError;
 
 typedef struct NinState_ NinState;
-typedef void (*NINAUDIOCALLBACK)(void*, const int16_t*);
+typedef void (*NINAUDIOCALLBACK)(void*, const float*);
 
 #define NIN_AUDIO_SAMPLE_SIZE   1024
 

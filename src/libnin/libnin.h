@@ -251,11 +251,12 @@ typedef struct {
 } NinAPU;
 
 typedef struct {
+    float               dcMean;
     uint8_t             windowSize;
     float               windowSum;
     float               hyperbolicFactors[AUDIO_BUFFER_SIZE_TARGET];
     float               samplesSrc[AUDIO_BUFFER_SIZE_TARGET];
-    int16_t             samplesDst[AUDIO_BUFFER_SIZE_TARGET];
+    float               samplesDst[AUDIO_BUFFER_SIZE_TARGET];
     uint16_t            samplesCursorSrc;
     uint16_t            samplesCursorDst;
     uint32_t            dividerNum;
@@ -291,12 +292,10 @@ struct NinState_ {
     uint8_t             controllerLatch;
     uint32_t*           backBuffer;
     uint32_t*           frontBuffer;
-    float*              audioSamples;
     float               audioSampleLoLast;
     float               audioSampleHiLast[2];
     float               audioSampleHiLastRaw[2];
     uint16_t            audioSamplesCount;
-    int16_t*            audioSamplesFiltered;
     uint32_t            audioCycles;
     NinCPU              cpu;
     NinPPU              ppu;

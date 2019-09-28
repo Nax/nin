@@ -25,6 +25,22 @@ static double hyperbolicFactor(double x)
     return sinc(pix) * sinc(pix / (double)DOWNSAMPLE_QUALITY);
 }
 
+static float lerp(float a, float b, float coeff)
+{
+    return (1.f - coeff) * a + coeff * b;
+}
+
+static float filterDC(NinState* state, float v)
+{
+    NinAudio* audio = &state->audio;
+    float tmp;
+
+    tmp = v - audio->dcMean;
+    audio->dcMean = lerp(audio->dcMean, v, 1e-5f);
+
+    return tmp;
+}
+
 NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
 {
     NinAudio* audio = &state->audio;
@@ -69,7 +85,7 @@ NIN_API void ninAudioPushSample(NinState* state, float sample)
     float acc;
 
     /* We push samples into a ring buffer */
-    audio->samplesSrc[audio->samplesCursorSrc++] = sample;
+    audio->samplesSrc[audio->samplesCursorSrc++] = filterDC(state, sample);
     if (audio->samplesCursorSrc == audio->windowSize)
         audio->samplesCursorSrc = 0;
 
@@ -88,7 +104,7 @@ NIN_API void ninAudioPushSample(NinState* state, float sample)
         }
         acc /= audio->windowSum;
 
-        audio->samplesDst[audio->samplesCursorDst++] = (int16_t)(acc * 32000.f);
+        audio->samplesDst[audio->samplesCursorDst++] = acc;
         // DEBUG
         //audio->samplesDst[audio->samplesCursorDst++] = (int16_t)(sample * 30000.f);
         if (audio->samplesCursorDst >= AUDIO_BUFFER_SIZE_TARGET)

@@ -199,12 +199,6 @@ static float ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t no
     float fPulse;
     float fTND;
 
-    //triangle = 0;
-    //pulse1 = 0;
-    //pulse2 = 0;
-    //dmc = 0;
-    //noise = 0;
-
     if (pulse1 || pulse2)
     {
         fPulse = 95.88f / ((8128.f / ((float)pulse1 + (float)pulse2)) + 100.f);
@@ -261,6 +255,16 @@ static void triangleTick(NinState* state)
     {
         channel->timerValue--;
     }
+}
+
+static uint8_t sampleTriangle(NinState* state)
+{
+    NinChannelTriangle* channel;
+
+    channel = &APU.triangle;
+    if (channel->length && channel->linear)
+        return kTriangleSequence[channel->seqIndex];
+    return 0;
 }
 
 static void envelopeTick(NinEnvelope* ev)
@@ -498,7 +502,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
  
 
         /* Load the triangle sample */
-        triangleSample = kTriangleSequence[state->apu.triangle.seqIndex];
+        triangleSample = sampleTriangle(state);
         pulseSample[0] = samplePulse(state, 0);
         pulseSample[1] = samplePulse(state, 1);
         noiseSample = sampleNoise(state);

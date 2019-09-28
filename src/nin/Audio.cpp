@@ -21,7 +21,7 @@ Audio::~Audio()
     alcCloseDevice(_device);
 }
 
-void Audio::pushSamples(const int16_t* samples)
+void Audio::pushSamples(const float* samples)
 {
     ALuint buffer;
     ALint attr;
@@ -44,7 +44,7 @@ void Audio::pushSamples(const int16_t* samples)
     buffer = _buffers.back();
     _buffers.pop_back();
 
-    alBufferData(buffer, AL_FORMAT_MONO16, samples, NIN_AUDIO_SAMPLE_SIZE * 2, 48000);
+    alBufferData(buffer, AL_FORMAT_MONO_FLOAT32, samples, NIN_AUDIO_SAMPLE_SIZE * sizeof(*samples), 48000);
     alSourceQueueBuffers(_source, 1, &buffer);
     alGetSourcei(_source, AL_SOURCE_STATE, &attr);
     if (attr != AL_PLAYING)

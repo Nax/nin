@@ -152,7 +152,7 @@ void MainWindow::openWindowAudioVisualizer()
     {
         win = new AudioVisualizerWindow;
         win->setAttribute(Qt::WA_DeleteOnClose);
-        connect(_emu, SIGNAL(audio(const int16_t*)), win, SLOT(refresh(const int16_t*)));
+        connect(_emu, &EmulatorWorker::audio, win, &AudioVisualizerWindow::refresh, Qt::DirectConnection);
         win->show();
         _windowAudioVisualizer = win;
     }

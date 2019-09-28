@@ -50,9 +50,7 @@ void RenderWidget::paintGL()
 
 void RenderWidget::resizeGL(int w, int h)
 {
-    (void)w;
-    (void)h;
-    glViewport(-1, -1, 1, 1);
+
 }
 
 void RenderWidget::updateTexture(const char* texture)
