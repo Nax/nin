@@ -24,6 +24,7 @@ typedef struct NinState_ NinState;
 typedef void (*NINAUDIOCALLBACK)(void*, const float*);
 
 #define NIN_AUDIO_SAMPLE_SIZE   1024
+#define NIN_FRAME_SIZE          (256 * 240 * 4)
 
 #define NIN_BUTTON_A        0x01
 #define NIN_BUTTON_B        0x02

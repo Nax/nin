@@ -37,6 +37,7 @@ MainWindow::MainWindow(QWidget* parent)
     dy = size().height() - _render->size().height();
     resize(256 * scale + dx, 240 * scale + dy);
 
+    connect(_emu, &EmulatorWorker::reset, _audio, &Audio::reset, Qt::DirectConnection);
     connect(_emu, &EmulatorWorker::audio, _audio, &Audio::pushSamples, Qt::DirectConnection);
     connect(_emu, &EmulatorWorker::frame, _render, &RenderWidget::updateTexture, Qt::DirectConnection);
 

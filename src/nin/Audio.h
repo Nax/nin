@@ -20,16 +20,20 @@ public:
     uint32_t frequency() const;
 
 public slots:
+    void reset();
     void pushSamples(const float* samples);
 
 private:
     static const unsigned kBufferCount = 4;
+
+    void adjustDrift(int numBuf);
 
     ALCdevice*          _device;
     ALCcontext*         _context;
     ALuint              _source;
     std::vector<ALuint> _buffers;
     uint32_t            _frequency;
+    double              _playbackDrift;
 };
 
 #endif

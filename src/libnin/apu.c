@@ -245,7 +245,7 @@ static void triangleTick(NinState* state)
     if (channel->timerValue == 0)
     {
         channel->timerValue = channel->timerPeriod;
-        if (channel->length && channel->linear)
+        if (channel->length && channel->linear && channel->timerPeriod > 2)
         {
             channel->seqIndex++;
             channel->seqIndex &= 0x1f;
@@ -262,9 +262,7 @@ static uint8_t sampleTriangle(NinState* state)
     NinChannelTriangle* channel;
 
     channel = &APU.triangle;
-    if (channel->length && channel->linear)
-        return kTriangleSequence[channel->seqIndex];
-    return 0;
+    return kTriangleSequence[channel->seqIndex];
 }
 
 static void envelopeTick(NinEnvelope* ev)
@@ -419,21 +417,6 @@ static void dmcTick(NinState* state)
         ch->bitCount = 8;
         ch->address++;
     }
-}
-
-static float ninLoPass(NinState* state, float sample, float coeff, float gain)
-{
-    float newSample;
-    float a1;
-    float b0;
-
-    a1 = coeff;
-    b0 = gain * (1.f - a1);
-
-    newSample = b0 * sample + a1 * state->audioSampleLoLast;
-    state->audioSampleLoLast = newSample;
-
-    return newSample;
 }
 
 static float ninHiPass(NinState* state, float sample, unsigned index, float coeff, float gain)

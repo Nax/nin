@@ -41,11 +41,26 @@ static float filterDC(NinState* state, float v)
     return tmp;
 }
 
+static float ninAudioLoPass(NinState* state, float sample, float coeff, float gain)
+{
+    float newSample;
+    float a1;
+    float b0;
+
+    a1 = coeff;
+    b0 = gain * (1.f - a1);
+
+    newSample = b0 * sample + a1 * state->audioSampleLoLast;
+    state->audioSampleLoLast = newSample;
+
+    return newSample;
+}
+
 static void ninAudioComputeCoefficients(NinState* state)
 {
     NinAudio* audio = &state->audio;
 
-    uint8_t windowBranchLen;
+    uint16_t windowBranchLen;
     double hyperbolicStep;
     double acc;
     float tmp;
@@ -54,9 +69,9 @@ static void ninAudioComputeCoefficients(NinState* state)
         return;
 
     hyperbolicStep = (double)audio->dividerNum / (double)audio->dividerDen;
-    windowBranchLen = (uint8_t)round((double)DOWNSAMPLE_QUALITY / hyperbolicStep);
+    windowBranchLen = (uint16_t)round((double)DOWNSAMPLE_QUALITY / hyperbolicStep);
     acc = 0;
-    for (uint8_t i = 1; i <= windowBranchLen; ++i)
+    for (uint16_t i = 1; i <= windowBranchLen; ++i)
     {
         tmp = (float)hyperbolicFactor((double)i * hyperbolicStep);
         audio->hyperbolicFactors[windowBranchLen + i] = tmp;
@@ -102,7 +117,7 @@ NIN_API void ninAudioPushSample(NinState* state, float sample)
     float acc;
 
     /* We push samples into a ring buffer */
-    audio->samplesSrc[audio->samplesCursorSrc++] = filterDC(state, sample);
+    audio->samplesSrc[audio->samplesCursorSrc++] = filterDC(state, ninAudioLoPass(state, sample, 0.796499627f, 1.f));
     if (audio->samplesCursorSrc == audio->windowSize)
         audio->samplesCursorSrc = 0;
 

@@ -63,6 +63,7 @@ bool EmulatorWorker::loadRom(const QString& path)
         ninAudioSetFrequency(_state, _audioFrequency);
         _workerState = WorkerState::Starting;
         success = true;
+        emit reset();
     }
 
     lock.unlock();

@@ -252,7 +252,7 @@ typedef struct {
 
 typedef struct {
     float               dcMean;
-    uint8_t             windowSize;
+    uint16_t            windowSize;
     float               windowSum;
     float               hyperbolicFactors[AUDIO_BUFFER_SIZE_TARGET];
     float               samplesSrc[AUDIO_BUFFER_SIZE_TARGET];

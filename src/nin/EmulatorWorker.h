@@ -33,11 +33,11 @@ signals:
     void frame(const char* texture);
     void audio(const float* samples);
     void update(NinState* state);
+    void reset();
 
 private:
     void workerMain();
     void workerUpdate();
-
     void closeRomRaw();
 
     static void audioCallback(void* emu, const float* samples);
@@ -67,6 +67,9 @@ private:
     std::atomic_uint64_t        _accumulator;
 
     std::atomic_uint32_t        _audioFrequency;
+
+    float   _audioBuffer[NIN_AUDIO_SAMPLE_SIZE];
+    char    _frameBuffer[NIN_FRAME_SIZE];
 
     NinState*   _state;
 };
