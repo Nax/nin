@@ -46,6 +46,11 @@ typedef enum {
     NIN_INFO_CLOCK_RATE,
     NIN_INFO_FRAME_CYCLES,
     NIN_INFO_FRAME_DELAY,
+    NIN_INFO_PC,
+    NIN_INFO_REG_A,
+    NIN_INFO_REG_X,
+    NIN_INFO_REG_Y,
+    NIN_INFO_REG_S
 } NinInfo;
 
 typedef int32_t NinInt32;

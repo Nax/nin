@@ -109,6 +109,30 @@ void EmulatorWorker::resume()
     }
 }
 
+void EmulatorWorker::stepFrame()
+{
+    std::unique_lock lock(_mutex);
+
+    if (_workerState == WorkerState::Paused || _workerState == WorkerState::Running)
+    {
+        _workerState = WorkerState::StepFrame;
+        lock.unlock();
+        _cv.notify_one();
+    }
+}
+
+void EmulatorWorker::stepSingle()
+{
+    std::unique_lock lock(_mutex);
+
+    if (_workerState == WorkerState::Paused || _workerState == WorkerState::Running)
+    {
+        _workerState = WorkerState::StepSingle;
+        lock.unlock();
+        _cv.notify_one();
+    }
+}
+
 void EmulatorWorker::inputKeyPress(uint8_t key)
 {
     _input |= key;
@@ -171,6 +195,13 @@ void EmulatorWorker::workerMain()
             }
             _cv.wait_for(lock, std::chrono::nanoseconds(delay - _accumulator));
             break;
+        case WorkerState::StepFrame:
+            workerStepFrame();
+            _workerState = WorkerState::Paused;
+        case WorkerState::StepSingle:
+            workerStepSingle();
+            _workerState = WorkerState::Paused;
+            break;
         case WorkerState::Stopping:
             return;
         }
@@ -189,6 +220,34 @@ void EmulatorWorker::workerUpdate()
         emit update(_state);
     }
     _cyc = cyc;
+}
+
+void EmulatorWorker::workerStepFrame()
+{
+    size_t cyc;
+
+    ninSetInput(_state, _input);
+    for (;;)
+    {
+        if (ninRunCycles(_state, 1, &cyc))
+        {
+            emit frame((const char*)ninGetScreenBuffer(_state));
+            emit update(_state);
+            return;
+        }
+    }
+}
+
+void EmulatorWorker::workerStepSingle()
+{
+    size_t cyc;
+
+    ninSetInput(_state, _input);
+    if (ninRunCycles(_state, 1, &cyc))
+    {
+        emit frame((const char*)ninGetScreenBuffer(_state));
+    }
+    emit update(_state);
 }
 
 void EmulatorWorker::closeRomRaw()

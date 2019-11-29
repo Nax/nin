@@ -371,6 +371,7 @@ NIN_API void    ninRegionApply(NinState* state);
 /* Mapper handlers */
 NIN_API void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);

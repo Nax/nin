@@ -7,6 +7,7 @@
 #include "RenderWidget.h"
 #include "MemoryWindow.h"
 #include "AudioVisualizerWindow.h"
+#include "DebuggerWindow.h"
 
 #define DEADZONE (0.30)
 
@@ -114,6 +115,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
         _windowMemoryViewer->close();
     if (!_windowAudioVisualizer.isNull())
         _windowAudioVisualizer->close();
+    if (!_windowDebugger.isNull())
+        _windowDebugger->close();
     QMainWindow::closeEvent(event);
 }
 
@@ -162,6 +165,22 @@ void MainWindow::openWindowAudioVisualizer()
         _windowAudioVisualizer->activateWindow();
 }
 
+void MainWindow::openWindowDebugger()
+{
+    DebuggerWindow* win;
+
+    if (_windowDebugger.isNull())
+    {
+        win = new DebuggerWindow;
+        win->setAttribute(Qt::WA_DeleteOnClose);
+        connect(_emu, SIGNAL(update(NinState*)), win, SLOT(refresh(NinState*)));
+        win->show();
+        _windowDebugger = win;
+    }
+    else
+        _windowDebugger->activateWindow();
+}
+
 void MainWindow::createActions()
 {
     _actionOpenFile = new QAction(tr("&Open..."), this);
@@ -185,12 +204,20 @@ void MainWindow::createActions()
     _resumeEmulation = new QAction(tr("Resume"), this);
     connect(_resumeEmulation, &QAction::triggered, _emu, &EmulatorWorker::resume);
 
+    _actionStepFrame = new QAction(tr("Step frame"), this);
+    connect(_actionStepFrame, &QAction::triggered, _emu, &EmulatorWorker::stepFrame);
+
+    _actionStepSingle = new QAction(tr("Step single"), this);
+    connect(_actionStepSingle, &QAction::triggered, _emu, &EmulatorWorker::stepSingle);
+
     _actionMemoryViewer = new QAction(tr("Memory Viewer"), this);
     connect(_actionMemoryViewer, &QAction::triggered, this, &MainWindow::openWindowMemoryViewer);
 
     _actionAudioVisualizer = new QAction(tr("Audio Visualizer"), this);
     connect(_actionAudioVisualizer, &QAction::triggered, this, &MainWindow::openWindowAudioVisualizer);
 
+    _actionDebugger = new QAction(tr("Debugger"), this);
+    connect(_actionDebugger, &QAction::triggered, this, &MainWindow::openWindowDebugger);
 }
 
 void MainWindow::createMenus()
@@ -206,10 +233,13 @@ void MainWindow::createMenus()
     _emulationMenu = menuBar()->addMenu(tr("&Emulation"));
     _emulationMenu->addAction(_pauseEmulation);
     _emulationMenu->addAction(_resumeEmulation);
+    _emulationMenu->addAction(_actionStepFrame);
+    _emulationMenu->addAction(_actionStepSingle);
 
     _windowMenu = menuBar()->addMenu(tr("&Window"));
     _windowMenu->addAction(_actionMemoryViewer);
     _windowMenu->addAction(_actionAudioVisualizer);
+    _windowMenu->addAction(_actionDebugger);
 }
 
 void MainWindow::updateRecentFiles()

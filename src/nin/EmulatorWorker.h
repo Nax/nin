@@ -23,6 +23,8 @@ public:
 
     void pause();
     void resume();
+    void stepFrame();
+    void stepSingle();
 
     void inputKeyPress(uint8_t key);
     void inputKeyRelease(uint8_t key);
@@ -41,6 +43,8 @@ signals:
 private:
     void workerMain();
     void workerUpdate();
+    void workerStepFrame();
+    void workerStepSingle();
     void closeRomRaw();
 
     static void audioCallback(void* emu, const float* samples);
@@ -51,6 +55,8 @@ private:
         Paused,
         Starting,
         Running,
+        StepFrame,
+        StepSingle,
         Stopping
     };
 
