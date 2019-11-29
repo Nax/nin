@@ -29,9 +29,12 @@ public:
 
     void setAudioFrequency(uint32_t freq);
 
+    void syncAudio();
+
 signals:
     void frame(const char* texture);
     void audio(const float* samples);
+    void audioEvent(void);
     void update(NinState* state);
     void reset();
 
@@ -68,7 +71,9 @@ private:
 
     std::atomic_uint32_t        _audioFrequency;
 
-    float   _audioBuffer[NIN_AUDIO_SAMPLE_SIZE];
+    std::mutex  _audioMutex;
+    float       _audioBuffer[NIN_AUDIO_SAMPLE_SIZE];
+
     char    _frameBuffer[NIN_FRAME_SIZE];
 
     NinState*   _state;

@@ -10,6 +10,7 @@ EmulatorWorker::EmulatorWorker(QObject* parent)
 , _input(0)
 , _audioFrequency(48000)
 {
+    connect(this, &EmulatorWorker::audioEvent, this, &EmulatorWorker::syncAudio, Qt::QueuedConnection);
     _thread = std::thread(&EmulatorWorker::workerMain, this);
 }
 
@@ -123,6 +124,12 @@ void EmulatorWorker::setAudioFrequency(uint32_t freq)
     _audioFrequency = freq;
 }
 
+void EmulatorWorker::syncAudio()
+{
+    std::unique_lock lock(_audioMutex);
+    emit audio(_audioBuffer);
+}
+
 void EmulatorWorker::workerMain()
 {
     TimePoint prev;
@@ -193,7 +200,14 @@ void EmulatorWorker::closeRomRaw()
     }
 }
 
-void EmulatorWorker::audioCallback(void* emu, const float* samples)
+void EmulatorWorker::audioCallback(void* arg, const float* samples)
 {
-    emit ((EmulatorWorker*)emu)->audio(samples);
+    EmulatorWorker* emu;
+
+    emu = (EmulatorWorker*)arg;
+    {
+        std::unique_lock lock(emu->_audioMutex);
+        memcpy(emu->_audioBuffer, samples, sizeof(emu->_audioBuffer));
+    }
+    emit emu->audioEvent();
 }
