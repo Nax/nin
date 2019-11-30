@@ -7,6 +7,7 @@
 
 #include <nin/nin.h>
 
+class DisassemblerWidget;
 class DebuggerWindow : public QWidget
 {
     Q_OBJECT;
@@ -23,6 +24,8 @@ private:
     QSpinBox* _spinX;
     QSpinBox* _spinY;
     QSpinBox* _spinS;
+
+    DisassemblerWidget* _disasm;
 };
 
 #endif

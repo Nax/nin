@@ -11,11 +11,11 @@ cache:
 install:
   - |
     if [ "$TRAVIS_OS_NAME" = "windows" ]; then
-      if [ ! -e "C:/Qt/5.12.3" ]; then
+      if [ ! -e "C:/Qt/5.12.6" ]; then
         curl -vLO http://download.qt.io/official_releases/online_installers/qt-unified-windows-x86-online.exe;
         ./qt-unified-windows-x86-online.exe --verbose --script tools/qt-installer-windows.qs;
       fi;
-      export CMAKE_PREFIX_PATH="C:/Qt/5.12.3/msvc2017_64";
+      export CMAKE_PREFIX_PATH="C:/Qt/5.12.6/msvc2017_64";
     fi;
   - |
     if [ "$TRAVIS_OS_NAME" = "osx" ]; then

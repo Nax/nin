@@ -1,5 +1,6 @@
 #include <QtWidgets>
 #include "DebuggerWindow.h"
+#include "DisassemblerWidget.h"
 
 DebuggerWindow::DebuggerWindow(QWidget* parent)
 : QWidget(parent)
@@ -46,15 +47,21 @@ DebuggerWindow::DebuggerWindow(QWidget* parent)
     _spinS->setPrefix("0x");
     regLayout->addWidget(_spinS, 4, 1);
 
+    _disasm = new DisassemblerWidget;
+    regLayout->addWidget(_disasm, 0, 2, 5, 5);
+
     setLayout(regLayout);
     setWindowTitle("Debugger");
 }
 
 void DebuggerWindow::refresh(NinState* state)
 {
+    uint16_t pc;
+    uint8_t buffer[0x200];
     NinInt32 tmp;
 
     ninInfoQueryInteger(state, &tmp, NIN_INFO_PC);
+    pc = tmp;
     _spinPC->setValue(tmp);
 
     ninInfoQueryInteger(state, &tmp, NIN_INFO_REG_A);
@@ -68,4 +75,7 @@ void DebuggerWindow::refresh(NinState* state)
 
     ninInfoQueryInteger(state, &tmp, NIN_INFO_REG_S);
     _spinS->setValue(tmp);
+
+    ninDumpMemory(state, buffer, pc, sizeof(buffer));
+    _disasm->disassemble(pc, buffer, sizeof(buffer));
 }

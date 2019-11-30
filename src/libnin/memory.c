@@ -148,8 +148,59 @@ void ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
     ninMemoryWrite8(state, addr + 1, value >> 8);
 }
 
+static int memoryExtractOverlap(uint16_t start, size_t len, uint16_t regionStart, size_t regionLen, uint16_t* overlapOffset, size_t* overlapLen, uint16_t* overlapOffsetInDest)
+{
+    size_t offset;
+    size_t regionEnd;
+    size_t transferEnd;
+    size_t end;
+
+    /* Check for non overlapping memory regions */
+    if (start >= regionStart + regionLen)
+        return 0;
+    if (start + len < regionStart)
+        return 0;
+
+    /* Now we know that the regions DO overlap, check the first region byte that overlap */
+    if (regionStart > start)
+        offset = regionStart;
+    else
+        offset = start;
+
+    *overlapOffset = offset - regionStart;
+    regionEnd = regionStart + regionLen;
+    transferEnd = start + len;
+    end = regionEnd > transferEnd ? transferEnd : regionEnd;
+    *overlapLen = end - offset;
+    *overlapOffsetInDest = offset - start;
+
+    return 1;
+}
+
 NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)
 {
-    memset(dst, 0xff, 0x10000);
-    memcpy(dst, state->ram, RAM_SIZE);
+    uint16_t oOff;
+    size_t oLen;
+    uint16_t dOff;
+
+    /* RAM */
+    if (memoryExtractOverlap(start, len, 0x0000, 0x2000, &oOff, &oLen, &dOff))
+    {
+        memcpy(dst + dOff, state->ram + oOff, oLen);
+    }
+
+    /* 0x2000-0x7fff, not implemented */
+    if (memoryExtractOverlap(start, len, 0x2000, 0x6000, &oOff, &oLen, &dOff))
+    {
+        memset(dst + dOff, 0xff, oLen);
+    }
+
+    /* 0x8000-0xffff, cart via mapper */
+    for (int i = 0; i < 4; ++i)
+    {
+        if (memoryExtractOverlap(start, len, 0x8000 + i * 0x2000, 0x2000, &oOff, &oLen, &dOff))
+        {
+            memcpy(dst + dOff, state->prgRomBank[i] + oOff, oLen);
+        }
+    }
 }
