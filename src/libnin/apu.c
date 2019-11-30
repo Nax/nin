@@ -477,7 +477,10 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
 
         if (APU.frameCounter == state->regionData.apuFrameCycles[3 + APU.mode])
         {
-            if (APU.irq) ninSetIRQ(state, IRQ_APU_FRAME);
+            if (APU.irq)
+            {
+                ninSetIRQ(state, IRQ_APU_FRAME);
+            }
             APU.frameCounter = 0;
         }
         else

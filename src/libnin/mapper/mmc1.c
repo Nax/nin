@@ -1,48 +1,20 @@
 #include <libnin/libnin.h>
 
-static void setBank(NinState* state, uint8_t slot, uint8_t number)
-{
-    state->prgRomBank[slot] = state->prgRom + 0x4000 * number;
-}
-
-static void setBankChr(NinState* state, uint8_t slot, uint8_t number)
-{
-    uint8_t* base;
-
-    if (state->chrRam)
-        base = state->chrRam;
-    else
-        base = state->chrRom;
-    state->chrBank[slot] = base + 0x1000 * (number % state->chrBankCount);
-}
-
 static void mirroringSwitch(NinState* state)
 {
     switch (state->mapperRegs.mmc1.mirroring)
     {
     case 0x00:
-        state->nametables[0] = state->vram + 0x000;
-        state->nametables[1] = state->vram + 0x000;
-        state->nametables[2] = state->vram + 0x000;
-        state->nametables[3] = state->vram + 0x000;
+        ninMirrorA(state);
         break;
     case 0x01:
-        state->nametables[0] = state->vram + 0x400;
-        state->nametables[1] = state->vram + 0x400;
-        state->nametables[2] = state->vram + 0x400;
-        state->nametables[3] = state->vram + 0x400;
+        ninMirrorB(state);
         break;
     case 0x02:
-        state->nametables[0] = state->vram + 0x000;
-        state->nametables[1] = state->vram + 0x400;
-        state->nametables[2] = state->vram + 0x000;
-        state->nametables[3] = state->vram + 0x400;
+        ninMirrorH(state);
         break;
     case 0x03:
-        state->nametables[0] = state->vram + 0x000;
-        state->nametables[1] = state->vram + 0x000;
-        state->nametables[2] = state->vram + 0x400;
-        state->nametables[3] = state->vram + 0x400;
+        ninMirrorV(state);
         break;
     }
 }
@@ -55,16 +27,16 @@ static void bankSwitch(NinState* state)
     {
     case 0:
     case 1:
-        setBank(state, 0, (mmc1->prgBank & 0xfe) | 0);
-        setBank(state, 1, (mmc1->prgBank & 0xfe) | 1);
+        ninBankSwitchPrgRom16k(state, 0, (mmc1->prgBank & 0xfe) | 0);
+        ninBankSwitchPrgRom16k(state, 1, (mmc1->prgBank & 0xfe) | 1);
         break;
     case 2:
-        setBank(state, 0, 0);
-        setBank(state, 1, mmc1->prgBank & 0xff);
+        ninBankSwitchPrgRom16k(state, 0, 0);
+        ninBankSwitchPrgRom16k(state, 1, mmc1->prgBank & 0xff);
         break;
     case 3:
-        setBank(state, 0, mmc1->prgBank & 0xff);
-        setBank(state, 1, state->prgBankCount - 1);
+        ninBankSwitchPrgRom16k(state, 0, mmc1->prgBank & 0xff);
+        ninBankSwitchPrgRom16k(state, 1, state->prgBankCount - 1);
         break;
     }
 }
@@ -75,13 +47,13 @@ static void bankSwitchChr(NinState* state)
 
     if (mmc1->chrBankMode)
     {
-        setBankChr(state, 0, mmc1->chrBank0);
-        setBankChr(state, 1, mmc1->chrBank1);
+        ninBankSwitchChrRom4k(state, 0, mmc1->chrBank0);
+        ninBankSwitchChrRom4k(state, 1, mmc1->chrBank1);
     }
     else
     {
-        setBankChr(state, 0, mmc1->chrBank0 & ~(0x01));
-        setBankChr(state, 1, mmc1->chrBank0 | 0x01);
+        ninBankSwitchChrRom4k(state, 0, mmc1->chrBank0 & ~(0x01));
+        ninBankSwitchChrRom4k(state, 1, mmc1->chrBank0 | 0x01);
     }
 }
 

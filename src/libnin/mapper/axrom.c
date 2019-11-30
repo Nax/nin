@@ -11,8 +11,8 @@ NIN_API void ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t val
     nametable = (value >> 4) & 1;
     nametableOffset = (uint16_t)nametable * 0x400;
 
-    state->prgRomBank[0] = state->prgRom + 0x4000 * bank;
-    state->prgRomBank[1] = state->prgRom + 0x4000 * (bank + 1);
+    ninBankSwitchPrgRom16k(state, 0, bank);
+    ninBankSwitchPrgRom16k(state, 1, bank + 1);
 
     for (int i = 0; i < 4; ++i)
         state->nametables[i] = state->vram + nametableOffset;

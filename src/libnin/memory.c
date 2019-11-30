@@ -89,10 +89,14 @@ uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
         else
             return badIO(state, addr, 0);
     }
+    else if (addr < 0xa000)
+        return state->prgRomBank[0][addr & 0x1fff];
     else if (addr < 0xc000)
-        return state->prgRomBank[0][addr & 0x3fff];
+        return state->prgRomBank[1][addr & 0x1fff];
+    else if (addr < 0xe000)
+        return state->prgRomBank[2][addr & 0x1fff];
     else
-        return state->prgRomBank[1][addr & 0x3fff];
+        return state->prgRomBank[3][addr & 0x1fff];
 }
 
 uint16_t ninMemoryRead16(NinState* state, uint16_t addr)

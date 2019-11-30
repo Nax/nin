@@ -105,8 +105,16 @@ typedef struct {
     uint8_t prgBank:4;
 } NinMapperRegsMMC1;
 
+typedef struct {
+    uint8_t bankSelect:3;
+    uint8_t bank[8];
+    uint8_t bankModePrgRom:1;
+    uint8_t bankModeChrRom:1;
+} NinMapperRegsMMC3;
+
 typedef union {
     NinMapperRegsMMC1 mmc1;
+    NinMapperRegsMMC3 mmc3;
 } NinMapperRegs;
 
 typedef union {
@@ -311,29 +319,37 @@ struct NinState_ {
     uint8_t             prgBankCount;
     uint8_t*            prgRom;
     uint32_t            prgRomSize;
-    uint8_t*            prgRomBank[2];
+    uint8_t*            prgRomBank[4];
     NinPrgWriteHandler  prgWriteHandler;
     uint8_t*            prgRam;
     uint16_t            prgRamSize;
-    uint8_t             chrBankCount;
+    uint16_t            chrBankCount;
     uint8_t*            chrRom;
     uint32_t            chrRomSize;
     uint8_t*            chrRam;
     uint32_t            chrRamSize;
-    uint8_t*            chrBank[2];
+    uint8_t*            chrBank[8];
     uint32_t            trainerSize;
     uint8_t*            nametables[4];
     uint8_t             nmi:1;
-    uint8_t             nmi2 : 1;
+    uint8_t             nmi2:1;
     uint8_t             irq:1;
     uint8_t             irqFlags;
     uint64_t            cyc;
     uint8_t             frame:1;
     uint8_t             frameOdd:1;
+    uint8_t             irqScanlineEnabled:1;
+    uint8_t             irqScanlineReload:1;
+    uint8_t             irqScanlineHalf:1;
+    uint8_t             irqScanlineCounter;
+    uint8_t             irqScanlineReloadValue;
+    uint16_t            irqScanlineFilterShifter;
+    uint16_t            oldVmemAddr;
 };
 
 #define IRQ_APU_FRAME   0x01
 #define IRQ_APU_DMC     0x02
+#define IRQ_SCANLINE    0x04
 
 void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
@@ -344,6 +360,7 @@ NIN_API void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t va
 
 NIN_API uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 NIN_API void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void        ninCheckScanlineAddr(NinState* state, uint16_t addr);
 
 void        ninSetFlagNMI(NinState* state, uint8_t flag);
 void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
@@ -375,5 +392,18 @@ NIN_API void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t v
 NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
+
+/* Bank */
+NIN_API void    ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, uint8_t bank);
+NIN_API void    ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, uint8_t bank);
+NIN_API void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, uint8_t bank);
+NIN_API void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, uint8_t bank);
+
+/* mirror.c */
+NIN_API void    ninMirrorA(NinState* state);
+NIN_API void    ninMirrorB(NinState* state);
+NIN_API void    ninMirrorH(NinState* state);
+NIN_API void    ninMirrorV(NinState* state);
+
 
 #endif

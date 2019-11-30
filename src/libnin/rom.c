@@ -68,8 +68,8 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     state->chrRam = zalloc(state->chrRamSize);
 
     /* Compute bank counts */
-    state->prgBankCount = state->prgRomSize / 0x4000;
-    state->chrBankCount = (state->chrRomSize ? state->chrRomSize : state->chrRamSize) / 0x1000;
+    state->prgBankCount = state->prgRomSize / 0x2000;
+    state->chrBankCount = (state->chrRomSize ? state->chrRomSize : state->chrRamSize) / 0x400;
 
     /* Actually read the ROM */
     fread(state->prgRam + 0x1000, state->trainerSize, 1, f);
@@ -106,17 +106,23 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     /* Apply a default configuration suitable for most mappers */
     state->prgWriteHandler = &ninPrgWriteHandlerNull;
     state->prgRomBank[0] = state->prgRom;
-    state->prgRomBank[1] = state->prgRom + (state->prgBankCount - 1) * 0x4000;
+    state->prgRomBank[1] = state->prgRom + 0x2000;
+    state->prgRomBank[2] = state->prgRom + (state->prgBankCount - 2) * 0x2000;
+    state->prgRomBank[3] = state->prgRom + (state->prgBankCount - 1) * 0x2000;
 
     if (state->chrRom)
     {
-        state->chrBank[0] = state->chrRom;
-        state->chrBank[1] = state->chrRom + 0x1000;
+        for (int i = 0; i < 8; ++i)
+        {
+            state->chrBank[i] = state->chrRom + i * 0x400;
+        }
     }
     else
     {
-        state->chrBank[0] = state->chrRam;
-        state->chrBank[1] = state->chrRam + 0x1000;
+        for (int i = 0; i < 8; ++i)
+        {
+            state->chrBank[i] = state->chrRam + i * 0x400;
+        }
     }
 
     /* Mapper-specific logic */
@@ -138,6 +144,12 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     case 3:
         /* CNROM */
         state->prgWriteHandler = &ninPrgWriteHandlerCNROM;
+        break;
+    case 4:
+        /* MMC3 */
+        state->prgWriteHandler = &ninPrgWriteHandlerMMC3;
+        state->mapperRegs.mmc3.bank[6] = 0;
+        state->mapperRegs.mmc3.bank[7] = 1;
         break;
     case 7:
         /* AXROM */
