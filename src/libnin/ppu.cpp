@@ -25,11 +25,11 @@ NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
             state->ppu.race0 = 1;
             state->nmi = 0;
         }
-        /*else if (state->ppu.race1) // Same-set race condition
+        else if (state->ppu.race1) // Same-set race condition
         {
             value |= 0x80;
             state->nmi = 0;
-        }*/
+        }
         else if ((state->ppu.nmi & NMI_OCCURED)) // Normal operation
         {
             value |= 0x80;

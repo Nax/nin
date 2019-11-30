@@ -94,6 +94,7 @@ typedef struct {
     uint16_t    pc;
     uint8_t     regs[4];
     uint8_t     p;
+    uint8_t     p2;
 } NinCPU;
 
 typedef struct {
