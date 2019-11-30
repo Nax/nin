@@ -2,8 +2,9 @@
 #define LIBNIN_H
 
 #include <nin/nin.h>
-
 #include <stdlib.h>
+
+#define UNUSED(x)   ((void)x)
 
 #define RAM_SIZE    0x800
 #define VRAM_SIZE   0x800
@@ -33,6 +34,7 @@
 #define DEBUG_LEVEL 0
 
 typedef void (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
+typedef void (*NinPpuMonitorHandler)(struct NinState_* state, uint16_t addr);
 
 #define MIRRORING_HORIZONTAL    0
 #define MIRRORING_VERTICAL      1
@@ -315,12 +317,15 @@ struct NinState_ {
         uint8_t*        oam;
         NinSprite*      oamSprites;
     };
-    NinMapperRegs       mapperRegs;
+
+    NinMapperRegs           mapperRegs;
+    NinPrgWriteHandler      prgWriteHandler;
+    NinPpuMonitorHandler    ppuMonitorHandler;
+
     uint8_t             prgBankCount;
     uint8_t*            prgRom;
     uint32_t            prgRomSize;
     uint8_t*            prgRomBank[4];
-    NinPrgWriteHandler  prgWriteHandler;
     uint8_t*            prgRam;
     uint16_t            prgRamSize;
     uint16_t            chrBankCount;
@@ -340,7 +345,6 @@ struct NinState_ {
     uint8_t             frameOdd:1;
     uint8_t             irqScanlineEnabled:1;
     uint8_t             irqScanlineReload:1;
-    uint8_t             irqScanlineHalf:1;
     uint8_t             irqScanlineCounter;
     uint8_t             irqScanlineReloadValue;
     uint16_t            irqScanlineFilterShifter;
@@ -360,7 +364,6 @@ NIN_API void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t va
 
 NIN_API uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 NIN_API void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void        ninCheckScanlineAddr(NinState* state, uint16_t addr);
 
 void        ninSetFlagNMI(NinState* state, uint8_t flag);
 void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
@@ -392,6 +395,9 @@ NIN_API void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t v
 NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
+
+NIN_API void    ninPpuMonitorHandlerNull(NinState* state, uint16_t addr);
+NIN_API void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
 
 /* Bank */
 NIN_API void    ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, uint8_t bank);

@@ -134,7 +134,7 @@ NIN_API void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
             state->ppu.rt.t &= 0xff00;
             state->ppu.rt.t |= (value & 0x00ff);
             state->ppu.rt.v = state->ppu.rt.t;
-            ninCheckScanlineAddr(state, state->ppu.rt.v);
+            state->ppuMonitorHandler(state, state->ppu.rt.v);
         }
         state->ppu.w ^= 1;
         break;
@@ -395,8 +395,8 @@ static void spriteEvaluation(NinState* state, uint16_t cycle)
             RT.latchSpriteBitmapAttr[n] = 0x00;
             RT.latchSpriteBitmapLo[n] = 0x00;
             RT.latchSpriteBitmapHi[n] = 0x00;
-            ninCheckScanlineAddr(state, 0x1000);
-            ninCheckScanlineAddr(state, 0x1000);
+            state->ppuMonitorHandler(state, 0x1000);
+            state->ppuMonitorHandler(state, 0x1000);
         }
         else
         {

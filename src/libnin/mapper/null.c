@@ -2,7 +2,13 @@
 
 NIN_API void ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value)
 {
-    (void)state;
-    (void)addr;
-    (void)value;
+    UNUSED(state);
+    UNUSED(addr);
+    UNUSED(value);
+}
+
+NIN_API void ninPpuMonitorHandlerNull(NinState* state, uint16_t addr)
+{
+    UNUSED(state);
+    UNUSED(addr);
 }

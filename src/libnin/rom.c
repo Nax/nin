@@ -105,6 +105,8 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
 
     /* Apply a default configuration suitable for most mappers */
     state->prgWriteHandler = &ninPrgWriteHandlerNull;
+    state->ppuMonitorHandler = &ninPpuMonitorHandlerNull;
+
     state->prgRomBank[0] = state->prgRom;
     state->prgRomBank[1] = state->prgRom + 0x2000;
     state->prgRomBank[2] = state->prgRom + (state->prgBankCount - 2) * 0x2000;
@@ -148,6 +150,7 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     case 4:
         /* MMC3 */
         state->prgWriteHandler = &ninPrgWriteHandlerMMC3;
+        state->ppuMonitorHandler = &ninPpuMonitorHandlerMMC3;
         state->mapperRegs.mmc3.bank[6] = 0;
         state->mapperRegs.mmc3.bank[7] = 1;
         break;

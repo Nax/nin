@@ -85,3 +85,31 @@ void ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value)
         break;
     }
 }
+
+NIN_API void ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr)
+{
+    if (addr >= 0x3f00)
+        return;
+
+    if (((state->oldVmemAddr & 0x1000) == 0x0000) && ((addr & 0x1000) == 0x1000))
+    {
+        if (!state->irqScanlineFilterShifter)
+        {
+            if (state->irqScanlineCounter == 0 && state->irqScanlineEnabled)
+            {
+                ninSetIRQ(state, IRQ_SCANLINE);
+            }
+            if (state->irqScanlineCounter == 0 || state->irqScanlineReload)
+            {
+                state->irqScanlineCounter = state->irqScanlineReloadValue;
+                state->irqScanlineReload = 0;
+            }
+            else
+                state->irqScanlineCounter--;
+        }
+        state->irqScanlineFilterShifter = 0x8000;
+    }
+    else
+        state->irqScanlineFilterShifter >>= 1;
+    state->oldVmemAddr = addr;
+}
