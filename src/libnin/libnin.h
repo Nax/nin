@@ -108,6 +108,15 @@ typedef struct {
 } NinMapperRegsMMC1;
 
 typedef struct {
+    uint8_t bankLatch0Lo;
+    uint8_t bankLatch0Hi;
+    uint8_t bankLatch1Lo;
+    uint8_t bankLatch1Hi;
+    uint8_t latch0:1;
+    uint8_t latch1:1;
+} NinMapperRegsMMC2;
+
+typedef struct {
     uint8_t bankSelect:3;
     uint8_t bank[8];
     uint8_t bankModePrgRom:1;
@@ -116,6 +125,7 @@ typedef struct {
 
 typedef union {
     NinMapperRegsMMC1 mmc1;
+    NinMapperRegsMMC2 mmc2;
     NinMapperRegsMMC3 mmc3;
 } NinMapperRegs;
 
@@ -391,12 +401,17 @@ NIN_API void    ninRegionApply(NinState* state);
 /* Mapper handlers */
 NIN_API void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void    ninPrgWriteHandlerMMC2(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void    ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
 
+NIN_API void    ninPrgWriteHandlerCommonMMC2_MMC4(NinState* state, uint16_t addr, uint8_t value);
+
 NIN_API void    ninPpuMonitorHandlerNull(NinState* state, uint16_t addr);
+NIN_API void    ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr);
 NIN_API void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
 
 /* Bank */

@@ -162,6 +162,21 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
             state->nametables[i] = state->vram;
         state->prgWriteHandler = &ninPrgWriteHandlerAXROM;
         break;
+    case 9:
+        /* MMC2 */
+        state->prgWriteHandler = &ninPrgWriteHandlerMMC2;
+        state->ppuMonitorHandler = &ninPpuMonitorHandlerMMC2;
+        state->prgRomBank[1] = state->prgRom + (state->prgBankCount - 3) * 0x2000;
+        state->prgRomBank[2] = state->prgRom + (state->prgBankCount - 2) * 0x2000;
+        state->prgRomBank[3] = state->prgRom + (state->prgBankCount - 1) * 0x2000;
+        break;
+    case 10:
+        /* MMC4 */
+        state->prgWriteHandler = &ninPrgWriteHandlerMMC4;
+        state->ppuMonitorHandler = &ninPpuMonitorHandlerMMC2;
+        state->prgRomBank[2] = state->prgRom + (state->prgBankCount - 2) * 0x2000;
+        state->prgRomBank[3] = state->prgRom + (state->prgBankCount - 1) * 0x2000;
+        break;
     }
 
     ninRegionApply(state);
