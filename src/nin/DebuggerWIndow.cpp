@@ -5,6 +5,7 @@
 DebuggerWindow::DebuggerWindow(QWidget* parent)
 : QWidget(parent)
 {
+    QHBoxLayout* layout = new QHBoxLayout;
     QGridLayout* regLayout = new QGridLayout;
 
     regLayout->addWidget(new QLabel("PC"), 0, 0);
@@ -46,11 +47,15 @@ DebuggerWindow::DebuggerWindow(QWidget* parent)
     _spinS->setDisplayIntegerBase(16);
     _spinS->setPrefix("0x");
     regLayout->addWidget(_spinS, 4, 1);
+    regLayout->setRowStretch(6, 1);
+    regLayout->setColumnMinimumWidth(0, 60);
+    regLayout->setColumnMinimumWidth(1, 100);
 
+    layout->addLayout(regLayout);
     _disasm = new DisassemblerWidget;
-    regLayout->addWidget(_disasm, 0, 2, 5, 5);
+    layout->addWidget(_disasm, 1);
 
-    setLayout(regLayout);
+    setLayout(layout);
     setWindowTitle("Debugger");
 }
 

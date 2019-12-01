@@ -312,6 +312,9 @@ DisassemblerWidget::DisassemblerWidget(QWidget* parent)
     verticalScrollBar()->setSingleStep(1);
     verticalScrollBar()->setPageStep(1);
     verticalScrollBar()->setMaximum(64 / 16);
+
+    setAutoFillBackground(true);
+    setPalette(QPalette(Qt::white));
 }
 
 void DisassemblerWidget::paintEvent(QPaintEvent* event)
