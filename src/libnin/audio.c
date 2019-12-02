@@ -1,96 +1,12 @@
 #include <math.h>
 #include <libnin/libnin.h>
 
-#define DOWNSAMPLE_QUALITY 3
-
-#ifndef PI
-# define PI (3.141592653589793)
-#endif
-
-static double sinc(double x)
-{
-    return sin(x) / x;
-}
-
-static double hyperbolicFactor(double x)
-{
-    double pix;
-
-    if (x < 0.0)
-        x = -x;
-    if (x > (double)DOWNSAMPLE_QUALITY)
-        return 0.0;
-
-    pix = PI * x;
-    return sinc(pix) * sinc(pix / (double)DOWNSAMPLE_QUALITY);
-}
-
-static float lerp(float a, float b, float coeff)
-{
-    return (1.f - coeff) * a + coeff * b;
-}
-
-static float filterDC(NinState* state, float v)
-{
-    NinAudio* audio = &state->audio;
-    float tmp;
-
-    tmp = v - audio->dcMean;
-    audio->dcMean = lerp(audio->dcMean, v, 4e-5f);
-
-    return tmp;
-}
-
-static float ninAudioLoPass(NinState* state, float sample, float coeff, float gain)
-{
-    float newSample;
-    float a1;
-    float b0;
-
-    a1 = coeff;
-    b0 = gain * (1.f - a1);
-
-    newSample = b0 * sample + a1 * state->audioSampleLoLast;
-    state->audioSampleLoLast = newSample;
-
-    return newSample;
-}
-
-static void ninAudioComputeCoefficients(NinState* state)
-{
-    NinAudio* audio = &state->audio;
-
-    uint16_t windowBranchLen;
-    double hyperbolicStep;
-    double acc;
-    float tmp;
-
-    if (!audio->dividerNum || !audio->dividerDen)
-        return;
-
-    hyperbolicStep = (double)audio->dividerNum / (double)audio->dividerDen;
-    windowBranchLen = (uint16_t)round((double)DOWNSAMPLE_QUALITY / hyperbolicStep);
-    acc = 0;
-    for (uint16_t i = 1; i <= windowBranchLen; ++i)
-    {
-        tmp = (float)hyperbolicFactor((double)i * hyperbolicStep);
-        audio->hyperbolicFactors[windowBranchLen + i] = tmp;
-        audio->hyperbolicFactors[windowBranchLen - i] = tmp;
-        acc += tmp * 2;
-    }
-    audio->hyperbolicFactors[windowBranchLen] = 1.0f;
-    acc += 1.0;
-
-    audio->windowSize = windowBranchLen * 2 + 1;
-    audio->windowSum = (float)acc;
-}
 
 NIN_API void ninAudioSetFrequency(NinState* state, uint32_t freq)
 {
     NinAudio* audio = &state->audio;
 
     audio->dividerNum = freq;
-    ninAudioComputeCoefficients(state);
 }
 
 NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
@@ -98,7 +14,6 @@ NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
     NinAudio* audio = &state->audio;
 
     audio->dividerDen = freq;
-    ninAudioComputeCoefficients(state);
 }
 
 NIN_API void ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg)
@@ -109,7 +24,7 @@ NIN_API void ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, voi
     audio->callbackArg = arg;
 }
 
-static double newLoPass(NinAudio* audio, double sample)
+static double ninQualityLoPass(NinAudio* audio, double sample)
 {
     static const float kGain = 6.259598570e+07;
 
@@ -141,7 +56,7 @@ static double newLoPass(NinAudio* audio, double sample)
     return audio->loPassY[5];
 }
 
-static double newHiPass(NinAudio* audio, double sample)
+static double ninQualityHiPass(NinAudio* audio, double sample)
 {
     static const float kGain = 1.000654713;
 
@@ -171,11 +86,11 @@ NIN_API void ninAudioPushSample(NinState* state, float sample)
     NinAudio* audio = &state->audio;
 
     /* We push samples into a ring buffer */
-    sample = newLoPass(audio, sample);
+    sample = ninQualityLoPass(audio, sample);
     audio->dividerClock += audio->dividerNum;
     if (audio->dividerClock >= audio->dividerDen)
     {
-        sample = newHiPass(audio, sample);
+        sample = ninQualityHiPass(audio, sample);
         audio->dividerClock -= audio->dividerDen;
         audio->samplesDst[audio->samplesCursorDst++] = sample;
         if (audio->samplesCursorDst >= AUDIO_BUFFER_SIZE_TARGET)
