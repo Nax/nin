@@ -12,12 +12,12 @@ function Controller() {
 
 Controller.prototype.WelcomePageCallback = function() {
     console.log("Step: " + gui.currentPageWidget());
-    gui.clickButton(buttons.NextButton, 1000);
+    gui.clickButton(buttons.NextButton, 3000);
 };
 
 Controller.prototype.CredentialsPageCallback = function() {
     console.log("Step: " + gui.currentPageWidget());
-    gui.clickButton(buttons.NextButton);
+    gui.clickButton(buttons.CommitButton);
 };
 
 Controller.prototype.IntroductionPageCallback = function() {
@@ -53,7 +53,7 @@ Controller.prototype.StartMenuDirectoryPageCallback = function() {
 
 Controller.prototype.ReadyForInstallationPageCallback = function() {
     console.log("Step: " + gui.currentPageWidget());
-    gui.clickButton(buttons.NextButton);
+    gui.clickButton(buttons.CommitButton);
 };
 
 Controller.prototype.FinishedPageCallback = function() {
