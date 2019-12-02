@@ -185,6 +185,10 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
         /* GXROM */
         state->prgWriteHandler = &ninPrgWriteHandlerGXROM;
         break;
+    case 180:
+        /* UxROM (180) */
+        state->prgWriteHandler = &ninPrgWriteHandlerUXROM_180;
+        break;
     }
 
     ninRegionApply(state);
