@@ -259,7 +259,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
         tmp = ninMemoryRead8(state, state->cpu.pc + 1);
         CYCLE();
 
-        if (state->nmi || isIRQ)
+        if (state->nmi2 || isIRQ)
         {
             if (isIRQ)
             {
