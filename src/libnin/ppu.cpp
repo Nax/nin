@@ -20,20 +20,27 @@ NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         break;
     case 0x02: // PPUSTATUS
         mask = 0xe0;
-        if (RT.scanline == 241 && RT.cycle == 1) // Pre-set race condition
+        if (RT.scanline == 241 && RT.cycle == 0) // Pre-set race
         {
-            state->ppu.race0 = 1;
-            state->nmi = 0;
+            RT.inhibitNmi = 1;
         }
-        else if (state->ppu.race1) // Same-set race condition
+        else if (RT.scanline == 241 && RT.cycle == 1) // Same-set
         {
+            RT.inhibitNmi = 1;
             value |= 0x80;
+        }
+        else if (RT.scanline == 241 && RT.cycle == 2) // Post-set
+        {
+            ninUnsetFlagNMI(state, NMI_OCCURED);
             state->nmi = 0;
+            value |= 0x80;
         }
         else if ((state->ppu.nmi & NMI_OCCURED)) // Normal operation
         {
             value |= 0x80;
         }
+        if ((state->ppu.nmi & NMI_OCCURED))
+            value |= 0x80;
         ninUnsetFlagNMI(state, NMI_OCCURED);
         if (state->ppu.zeroHitFlag)
             value |= 0x40;
@@ -446,6 +453,10 @@ static void scanline(NinState* state)
     cycle = RT.cycle;
     isRendering = (RT.maskEnableBackground || RT.maskEnableSprites);
 
+    if (RT.scanline == 0 && RT.maskEnableBackground && cycle == 0 && state->frameOdd)
+    {
+        RT.cycle++;
+    }
     if (prerender && cycle == 1)
     {
         ninUnsetFlagNMI(state, NMI_OCCURED);
@@ -480,10 +491,6 @@ static void scanline(NinState* state)
             RT.v &= kHMask;
             RT.v |= (RT.t & ~kHMask);
         }
-        if (prerender && cycle == 339 && state->frameOdd)
-        {
-            RT.cycle++;
-        }
     }
 }
 
@@ -496,12 +503,12 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     while (cycles--)
     {
         if (RT.scanline < 240) scanline<false>(state);
-        if (RT.scanline == 261) scanline<true>(state);
+        if (RT.scanline == 241 + state->regionData.vblank) scanline<true>(state);
         if (RT.scanline == 241 && RT.cycle == 1)
         {
-            if (!state->ppu.race0)
+            if (!RT.inhibitNmi)
                 ninSetFlagNMI(state, NMI_OCCURED);
-            state->ppu.race0 = 0;
+            RT.inhibitNmi = 0;
         }
 
         RT.cycle++;

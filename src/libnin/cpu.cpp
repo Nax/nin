@@ -123,7 +123,7 @@ static uint16_t indirect(NinState* state, uint16_t addr)
 static constexpr const uint8_t kHex[] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15 };
 static constexpr const uint8_t kBranchFlags[] = { PFLAG_N, PFLAG_V, PFLAG_C, PFLAG_Z };
 
-static constexpr bool matchPattern(const char* pattern, uint8_t value)
+static constexpr bool matchPattern(const char* pattern, uint16_t value)
 {
     return !!((kHex[pattern[value / 4] - '0']) & (1 << (value % 4)));
 }
@@ -148,16 +148,14 @@ static constexpr bool matchPattern(const char* pattern, uint8_t value)
 #define POP16()         do { POP8(); addr = tmp; POP8(); addr |= ((uint16_t)tmp << 8); } while (0)
 #define ECYCLE(a, b)    do { if (((a + b) ^ (a)) & 0xff00) CYCLE(); } while (0)
 
-template <uint8_t N>
-static void instruction(NinState* state)
+template <uint16_t N>
+static void instruction(NinState* state, uint8_t tmp)
 {
-    uint8_t tmp;
     uint16_t addr;
     uint8_t r0;
     uint8_t r1;
     uint8_t i;
 
-    tmp = 0;
     addr = 0;
     r0 = 0;
     r1 = 0;
@@ -176,67 +174,77 @@ static void instruction(NinState* state)
     default: break;
     }
 
-    X("0040000000400000005000000040000022222222005000002222222200000000") { r0 = REG_A; }
-    X("0000000000000000000000000000000004440440000000000040000011110000") { r0 = REG_X; }
-    X("0000000000000000000000000000000001110110000000001111100000000000") { r0 = REG_Y; }
-    X("0000000000000000000000000000000000000000000000400000000000000000") { r0 = REG_S; }
-    X("2262222222622222226222222272222200440010222222220000000022222222") { r1 = REG_A; }
-    X("0000000000000000000000000000000000000000444404440040000000100000") { r1 = REG_X; }
-    X("0000000000000000000000000000000000100000111101010010000000000000") { r1 = REG_Y; }
-    X("0000000000000000000000000000000000000060000000000000000000000000") { r1 = REG_S; }
-    X("2000060620000606200006062000060620000302200003032000060620000606") { i = state->cpu.regs[REG_X]; }                                       /* index-X */
-    X("0000002000000020000000200000002000000420000004240000002000000020") { i = state->cpu.regs[REG_Y]; }                                       /* index-Y */
-    X("2626362637273626262736262627362627073722772737273727362637273626") { tmp = ninMemoryRead8(state, state->cpu.pc++); addr = tmp; }         /* op1 */
-    X("0006002610070026000700260007002600070022000700270007002600070026") { CYCLE();  READ(state->cpu.pc++); addr |= ((uint16_t)tmp << 8); }    /* op2 */
-    X("2000060020000600200006002000060020000700200007002000060020000600") { addr = (addr + i) & 0xff; CYCLE(); }                                /* zero-index */
-    X("0000002200000022000000220000002200000000000000270000002200000022") { ECYCLE(addr, i); }                                                  /* abs-extra */
-    X("0000002600000026000000260000002600000022000000270000002600000026") { addr += i; }                                                        /* abs-index */
-    X("2000200020002000200020002001200020002000200020002000200020002000") { addr = indirect(state, addr); CYCLE(); CYCLE(); }                   /* indirect */
-    X("0000200000002000000020000000200000000000000020000000200000002000") { ECYCLE(addr, state->cpu.regs[REG_Y]); }                             /* post-extra */
-    X("0000200000002000000020000000200000002000000020000000200000002000") { addr += state->cpu.regs[REG_Y]; }                                   /* post-index */
-    X("0000000000000000000000000000000000000000000000000000000000000000") { CYCLE(); }                                                          /* post-X */
-    X("0000000400000004000000040000000400002022000000000000000400000004") { CYCLE(); }                                                          /* phantom read */
-    X("2606262627072626260626262606262600000000270727272707262627072626") { READ(addr); CYCLE(); }                                              /* mem */
-    X("0404040404040404040404040404040400000000000000000404040404040404") { ninMemoryWrite8(state, addr, tmp); CYCLE(); }                       /* RMW phantom writes */
-    X("0040000000400000005000000040000027772772005000400050000000100000") { tmp = state->cpu.regs[r0]; }                                        /* reg -> tmp */
-    X("0010000000000000000000000000000000000000000000000000000000000000") { tmp = (state->cpu.p | ~PFLAG_MASK); }                               /* flags -> tmp */
-    X("2222222200000000000000000000000000000000000000000000000000000000") { tmp = state->cpu.regs[REG_A] | tmp; }                               /* ora */
-    X("0000000022222222000000000000000000000000000000000000000000000000") { tmp = state->cpu.regs[REG_A] & tmp; }                               /* and */
-    X("0000000000000000222222220000000000000000000000000000000000000000") { tmp = state->cpu.regs[REG_A] ^ tmp; }                               /* eor */
-    X("0000000000000000000000002222222200000000000000000000000000000000") { tmp = _adc(state, state->cpu.regs[REG_A], tmp); }                   /* adc */
-    X("0000000000000000000000000000000000000000000000000000000022222222") { tmp = _adc(state, state->cpu.regs[REG_A], ~tmp); }                  /* sbc */
-    X("0000000000000000000000000000000000000000000000000010000004140404") { tmp++; }                                                            /* inc */
-    X("0000000000000000000000000000000000100000000000000444040400000000") { tmp--; }                                                            /* dec */
-    X("0444040400000000000000000000000000000000000000000000000000000000") { tmp = asl(state, tmp); }                                            /* asl */
-    X("0000000004440404000000000000000000000000000000000000000000000000") { tmp = rol(state, tmp); }                                            /* rol */
-    X("0000000000000000044404040000000000000000000000000000000000000000") { tmp = lsr(state, tmp); }                                            /* lsr */
-    X("0000000000000000000000000444040400000000000000000000000000000000") { tmp = ror(state, tmp); }                                            /* ror */
-    X("0000000001010000000000000000000000000000000000000000000000000000") { tmp = bit(state, tmp); }                                            /* bit */
-    X("0010000000000000001000000000000000000000000000000000000000000000") { PUSH8(tmp); }                                                       /* push */
-    X("0000000000100000000000000010000000000000000000000000000000000000") { POP8(); CYCLE(); }                                                  /* pop */
-    X("0404040404040404040404040404040427072722000000000404040404040404") { ninMemoryWrite8(state, addr, tmp); CYCLE(); }                       /* store */
-    X("2262222222622222226222222272222200500050777727670050000022322222") { state->cpu.regs[r1] = tmp; }                                        /* load */
-    X("0000000000100000000000000000000000000000000000000000000000000000") { state->cpu.p = (tmp & PFLAG_MASK); }                                /* tmp -> flags */
-    X("0000000000000000000000000000000000000000000000003323222211010000") { tmp = compare(state, state->cpu.regs[r0], tmp); }                   /* cmp */
-    X("2666266727672666266626662676042600704010777727677777262637372626") { flagZ(state, tmp); }                                                /* Z */
-    X("2666266726662666266626662676042600704010777727677777262637372626") { flagN(state, tmp); }                                                /* N */
-    X("0000000000000000100000000000000000000000000000000000000000000000") { POP8(); state->cpu.p = (tmp & PFLAG_MASK); POP16(); state->cpu.p2 = state->cpu.p; state->cpu.pc = addr; CYCLE(); } /* rti */
-    X("0000000000000000000000001000000000000000000000000000000000000000") { POP16(); state->cpu.pc = addr + 1; CYCLE(); CYCLE(); } /* rts */
-    X("0000000010000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc - 1); CYCLE(); } /* jsr */
-    X("0000000010000000000100000001000000000000000000000000000000000000") { state->cpu.pc = addr; } /* jmp */
-    X("0000100000000000000010000000000000001000000000000000100000000000") { if (!(state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); ECYCLE(state->cpu.pc, ((int8_t)tmp)); state->cpu.pc += (int8_t)tmp; } } /* branch-clear */
-    X("0000000000001000000000000000100000000000000010000000000000001000") { if ((state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); ECYCLE(state->cpu.pc, ((int8_t)tmp)); state->cpu.pc += (int8_t)tmp; } } /* branch-set */
-    X("1000000000000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc + 1); PUSH8(state->cpu.p | PFLAG_1 | PFLAG_B); CYCLE(); CYCLE(); state->cpu.p |= PFLAG_I; state->cpu.pc = ninMemoryRead16(state, 0xfffe); } /* brk */
+    X("00400000004000000050000000400000222222220050000022222222000000000") { r0 = REG_A; }
+    X("00000000000000000000000000000000044404400000000000400000111100000") { r0 = REG_X; }
+    X("00000000000000000000000000000000011101100000000011111000000000000") { r0 = REG_Y; }
+    X("00000000000000000000000000000000000000000000004000000000000000000") { r0 = REG_S; }
+    X("22622222226222222262222222722222004400102222222200000000222222220") { r1 = REG_A; }
+    X("00000000000000000000000000000000000000004444044400400000001000000") { r1 = REG_X; }
+    X("00000000000000000000000000000000001000001111010100100000000000000") { r1 = REG_Y; }
+    X("00000000000000000000000000000000000000600000000000000000000000000") { r1 = REG_S; }
+    X("20000606200006062000060620000606200003022000030320000606200006060") { i = state->cpu.regs[REG_X]; }                                       /* index-X */
+    X("00000020000000200000002000000020000004200000042400000020000000200") { i = state->cpu.regs[REG_Y]; }                                       /* index-Y */
+    X("26263626372736262627362626273626270737227727372737273626372736260") { state->cpu.pc++; addr = tmp; }                                      /* op1 */
+    X("00060026100700260007002600070026000700220007002700070026000700260") { CYCLE();  READ(state->cpu.pc++); addr |= ((uint16_t)tmp << 8); }    /* op2 */
+    X("20000600200006002000060020000600200007002000070020000600200006000") { addr = (addr + i) & 0xff; CYCLE(); }                                /* zero-index */
+    X("00000022000000220000002200000022000000000000002700000022000000220") { ECYCLE(addr, i); }                                                  /* abs-extra */
+    X("00000026000000260000002600000026000000220000002700000026000000260") { addr += i; }                                                        /* abs-index */
+    X("20002000200020002000200020012000200020002000200020002000200020000") { addr = indirect(state, addr); CYCLE(); CYCLE(); }                   /* indirect */
+    X("00002000000020000000200000002000000000000000200000002000000020000") { ECYCLE(addr, state->cpu.regs[REG_Y]); }                             /* post-extra */
+    X("00002000000020000000200000002000000020000000200000002000000020000") { addr += state->cpu.regs[REG_Y]; }                                   /* post-index */
+    X("00000000000000000000000000000000000000000000000000000000000000000") { CYCLE(); }                                                          /* post-X */
+    X("00000004000000040000000400000004000020220000000000000004000000040") { CYCLE(); }                                                          /* phantom read */
+    X("26062626270726262606262626062626000000002707272727072626270726260") { READ(addr); CYCLE(); }                                              /* mem */
+    X("04040404040404040404040404040404000000000000000004040404040404040") { ninMemoryWrite8(state, addr, tmp); CYCLE(); }                       /* RMW phantom writes */
+    X("00400000004000000050000000400000277727720050004000500000001000000") { tmp = state->cpu.regs[r0]; }                                        /* reg -> tmp */
+    X("00100000000000000000000000000000000000000000000000000000000000000") { tmp = (state->cpu.p | ~PFLAG_MASK); }                               /* flags -> tmp */
+    X("22222222000000000000000000000000000000000000000000000000000000000") { tmp = state->cpu.regs[REG_A] | tmp; }                               /* ora */
+    X("00000000222222220000000000000000000000000000000000000000000000000") { tmp = state->cpu.regs[REG_A] & tmp; }                               /* and */
+    X("00000000000000002222222200000000000000000000000000000000000000000") { tmp = state->cpu.regs[REG_A] ^ tmp; }                               /* eor */
+    X("00000000000000000000000022222222000000000000000000000000000000000") { tmp = _adc(state, state->cpu.regs[REG_A], tmp); }                   /* adc */
+    X("00000000000000000000000000000000000000000000000000000000222222220") { tmp = _adc(state, state->cpu.regs[REG_A], ~tmp); }                  /* sbc */
+    X("00000000000000000000000000000000000000000000000000100000041404040") { tmp++; }                                                            /* inc */
+    X("00000000000000000000000000000000001000000000000004440404000000000") { tmp--; }                                                            /* dec */
+    X("04440404000000000000000000000000000000000000000000000000000000000") { tmp = asl(state, tmp); }                                            /* asl */
+    X("00000000044404040000000000000000000000000000000000000000000000000") { tmp = rol(state, tmp); }                                            /* rol */
+    X("00000000000000000444040400000000000000000000000000000000000000000") { tmp = lsr(state, tmp); }                                            /* lsr */
+    X("00000000000000000000000004440404000000000000000000000000000000000") { tmp = ror(state, tmp); }                                            /* ror */
+    X("00000000010100000000000000000000000000000000000000000000000000000") { tmp = bit(state, tmp); }                                            /* bit */
+    X("00100000000000000010000000000000000000000000000000000000000000000") { PUSH8(tmp); }                                                       /* push */
+    X("00000000001000000000000000100000000000000000000000000000000000000") { POP8(); CYCLE(); }                                                  /* pop */
+    X("04040404040404040404040404040404270727220000000004040404040404040") { ninMemoryWrite8(state, addr, tmp); CYCLE(); }                       /* store */
+    X("22622222226222222262222222722222005000507777276700500000223222220") { state->cpu.regs[r1] = tmp; }                                        /* load */
+    X("00000000001000000000000000000000000000000000000000000000000000000") { state->cpu.p = (tmp & PFLAG_MASK); }                                /* tmp -> flags */
+    X("00000000000000000000000000000000000000000000000033232222110100000") { tmp = compare(state, state->cpu.regs[r0], tmp); }                   /* cmp */
+    X("26662667276726662666266626760426007040107777276777772626373726260") { flagZ(state, tmp); }                                                /* Z */
+    X("26662667266626662666266626760426007040107777276777772626373726260") { flagN(state, tmp); }                                                /* N */
+    X("00000000000000001000000000000000000000000000000000000000000000000") { POP8(); state->cpu.p = (tmp & PFLAG_MASK); POP16(); state->cpu.p2 = state->cpu.p; state->cpu.pc = addr; CYCLE(); } /* rti */
+    X("00000000000000000000000010000000000000000000000000000000000000000") { POP16(); state->cpu.pc = addr + 1; CYCLE(); CYCLE(); } /* rts */
+    X("00000000100000000000000000000000000000000000000000000000000000000") { PUSH16(state->cpu.pc - 1); CYCLE(); } /* jsr */
+    X("00000000100000000001000000010000000000000000000000000000000000000") { state->cpu.pc = addr; } /* jmp */
+    X("00001000000000000000100000000000000010000000000000001000000000000") { if (!(state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); ECYCLE(state->cpu.pc, ((int8_t)tmp)); state->cpu.pc += (int8_t)tmp; } } /* branch-clear */
+    X("00000000000010000000000000001000000000000000100000000000000010000") { if ((state->cpu.p & kBranchFlags[N >> 6])) { CYCLE(); ECYCLE(state->cpu.pc, ((int8_t)tmp)); state->cpu.pc += (int8_t)tmp; } } /* branch-set */
+    X("10000000000000000000000000000000000000000000000000000000000000000") { state->cpu.p |= PFLAG_B; state->cpu.pc++; } /* BRK */
+    X("10000000000000000000000000000000000000000000000000000000000000001") { addr = 0xfffe; } /* Vector: IRQ */
+    X("00000000000000000000000000000000000000000000000000000000000000002") { addr = 0xfffa; } /* Vector: NMI */
+    X("10000000000000000000000000000000000000000000000000000000000000003") { PUSH16(state->cpu.pc); PUSH8(state->cpu.p | PFLAG_1); state->cpu.p &= ~(PFLAG_B); CYCLE(); CYCLE(); state->cpu.p |= PFLAG_I; state->cpu.pc = ninMemoryRead16(state, addr); } /* brk */
 }
 
-#define ICASE1(n)   case n: instruction<(n)>(state); break
+/*
+ * Pseudo ops:
+ *  0x100: IRQ
+ *  0x101: NMI            
+ */
+
+#define ICASE1(n)   case n: instruction<(n)>(state, tmp); break
 #define ICASE2(n)   ICASE1(n + 0x00); ICASE1(n + 0x01); ICASE1(n + 0x02); ICASE1(n + 0x03)
 #define ICASE3(n)   ICASE2(n + 0x00); ICASE2(n + 0x04); ICASE2(n + 0x08); ICASE2(n + 0x0c)
 #define ICASE4(n)   ICASE3(n + 0x00); ICASE3(n + 0x10); ICASE3(n + 0x20); ICASE3(n + 0x30)
-#define EXECUTE(x)  do { switch (x) { ICASE4(0x00); ICASE4(0x40); ICASE4(0x80); ICASE4(0xc0); } } while(0)
+#define EXECUTE(x)  do { switch (x) { ICASE4(0x00); ICASE4(0x40); ICASE4(0x80); ICASE4(0xc0); ICASE1(0x100); ICASE1(0x101); } } while(0)
 
 NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
 {
+    uint8_t tmp;
     uint16_t op;
     uint8_t isIRQ;
 
@@ -245,34 +253,34 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
     for (;;)
     {
         isIRQ = ((((state->cpu.p2) & PFLAG_I) == 0) && state->irq);
-        if (state->nmi2 || isIRQ)
+
+        op = ninMemoryRead8(state, state->cpu.pc);
+        CYCLE();
+        tmp = ninMemoryRead8(state, state->cpu.pc + 1);
+        CYCLE();
+
+        if (state->nmi || isIRQ)
         {
             if (isIRQ)
             {
-                printf("IRQ -- 0x%02x\n", state->irqFlags);
-                fflush(stdout);
+                op = 0x100;
             }
-            if (!isIRQ)
-                state->nmi = 0;
-            state->cyc += 7;
-            ninRunCyclesAPU(state, 7);
-            ninPpuRunCycles(state, 21);
-            stackPush16(state, state->cpu.pc);
-            stackPush8(state, state->cpu.p | PFLAG_1);
-            state->cpu.p |= PFLAG_I;
-            if (isIRQ)
-                state->cpu.pc = ninMemoryRead16(state, 0xfffe);
             else
-                state->cpu.pc = ninMemoryRead16(state, 0xfffa);
+            {
+                state->nmi = 0;
+                op = 0x101;
+            }
+        }
+        else
+        {
+            state->cpu.pc++;
         }
 
         state->nmi2 = state->nmi;
         state->cpu.p2 = state->cpu.p;
 
-        op = ninMemoryRead8(state, state->cpu.pc++);
-        CYCLE();
-        CYCLE();
         EXECUTE(op);
+
         if (state->cyc >= cycles)
             break;
     }

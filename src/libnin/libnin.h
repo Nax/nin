@@ -171,6 +171,7 @@ typedef struct {
     unsigned    maskEnableSprites:1;
     unsigned    maskEnableSpritesLeft:1;
     unsigned    largeSprites:1;
+    uint8_t     inhibitNmi:1;
 } NinRuntimePPU;
 
 typedef struct {
