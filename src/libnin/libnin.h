@@ -279,6 +279,10 @@ typedef struct {
     float               hyperbolicFactors[AUDIO_BUFFER_SIZE_TARGET];
     float               samplesSrc[AUDIO_BUFFER_SIZE_TARGET];
     float               samplesDst[AUDIO_BUFFER_SIZE_TARGET];
+    double              loPassX[6];
+    double              loPassY[6];
+    double              hiPassX[4];
+    double              hiPassY[4];
     uint16_t            samplesCursorSrc;
     uint16_t            samplesCursorDst;
     uint32_t            dividerNum;
