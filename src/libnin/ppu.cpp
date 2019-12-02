@@ -121,7 +121,7 @@ NIN_API void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         else
         {
             // Fine Y
-            state->ppu.rt.t &= ~(0xe000);
+            state->ppu.rt.t &= ~(0x7000);
             state->ppu.rt.t |= (((uint16_t)value & 0x07) << 12);
 
             // Coarse Y
