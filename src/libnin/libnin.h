@@ -409,6 +409,7 @@ NIN_API void    ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t v
 NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void    ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value);
 
 NIN_API void    ninPrgWriteHandlerCommonMMC2_MMC4(NinState* state, uint16_t addr, uint8_t value);
 
@@ -419,8 +420,11 @@ NIN_API void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
 /* Bank */
 NIN_API void    ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, uint8_t bank);
 NIN_API void    ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, uint8_t bank);
+NIN_API void    ninBankSwitchPrgRom32k(NinState* state, uint8_t bank);
+
 NIN_API void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, uint8_t bank);
 NIN_API void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, uint8_t bank);
+NIN_API void    ninBankSwitchChrRom8k(NinState* state, uint8_t bank);
 
 /* mirror.c */
 NIN_API void    ninMirrorA(NinState* state);

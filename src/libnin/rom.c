@@ -177,6 +177,10 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
         state->prgRomBank[2] = state->prgRom + (state->prgBankCount - 2) * 0x2000;
         state->prgRomBank[3] = state->prgRom + (state->prgBankCount - 1) * 0x2000;
         break;
+    case 66:
+        /* GXROM */
+        state->prgWriteHandler = &ninPrgWriteHandlerGXROM;
+        break;
     }
 
     ninRegionApply(state);
