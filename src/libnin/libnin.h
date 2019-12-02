@@ -410,6 +410,7 @@ NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t 
 NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void    ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void    ninPrgWriteHandlerColorDreams(NinState* state, uint16_t addr, uint8_t value);
 
 NIN_API void    ninPrgWriteHandlerCommonMMC2_MMC4(NinState* state, uint16_t addr, uint8_t value);
 
