@@ -2,6 +2,9 @@
 
 #define APU                         state->apu
 
+static void ninApuFrameQuarter(NinState* state);
+static void ninApuFrameHalf(NinState* state);
+
 static const uint8_t kTriangleSequence[32] = {
     15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
@@ -29,11 +32,12 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
     default:
         break;
     case 0x15:
-        if (APU.pulse[0].length)   value |= 0x01;
-        if (APU.pulse[1].length)   value |= 0x02;
-        if (APU.triangle.length)   value |= 0x04;
-        if (APU.noise.length)      value |= 0x08;
-        if (APU.dmc.enabled)       value |= 0x10;
+        if (APU.pulse[0].length)                value |= 0x01;
+        if (APU.pulse[1].length)                value |= 0x02;
+        if (APU.triangle.length)                value |= 0x04;
+        if (APU.noise.length)                   value |= 0x08;
+        if (APU.dmc.enabled)                    value |= 0x10;
+        if (state->irqFlags & IRQ_APU_FRAME)    value |= 0x40;
         ninClearIRQ(state, IRQ_APU_FRAME);
         break;
     }
@@ -185,11 +189,18 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         }
         break;
     case 0x17:
-        if (value & 0x40)
-            ninClearIRQ(state, IRQ_APU_FRAME);
         APU.mode = !!(value & 0x80);
-        APU.irq = ((value & 0xc0) == 0);
-        APU.frameCounter = 0;
+        APU.irqInhibit = !!(value & 0x40);
+        if (APU.irqInhibit)
+        {
+            ninClearIRQ(state, IRQ_APU_FRAME);
+        }
+        if (APU.mode)
+        {
+            ninApuFrameQuarter(state);
+            ninApuFrameHalf(state);
+        }
+        APU.resetClock = (APU.frameCounter & 0x01) ? 4 : 3;
         break;
     }
 }
@@ -245,7 +256,7 @@ static void triangleTick(NinState* state)
     if (channel->timerValue == 0)
     {
         channel->timerValue = channel->timerPeriod;
-        if (channel->length && channel->linear && channel->timerPeriod > 2)
+        if (channel->length && channel->linear)
         {
             channel->seqIndex++;
             channel->seqIndex &= 0x1f;
@@ -436,17 +447,41 @@ static float ninHiPass(NinState* state, float sample, unsigned index, float coef
     return newSample;
 }
 
+static void ninApuFrameQuarter(NinState* state)
+{
+    triangleClockQuarter(state);
+    envelopeTick(&APU.pulse[0].envelope);
+    envelopeTick(&APU.pulse[1].envelope);
+    envelopeTick(&APU.noise.envelope);
+}
+
+static void ninApuFrameHalf(NinState* state)
+{
+    triangleClockHalf(state);
+    pulseClockHalf(state, 0);
+    pulseClockHalf(state, 1);
+    noiseClockHalf(state);
+}
+
 void ninRunCyclesAPU(NinState* state, size_t cycles)
 {
     float sample;
     uint8_t triangleSample;
     uint8_t pulseSample[2];
     uint8_t noiseSample;
+    size_t maxApuCycle;
 
+    maxApuCycle = state->regionData.apuFrameCycles[3 + APU.mode];
     while (cycles--)
     {
-        triangleTick(state);
+        if (APU.resetClock)
+        {
+            APU.resetClock--;
+            if (APU.resetClock == 0)
+                APU.frameCounter = 0;
+        }
 
+        triangleTick(state);
         if (!(APU.frameCounter & 0x1))
         {
             pulseTick(state, 0);
@@ -458,34 +493,27 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
         if (APU.frameCounter == state->regionData.apuFrameCycles[0]
             || APU.frameCounter == state->regionData.apuFrameCycles[1]
             || APU.frameCounter == state->regionData.apuFrameCycles[2]
-            || APU.frameCounter == state->regionData.apuFrameCycles[3])
+            || APU.frameCounter == maxApuCycle)
         {
-            triangleClockQuarter(state);
-            envelopeTick(&APU.pulse[0].envelope);
-            envelopeTick(&APU.pulse[1].envelope);
-            envelopeTick(&APU.noise.envelope);
+            ninApuFrameQuarter(state);
         }
 
-        if (APU.frameCounter == state->regionData.apuFrameCycles[0]
-            || APU.frameCounter == state->regionData.apuFrameCycles[2])
+        if (APU.frameCounter == state->regionData.apuFrameCycles[1]
+            || APU.frameCounter == maxApuCycle)
         {
-            triangleClockHalf(state);
-            pulseClockHalf(state, 0);
-            pulseClockHalf(state, 1);
-            noiseClockHalf(state);
+            ninApuFrameHalf(state);
         }
 
-        if (APU.frameCounter == state->regionData.apuFrameCycles[3 + APU.mode])
+        if (APU.frameCounter >= maxApuCycle - 1)
         {
-            if (APU.irq)
-            {
+            if (!APU.mode && !APU.irqInhibit)
                 ninSetIRQ(state, IRQ_APU_FRAME);
-            }
-            APU.frameCounter = 0;
         }
+
+        if (APU.frameCounter == maxApuCycle + 1)
+            APU.frameCounter = 1;
         else
             APU.frameCounter++;;
- 
 
         /* Load the triangle sample */
         triangleSample = sampleTriangle(state);

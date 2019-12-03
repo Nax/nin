@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <libnin/libnin.h> 
 
-static const uint16_t kApuFrameCyclesNTSC[5] = { 7456, 14912, 22370, 29828, 37280 };
+static const uint16_t kApuFrameCyclesNTSC[5] = { 7457, 14913, 22371, 29829, 37281 };
 static const uint16_t kApuNoisePeriodNTSC[16] = { 4, 8, 16, 32, 64, 96, 128, 160, 202, 254, 380, 508, 762, 1016, 2034, 4068 };
 static const uint16_t kApuDmcPeriodNTSC[16] = { 214, 190, 170, 160, 143, 127, 113, 107, 95, 80, 71, 64, 53, 42, 36, 27 };
 

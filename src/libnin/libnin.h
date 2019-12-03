@@ -269,7 +269,8 @@ typedef struct {
     NinChannelNoise     noise;
     NinChannelDMC       dmc;
     uint8_t             mode:1;
-    uint8_t             irq:1;
+    uint8_t             irqInhibit:1;
+    uint8_t             resetClock;
 } NinAPU;
 
 typedef struct {
