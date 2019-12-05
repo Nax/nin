@@ -61,8 +61,10 @@
 
 #define DEBUG_LEVEL 0
 
-typedef void (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
-typedef void (*NinPpuMonitorHandler)(struct NinState_* state, uint16_t addr);
+typedef void    (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
+typedef void    (*NinPpuMonitorHandler)(struct NinState_* state, uint16_t addr);
+typedef uint8_t (*NinMemoryReadHandler)(struct NinState_* state, uint16_t addr);
+typedef void    (*NinMemoryWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
 
 #define MIRRORING_HORIZONTAL    0
 #define MIRRORING_VERTICAL      1
@@ -360,7 +362,12 @@ struct NinState_ {
     NinMapperRegs           mapperRegs;
     NinPrgWriteHandler      prgWriteHandler;
     NinPpuMonitorHandler    ppuMonitorHandler;
+    NinMemoryReadHandler    readHandler;
+    NinMemoryWriteHandler   writeHandler;
 
+    uint8_t             diskSides;
+    uint32_t            diskDataSize;
+    uint8_t*            diskData;
     uint8_t             prgBankCount;
     uint8_t*            prgRom;
     uint32_t            prgRomSize;
@@ -388,6 +395,7 @@ struct NinState_ {
     uint8_t             irqScanlineReloadValue;
     uint16_t            irqScanlineFilterShifter;
     uint16_t            oldVmemAddr;
+    NinSystem           system;
 };
 
 #define IRQ_APU_FRAME   0x01
@@ -400,6 +408,11 @@ NIN_API uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
 NIN_API uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
 NIN_API void        ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 NIN_API void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
+
+NIN_API uint8_t     ninMemoryReadNES(NinState* state, uint16_t addr);
+NIN_API uint8_t     ninMemoryReadFDS(NinState* state, uint16_t addr);
+NIN_API void        ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void        ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value);
 
 NIN_API uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
 NIN_API void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
@@ -414,7 +427,6 @@ uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
 void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
 NIN_API int         ninPpuRunCycles(NinState* state, uint16_t cycles);
-NIN_API void        ninRunFrameCPU(NinState* state);
 NIN_API void        ninRunCyclesAPU(NinState* state, size_t cycles);
 
 NIN_API void ninSetIRQ(NinState* state, uint8_t flag);

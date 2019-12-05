@@ -91,7 +91,7 @@ static void ioWrite(NinState* state, uint8_t port, uint8_t value)
     }
 }
 
-uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
+uint8_t ninMemoryReadNES(NinState* state, uint16_t addr)
 {
     if (addr < 0x2000)
         return state->ram[addr & 0x7ff];
@@ -127,6 +127,36 @@ uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
         return state->prgRomBank[3][addr & 0x1fff];
 }
 
+uint8_t ninMemoryReadFDS(NinState* state, uint16_t addr)
+{
+    if (addr < 0x2000)
+        return state->ram[addr & 0x7ff];
+    else if (addr < 0x4000)
+        return ninPpuRegRead(state, addr);
+    else if (addr < 0x4018)
+    {
+        switch (addr & 0xff)
+        {
+        case 0x14:
+        case 0x16:
+            return ioRead(state, addr & 0xff);
+        default:
+            return ninApuRegRead(state, addr & 0xff);
+        }
+    }
+    else if (addr < 0x6000)
+        return badIO(state, addr, 0);
+    else if (addr < 0xe000)
+        return state->prgRam[addr - 0x6000];
+    else
+        return state->prgRom[addr & 0x1fff];
+}
+
+uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
+{
+    return state->readHandler(state, addr);
+}
+
 uint16_t ninMemoryRead16(NinState* state, uint16_t addr)
 {
     uint8_t lo;
@@ -138,7 +168,7 @@ uint16_t ninMemoryRead16(NinState* state, uint16_t addr)
     return lo | (hi << 8);
 }
 
-void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
+void ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value)
 {
     if (addr < 0x2000)
         state->ram[addr & 0x7ff] = value;
@@ -168,6 +198,40 @@ void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
     }
     else
         state->prgWriteHandler(state, addr, value);
+}
+
+void ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value)
+{
+    if (addr < 0x2000)
+        state->ram[addr & 0x7ff] = value;
+    else if (addr < 0x4000)
+        ninPpuRegWrite(state, addr, value);
+    else if (addr < 0x4018)
+    {
+        switch (addr & 0xff)
+        {
+        case 0x14:
+        case 0x16:
+            ioWrite(state, addr & 0xff, value);
+            break;
+        default:
+            ninApuRegWrite(state, addr & 0xff, value);
+            break;
+        }
+    }
+    else if (addr < 0x6000)
+        badIO(state, addr, 1);
+    else if (addr < 0xe000)
+    {
+        state->prgRam[addr - 0x6000] = value;
+    }
+    else
+        state->prgWriteHandler(state, addr, value);
+}
+
+void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
+{
+    state->writeHandler(state, addr, value);
 }
 
 void ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
@@ -205,7 +269,7 @@ static int memoryExtractOverlap(uint16_t start, size_t len, uint16_t regionStart
     return 1;
 }
 
-NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)
+NIN_API void ninDumpMemoryNES(NinState* state, uint8_t* dst, uint16_t start, size_t len)
 {
     uint16_t oOff;
     size_t oLen;
@@ -230,5 +294,47 @@ NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t
         {
             memcpy(dst + dOff, state->prgRomBank[i] + oOff, oLen);
         }
+    }
+}
+
+NIN_API void ninDumpMemoryFDS(NinState* state, uint8_t* dst, uint16_t start, size_t len)
+{
+    uint16_t oOff;
+    size_t oLen;
+    uint16_t dOff;
+
+    /* RAM */
+    if (memoryExtractOverlap(start, len, 0x0000, 0x2000, &oOff, &oLen, &dOff))
+    {
+        memcpy(dst + dOff, state->ram + oOff, oLen);
+    }
+
+    /* 0x2000-0x5fff, not implemented */
+    if (memoryExtractOverlap(start, len, 0x2000, 0x4000, &oOff, &oLen, &dOff))
+    {
+        memset(dst + dOff, 0xff, oLen);
+    }
+
+    /* 0x6000-0xdfff, PRG RAM */
+    if (memoryExtractOverlap(start, len, 0x6000, 0x8000, &oOff, &oLen, &dOff))
+    {
+        memcpy(dst + dOff, state->prgRam + oOff, oLen);
+    }
+
+    /* 0xe000-0xffff, PRG ROM */
+    if (memoryExtractOverlap(start, len, 0xe000, 0x2000, &oOff, &oLen, &dOff))
+    {
+        memcpy(dst + dOff, state->prgRom + oOff, oLen);
+    }
+}
+
+NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)
+{
+    switch (state->system)
+    {
+    case NIN_SYSTEM_NES:
+        ninDumpMemoryNES(state, dst, start, len);
+    case NIN_SYSTEM_FDS:
+        ninDumpMemoryFDS(state, dst, start, len);
     }
 }

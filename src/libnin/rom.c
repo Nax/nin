@@ -26,17 +26,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <string.h>
 #include <libnin/libnin.h>
 
-static const char kHeaderMagic[] = { 'N', 'E', 'S', '\x1a' };
+static const char kHeaderMagicNES[] = { 'N', 'E', 'S', '\x1a' };
+static const char kHeaderMagicFDS[] = { 'F', 'D', 'S', '\x1a' };
+
+NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f);
+NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE* f);
 
 NIN_API NinError ninLoadRom(NinState* state, const char* path)
 {
-    int nes2;
     FILE* f;
     NinRomHeader header;
 
-    nes2 = 0;
     /* Open the ROM */
     f = fopen(path, "rb");
     if (!f)
@@ -46,27 +49,40 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     memset(&header, 0, sizeof(header));
     fread(&header, sizeof(header), 1, f);
 
-    /* Check for the iNES signature */
-    if (memcmp(header.magic, kHeaderMagic, 4) != 0)
-        return NIN_ERROR_BAD_FILE;
+    /* Check for the NES signature */
+    if (memcmp(header.magic, kHeaderMagicNES, 4) == 0)
+        return ninLoadRomNES(state, &header, f);
 
+    /* Check for the iNES signature */
+    if (memcmp(header.magic, kHeaderMagicFDS, 4) == 0)
+        return ninLoadRomFDS(state, &header, f);
+
+    fclose(f);
+    return NIN_ERROR_BAD_FILE;
+}
+
+NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f)
+{
+    int nes2;
+
+    nes2 = 0;
     /* Check for the nes2 signature */
-    if (header.magicNes2 == 0x2)
+    if (header->magicNes2 == 0x2)
         nes2 = 1;
 
     /* Load the region */
     if (!nes2)
         state->region = NIN_REGION_NTSC;
     else
-        state->region = header.nes2.region;
+        state->region = header->nes2.region;
 
     /* Load the header misc. info */
-    state->mapper = (header.mapperHi << 4) | header.mapperLo;
-    if (header.quadScreen)
+    state->mapper = (header->mapperHi << 4) | header->mapperLo;
+    if (header->quadScreen)
     {
         state->mirroring = MIRRORING_QUAD;
     }
-    else if (header.mirroring)
+    else if (header->mirroring)
     {
         state->mirroring = MIRRORING_VERTICAL;
     }
@@ -74,10 +90,10 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     {
         state->mirroring = MIRRORING_HORIZONTAL;
     }
-    state->battery = header.battery;
-    state->trainerSize = header.trainer ? 0x200 : 0;
-    state->prgRomSize = 0x4000 * header.prgRomSize;
-    state->chrRomSize = 0x2000 * header.chrRomSize;
+    state->battery = header->battery;
+    state->trainerSize = header->trainer ? 0x200 : 0;
+    state->prgRomSize = 0x4000 * header->prgRomSize;
+    state->chrRomSize = 0x2000 * header->chrRomSize;
     state->prgRamSize = 0x2000;
 
     /* Zero is an error for PRG but allowed for CHR */
@@ -106,7 +122,7 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
         fread(state->chrRom, state->chrRomSize, 1, f);
 
     /* Check that the file was actually long enough */
-    if (ftell(f) < sizeof(header) + state->prgRomSize + state->chrRomSize + state->trainerSize)
+    if (ftell(f) < sizeof(NinRomHeader) + state->prgRomSize + state->chrRomSize + state->trainerSize)
     {
         fclose(f);
         return NIN_ERROR_BAD_FILE;
@@ -134,6 +150,8 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     /* Apply a default configuration suitable for most mappers */
     state->prgWriteHandler = &ninPrgWriteHandlerNull;
     state->ppuMonitorHandler = &ninPpuMonitorHandlerNull;
+    state->readHandler = &ninMemoryReadNES;
+    state->writeHandler = &ninMemoryWriteNES;
 
     state->prgRomBank[0] = state->prgRom;
     state->prgRomBank[1] = state->prgRom + 0x2000;
@@ -222,4 +240,78 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     ninRegionApply(state);
 
     return NIN_OK;
+}
+
+NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE* f)
+{
+    state->system = NIN_SYSTEM_FDS;
+
+    /* PRG ROM is the FDS BIOS */
+    state->prgRomSize = 0x2000;
+    state->prgRom = zalloc(state->prgRomSize);
+
+    /* PRG RAM is included as well */
+    state->prgRamSize = 0x8000;
+    state->prgRam = zalloc(state->prgRamSize);
+
+    /* As is CHR RAM */
+    state->chrRamSize = 0x2000;
+    state->chrRam = zalloc(state->chrRamSize);
+    for (int i = 0; i < 8; ++i)
+    {
+        state->chrBank[i] = state->chrRam + i * 0x400;
+    }
+
+    /* We need the number of disk sides */
+    state->diskSides = header->prgRomSize;
+    state->diskDataSize = state->diskSides * 65500;
+    state->diskData = zalloc(state->diskDataSize);
+    fread(state->diskData, state->diskDataSize, 1, f);
+
+    /* Check that the file was actually long enough */
+    if (ftell(f) < sizeof(NinRomHeader) + state->diskDataSize)
+    {
+        fclose(f);
+        return NIN_ERROR_BAD_FILE;
+    }
+
+    /* We won't need the ROM from now on */
+    fclose(f);
+
+    /* Apply mirroring */
+    if (state->mirroring == MIRRORING_VERTICAL)
+    {
+        state->nametables[0] = state->vram + 0x000;
+        state->nametables[1] = state->vram + 0x400;
+        state->nametables[2] = state->vram + 0x000;
+        state->nametables[3] = state->vram + 0x400;
+    }
+    else
+    {
+        state->nametables[0] = state->vram + 0x000;
+        state->nametables[1] = state->vram + 0x000;
+        state->nametables[2] = state->vram + 0x400;
+        state->nametables[3] = state->vram + 0x400;
+    }
+
+    /* TODO: Add an FDS mapper */
+    state->prgWriteHandler = &ninPrgWriteHandlerNull;
+    state->ppuMonitorHandler = &ninPpuMonitorHandlerNull;
+    state->readHandler = &ninMemoryReadFDS;
+    state->writeHandler = &ninMemoryWriteFDS;
+    ninRegionApply(state);
+
+    return NIN_OK;
+}
+
+NIN_API void ninLoadBiosFDS(NinState* state, const char* path)
+{
+    FILE* f;
+
+    f = fopen(path, "rb");
+    if (!f)
+        return;
+    fread(state->prgRom, state->prgRomSize, 1, f);
+    fclose(f);
+    state->cpu.pc = ninMemoryRead16(state, 0xfffc);
 }

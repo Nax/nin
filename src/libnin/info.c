@@ -32,6 +32,9 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
 {
     switch (info)
     {
+    case NIN_INFO_SYSTEM:
+        *dst = state->system;
+        break;
     case NIN_INFO_CLOCK_RATE:
         *dst = state->regionData.clockRate;
         break;

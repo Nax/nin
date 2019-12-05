@@ -57,9 +57,11 @@ bool EmulatorWorker::loadRom(const QString& path)
 {
     QByteArray raw;
     QString saveFile;
+    QString biosPath;
     NinError err;
     NinInt32 frameCycles;
     NinInt32 frameDelay;
+    NinInt32 system;
     bool success;
 
     std::unique_lock lock(_mutex);
@@ -78,6 +80,13 @@ bool EmulatorWorker::loadRom(const QString& path)
     {
         ninInfoQueryInteger(_state, &frameCycles, NIN_INFO_FRAME_CYCLES);
         ninInfoQueryInteger(_state, &frameDelay, NIN_INFO_FRAME_DELAY);
+        ninInfoQueryInteger(_state, &system, NIN_INFO_SYSTEM);
+
+        if (system == NIN_SYSTEM_FDS) {
+            biosPath = QCoreApplication::applicationDirPath() + "/bios/disksys.rom";
+            raw = biosPath.toUtf8();
+            ninLoadBiosFDS(_state, raw.data());
+        }
 
         _frameCycles = frameCycles;
         _frameDelay = frameDelay;

@@ -71,6 +71,12 @@ typedef enum {
 } NinRegion;
 
 typedef enum {
+    NIN_SYSTEM_NES      = 0,
+    NIN_SYSTEM_FDS      = 1
+} NinSystem;
+
+typedef enum {
+    NIN_INFO_SYSTEM,
     NIN_INFO_CLOCK_RATE,
     NIN_INFO_FRAME_CYCLES,
     NIN_INFO_FRAME_DELAY,
@@ -94,6 +100,7 @@ NIN_API void            ninSetInput(NinState* state, uint8_t input);
 NIN_API void            ninAudioSetFrequency(NinState* state, uint32_t frequency);
 NIN_API void            ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg);
 NIN_API void            ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len);
+NIN_API void            ninLoadBiosFDS(NinState* state, const char* path);
 
 NIN_API void            ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info);
 

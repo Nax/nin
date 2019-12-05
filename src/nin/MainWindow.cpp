@@ -150,7 +150,7 @@ void MainWindow::closeEvent(QCloseEvent* event)
 
 void MainWindow::openFile()
 {
-    QString filename = QFileDialog::getOpenFileName(this, tr("Open ROM"), "", "*.nes");
+    QString filename = QFileDialog::getOpenFileName(this, tr("Open ROM"), "", "NES/FDS rom (*.nes *.fds)");
     openRom(filename);
 }
 
