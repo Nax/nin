@@ -331,6 +331,27 @@ typedef struct
     const uint16_t*     apuDmcPeriod;
 } NinRegionData;
 
+typedef struct {
+    uint8_t     extPort;
+    uint8_t     motor:1;
+    uint8_t     noScan:1;
+    uint8_t     noWrite:1;
+    uint8_t     inData:1;
+    uint8_t     irqEnabledTransfer:1;
+    uint8_t     irqEnabledTimer:1;
+    uint8_t     irqReloadFlag:1;
+    uint16_t    irqReloadValue;
+    uint16_t    irqTimer;
+    uint8_t     transfered:1;
+    uint8_t     latchRead;
+    uint16_t    headClock;
+    uint32_t    headPos;
+    uint16_t    delay;
+    uint8_t     scanning:1;
+    uint8_t     skippedGap:1;
+    uint8_t     endOfDisk:1;
+} NinFds;
+
 struct NinState_ {
     FILE*               saveFile;
     NinRegion           region;
@@ -396,11 +417,14 @@ struct NinState_ {
     uint16_t            irqScanlineFilterShifter;
     uint16_t            oldVmemAddr;
     NinSystem           system;
+    NinFds              fds;
 };
 
-#define IRQ_APU_FRAME   0x01
-#define IRQ_APU_DMC     0x02
-#define IRQ_SCANLINE    0x04
+#define IRQ_APU_FRAME       0x01
+#define IRQ_APU_DMC         0x02
+#define IRQ_SCANLINE        0x04
+#define IRQ_FDS_TRANSFER    0x08
+#define IRQ_FDS_TIMER       0x10
 
 void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
@@ -473,5 +497,9 @@ NIN_API void    ninMirrorB(NinState* state);
 NIN_API void    ninMirrorH(NinState* state);
 NIN_API void    ninMirrorV(NinState* state);
 
+/* fds.c */
+NIN_API uint8_t     ninFdsRegRead(NinState* state, uint16_t addr);
+NIN_API void        ninFdsRegWrite(NinState* state, uint16_t addr, uint8_t value);
+NIN_API void        ninFdsCycle(NinState* state);
 
 #endif

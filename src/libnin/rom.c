@@ -29,11 +29,53 @@
 #include <string.h>
 #include <libnin/libnin.h>
 
+#define FDS_DISK_GAP0   3538
+#define FDS_DISK_GAP1   122
+
 static const char kHeaderMagicNES[] = { 'N', 'E', 'S', '\x1a' };
 static const char kHeaderMagicFDS[] = { 'F', 'D', 'S', '\x1a' };
 
 NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f);
 NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE* f);
+
+static void loadDisk(uint8_t* dst, FILE* f)
+{
+    uint32_t head;
+    uint16_t fileSize;
+    uint8_t fileCount;
+
+    /* First, large gap */
+    head = FDS_DISK_GAP0;
+    dst[head - 1] = 0x80;
+
+    /* Load block 1 */
+    fread(dst + head, 0x38, 1, f);
+    head += 0x3a;
+    head += FDS_DISK_GAP1;
+    dst[head - 1] = 0x80;
+
+    /* Load block 2 */
+    fread(dst + head, 0x02, 1, f);
+    fileCount = dst[head + 1];
+    head += 0x04;
+
+    for (int i = 0; i < fileCount; ++i)
+    {
+        head += FDS_DISK_GAP1;
+        dst[head - 1] = 0x80;
+
+        /* Block 3 */
+        fread(dst + head, 0x10, 1, f);
+        fileSize = *(uint16_t*)(dst + head + 13);
+        head += 0x12;
+        head += FDS_DISK_GAP1;
+        dst[head - 1] = 0x80;
+
+        /* Block 4 */
+        fread(dst + head, fileSize + 1, 1, f);
+        head += (fileSize + 3);
+    }
+}
 
 NIN_API NinError ninLoadRom(NinState* state, const char* path)
 {
@@ -264,16 +306,9 @@ NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE
 
     /* We need the number of disk sides */
     state->diskSides = header->prgRomSize;
-    state->diskDataSize = state->diskSides * 65500;
+    state->diskDataSize = 0x14000;
     state->diskData = zalloc(state->diskDataSize);
-    fread(state->diskData, state->diskDataSize, 1, f);
-
-    /* Check that the file was actually long enough */
-    if (ftell(f) < sizeof(NinRomHeader) + state->diskDataSize)
-    {
-        fclose(f);
-        return NIN_ERROR_BAD_FILE;
-    }
+    loadDisk(state->diskData, f);
 
     /* We won't need the ROM from now on */
     fclose(f);

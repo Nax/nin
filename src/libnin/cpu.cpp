@@ -167,6 +167,7 @@ static constexpr bool matchPattern(const char* pattern, uint16_t value)
         state->regionData.cycleExtraCounter = 0;                                    \
         state->frame |= ninPpuRunCycles(state, 1);                                  \
     }                                                                               \
+    ninFdsCycle(state);                                                             \
 } while (0)
 
 #define READ(x)         do { tmp = ninMemoryRead8(state, (x)); } while (0)
@@ -280,7 +281,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
     state->cyc = 0;
     for (;;)
     {
-        isIRQ = ((((state->cpu.p2) & PFLAG_I) == 0) && state->irq);
+        isIRQ = ((((state->cpu.p) & PFLAG_I) == 0) && state->irq);
 
         op = ninMemoryRead8(state, state->cpu.pc);
         CYCLE();
@@ -305,7 +306,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
         }
 
         state->nmi2 = state->nmi;
-        state->cpu.p2 = state->cpu.p;
+        //state->cpu.p2 = state->cpu.p;
 
         EXECUTE(op);
 

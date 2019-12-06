@@ -144,6 +144,8 @@ uint8_t ninMemoryReadFDS(NinState* state, uint16_t addr)
             return ninApuRegRead(state, addr & 0xff);
         }
     }
+    else if (addr < 0x4100)
+        return ninFdsRegRead(state, addr);
     else if (addr < 0x6000)
         return badIO(state, addr, 0);
     else if (addr < 0xe000)
@@ -165,7 +167,7 @@ uint16_t ninMemoryRead16(NinState* state, uint16_t addr)
     lo = ninMemoryRead8(state, addr);
     hi = ninMemoryRead8(state, addr + 1);
 
-    return lo | (hi << 8);
+    return lo | ((uint16_t)hi << 8);
 }
 
 void ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value)
@@ -219,6 +221,8 @@ void ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value)
             break;
         }
     }
+    else if (addr < 0x4100)
+        ninFdsRegWrite(state, addr, value);
     else if (addr < 0x6000)
         badIO(state, addr, 1);
     else if (addr < 0xe000)
