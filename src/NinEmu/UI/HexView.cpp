@@ -28,7 +28,7 @@
 
 #include <QFontDatabase>
 #include <QScrollBar>
-#include "HexView.h"
+#include <NinEmu/UI/HexView.h>
 
 HexView::HexView(size_t bufferSize, QWidget* parent)
 : QAbstractScrollArea(parent)

@@ -28,8 +28,8 @@
 
 #include <complex>
 #include <QtWidgets>
-#include "AudioVisualizerWindow.h"
-#include "SignalVisualizer.h"
+#include <NinEmu/Window/AudioVisualizerWindow.h>
+#include <NinEmu/UI/SignalVisualizer.h>
 
 #define PI (3.141592653589793f)
 

@@ -29,13 +29,13 @@
 #include <QtWidgets>
 #include <nin/nin.h>
 
-#include "MainWindow.h"
-#include "EmulatorWorker.h"
-#include "Audio.h"
-#include "RenderWidget.h"
-#include "MemoryWindow.h"
-#include "AudioVisualizerWindow.h"
-#include "DebuggerWindow.h"
+#include <NinEmu/Core/Audio.h>
+#include <NinEmu/Core/EmulatorWorker.h>
+#include <NinEmu/UI/RenderWidget.h>
+#include <NinEmu/Window/AudioVisualizerWindow.h>
+#include <NinEmu/Window/DebuggerWindow.h>
+#include <NinEmu/Window/MainWindow.h>
+#include <NinEmu/Window/MemoryWindow.h>
 
 #define DEADZONE (0.30)
 
@@ -48,7 +48,7 @@ MainWindow::MainWindow(QWidget* parent)
 
     _audio = new Audio(this);
     _emu = new EmulatorWorker(this);
-    _emu->setAudioFrequency(/*_audio->frequency()*/ 48000);
+    _emu->setAudioFrequency(48000);
 
     setWindowTitle("Nin " NIN_VERSION);
 

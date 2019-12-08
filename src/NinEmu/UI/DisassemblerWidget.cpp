@@ -28,7 +28,7 @@
 
 #include <QFontDatabase>
 #include <QScrollBar>
-#include "DisassemblerWidget.h"
+#include <NinEmu/UI/DisassemblerWidget.h>
 
 #define A_IMPL      0
 #define A_IZX       1

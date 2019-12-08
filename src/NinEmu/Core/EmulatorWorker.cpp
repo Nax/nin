@@ -29,7 +29,7 @@
 #include <stdio.h>
 #include <QFileInfo>
 #include <QApplication>
-#include "EmulatorWorker.h"
+#include <NinEmu/Core/EmulatorWorker.h>
 
 EmulatorWorker::EmulatorWorker(QObject* parent)
 : QObject(parent)

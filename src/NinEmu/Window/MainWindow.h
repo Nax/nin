@@ -35,8 +35,7 @@
 #include <QGamepad>
 #include <QString>
 
-#include "RenderWidget.h"
-#include "MemoryWindow.h"
+#include <NinEmu/UI/RenderWidget.h>
 
 class EmulatorWorker;
 class Audio;

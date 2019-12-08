@@ -33,6 +33,6 @@ if (WIN32)
 endif()
 
 add_subdirectory(libnin)
-add_subdirectory(nin)
 add_subdirectory(ninperf)
 add_subdirectory(ninconv)
+add_subdirectory(NinEmu)

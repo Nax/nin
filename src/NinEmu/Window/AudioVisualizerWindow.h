@@ -26,28 +26,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <QVboxLayout>
-#include "MemoryWindow.h"
+#ifndef AUDIO_VISUALIZER_WINDOW_H
+#define AUDIO_VISUALIZER_WINDOW_H
 
-MemoryWindow::MemoryWindow(QWidget* parent)
-: QWidget(parent, Qt::Window)
+#include <cstdint>
+#include <QWidget>
+
+#include <nin/nin.h>
+
+class SignalVisualizer;
+class AudioVisualizerWindow : public QWidget
 {
-    QVBoxLayout* layout;
+    Q_OBJECT;
 
-    setWindowTitle("Memory Viewer");
+public:
+    explicit AudioVisualizerWindow(QWidget* parent = nullptr);
 
-    layout = new QVBoxLayout;
-    setLayout(layout);
+public slots:
+    void refresh(const float* samples);
 
-    _hexView = new HexView(0x10000);
-    _hexView->show();
-    _hexView->repaint();
+private:
+    SignalVisualizer* _timeDomainVisualizer;
+    SignalVisualizer* _freqDomainVisualizer;
+};
 
-    layout->addWidget(_hexView);
-}
-
-void MemoryWindow::refresh(NinState* state)
-{
-    ninDumpMemory(state, _hexView->buffer(), 0, 0x10000);
-    _hexView->update();
-}
+#endif

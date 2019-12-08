@@ -27,7 +27,7 @@
  */
 
 #include <nin/nin.h>
-#include "Audio.h"
+#include <NinEmu/Core/Audio.h>
 
 Audio::Audio(QObject* parent)
 : QObject(parent)

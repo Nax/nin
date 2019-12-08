@@ -26,29 +26,25 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef AUDIO_VISUALIZER_WINDOW_H
-#define AUDIO_VISUALIZER_WINDOW_H
-
-#include <cstdint>
-#include <QWidget>
-
-#include <nin/nin.h>
-#include "HexView.h"
-
-class SignalVisualizer;
-class AudioVisualizerWindow : public QWidget
-{
-    Q_OBJECT;
-
-public:
-    explicit AudioVisualizerWindow(QWidget* parent = nullptr);
-
-public slots:
-    void refresh(const float* samples);
-
-private:
-    SignalVisualizer* _timeDomainVisualizer;
-    SignalVisualizer* _freqDomainVisualizer;
-};
-
+#if defined(_MSC_VER)
+# include <intrin.h>
+#else
+# include <x86intrin.h>
 #endif
+
+#include <QApplication>
+#include <NinEmu/Window/MainWindow.h>
+
+int main(int argc, char** argv)
+{
+    _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+
+    QApplication app(argc, argv);
+    QApplication::setApplicationName("Nin");
+    QApplication::setOrganizationName("NotAndXor");
+
+    MainWindow mainWindow;
+
+    mainWindow.show();
+    return app.exec();
+}

@@ -27,7 +27,7 @@
  */
 
 #include <QtWidgets>
-#include "SignalVisualizer.h"
+#include <NinEmu/UI/SignalVisualizer.h>
 
 static float mapUnit(float min, float max, float v)
 {

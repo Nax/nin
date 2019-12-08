@@ -26,25 +26,28 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if defined(_MSC_VER)
-# include <intrin.h>
-#else
-# include <x86intrin.h>
-#endif
+#ifndef MEMORY_WINDOW_H
+#define MEMORY_WINDOW_H
 
-#include <QApplication>
-#include "MainWindow.h"
+#include <cstdint>
+#include <QWidget>
+#include <QTimer>
 
-int main(int argc, char** argv)
+#include <nin/nin.h>
+#include <NinEmu/UI/HexView.h>
+
+class MemoryWindow : public QWidget
 {
-    _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
+    Q_OBJECT;
 
-    QApplication app(argc, argv);
-    QApplication::setApplicationName("Nin");
-    QApplication::setOrganizationName("NotAndXor");
+public:
+    explicit MemoryWindow(QWidget* parent = nullptr);
 
-    MainWindow mainWindow;
+public slots:
+    void refresh(NinState* state);
 
-    mainWindow.show();
-    return app.exec();
-}
+private:
+    HexView*    _hexView;
+};
+
+#endif

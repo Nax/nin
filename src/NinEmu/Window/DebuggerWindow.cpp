@@ -27,8 +27,8 @@
  */
 
 #include <QtWidgets>
-#include "DebuggerWindow.h"
-#include "DisassemblerWidget.h"
+#include <NinEmu/UI/DisassemblerWidget.h>
+#include <NinEmu/Window/DebuggerWindow.h>
 
 DebuggerWindow::DebuggerWindow(QWidget* parent)
 : QWidget(parent)

@@ -26,7 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "RenderWidget.h"
+#include <NinEmu/UI/RenderWidget.h>
 
 RenderWidget::RenderWidget(QWidget* parent)
 : QOpenGLWidget(parent)
