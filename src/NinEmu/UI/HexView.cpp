@@ -30,8 +30,11 @@
 #include <QScrollBar>
 #include <NinEmu/UI/HexView.h>
 
-HexView::HexView(size_t bufferSize, QWidget* parent)
+#define LINE_HEIGHT (16)
+
+HexView::HexView(const uint8_t* buffer, size_t bufferSize, QWidget* parent)
 : QAbstractScrollArea(parent)
+, _buffer(buffer)
 , _bufferSize(bufferSize)
 {
     QFont f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
@@ -41,24 +44,12 @@ HexView::HexView(size_t bufferSize, QWidget* parent)
     _viewport = new QWidget();
     setViewport(_viewport);
 
-    _buffer = new uint8_t[bufferSize];
-    memset(_buffer, 0, bufferSize);
-
-    _viewport->setFixedSize(80 + 16 * 20, _bufferSize * 16 + 64);
-
     verticalScrollBar()->setSingleStep(1);
     verticalScrollBar()->setPageStep(1);
-    verticalScrollBar()->setMaximum(bufferSize / 16);
-}
+    updateScroll();
 
-HexView::~HexView()
-{
-    delete[] _buffer;
-}
-
-uint8_t* HexView::buffer()
-{
-    return _buffer;
+    setAutoFillBackground(true);
+    setPalette(QPalette(Qt::white));
 }
 
 void HexView::paintEvent(QPaintEvent* event)
@@ -66,24 +57,47 @@ void HexView::paintEvent(QPaintEvent* event)
     QPainter painter(_viewport);
     uint16_t addr;
     char tmp[7];
+    int offset;
+    size_t lineCount;
 
-    size_t lineCount = size().height() / 16;
+    offset = verticalScrollBar()->value();
+    lineCount = size().height() / LINE_HEIGHT;
 
     for (size_t j = 0; j < lineCount; ++j)
     {
         painter.setPen(Qt::blue);
-        addr = j << 4;
+        addr = (j + offset) << 4;
         snprintf(tmp, sizeof(tmp), "0x%04X", addr);
-        painter.drawText(QPoint(0, j * 16 + 14), tmp);
+        painter.drawText(QPoint(0, j * LINE_HEIGHT + 14), tmp);
         painter.setPen(Qt::black);
 
         for (unsigned i = 0; i < 16; ++i)
         {
             snprintf(tmp, sizeof(tmp), "%02X", _buffer[addr]);
-            painter.drawText(QPoint(80 + i * 20, j * 16 + 14), tmp);
+            painter.drawText(QPoint(80 + i * 20, j * LINE_HEIGHT + 14), tmp);
             addr++;
         }
     }
 
     QAbstractScrollArea::paintEvent(event);
+}
+
+void HexView::resizeEvent(QResizeEvent* event)
+{
+    QAbstractScrollArea::resizeEvent(event);
+    updateScroll();
+}
+
+void HexView::updateScroll()
+{
+    long maxScroll;
+
+    maxScroll = _bufferSize / 16;
+    maxScroll -= (_viewport->size().height() / LINE_HEIGHT);
+
+    if (maxScroll < 0)
+        maxScroll = 0;
+
+    verticalScrollBar()->setMaximum(maxScroll);
+    update();
 }

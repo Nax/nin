@@ -39,17 +39,17 @@ class HexView : public QAbstractScrollArea
     Q_OBJECT;
 
 public:
-    HexView(size_t bufferSize, QWidget* parent = nullptr);
-    virtual ~HexView();
-
-    uint8_t* buffer();
+    HexView(const uint8_t* buffer, size_t bufferSize, QWidget* parent = nullptr);
 
     virtual void paintEvent(QPaintEvent* event) override;
+    virtual void resizeEvent(QResizeEvent* event) override;
 
 private:
-    QWidget*    _viewport;
-    size_t      _bufferSize;
-    uint8_t*    _buffer;
+    void updateScroll();
+
+    QWidget*        _viewport;
+    size_t          _bufferSize;
+    const uint8_t*  _buffer;
 };
 
 #endif

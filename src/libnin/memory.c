@@ -280,9 +280,12 @@ NIN_API void ninDumpMemoryNES(NinState* state, uint8_t* dst, uint16_t start, siz
     uint16_t dOff;
 
     /* RAM */
-    if (memoryExtractOverlap(start, len, 0x0000, 0x2000, &oOff, &oLen, &dOff))
+    for (int i = 0; i < 4; ++i)
     {
-        memcpy(dst + dOff, state->ram + oOff, oLen);
+        if (memoryExtractOverlap(start, len, i * 0x800, 0x800, &oOff, &oLen, &dOff))
+        {
+            memcpy(dst + dOff, state->ram + oOff, oLen);
+        }
     }
 
     /* 0x2000-0x7fff, not implemented */
@@ -308,9 +311,12 @@ NIN_API void ninDumpMemoryFDS(NinState* state, uint8_t* dst, uint16_t start, siz
     uint16_t dOff;
 
     /* RAM */
-    if (memoryExtractOverlap(start, len, 0x0000, 0x2000, &oOff, &oLen, &dOff))
+    for (int i = 0; i < 4; ++i)
     {
-        memcpy(dst + dOff, state->ram + oOff, oLen);
+        if (memoryExtractOverlap(start, len, i * 0x800, 0x800, &oOff, &oLen, &dOff))
+        {
+            memcpy(dst + dOff, state->ram + oOff, oLen);
+        }
     }
 
     /* 0x2000-0x5fff, not implemented */
@@ -338,7 +344,9 @@ NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t
     {
     case NIN_SYSTEM_NES:
         ninDumpMemoryNES(state, dst, start, len);
+        break;
     case NIN_SYSTEM_FDS:
         ninDumpMemoryFDS(state, dst, start, len);
+        break;
     }
 }

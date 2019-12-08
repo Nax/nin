@@ -26,28 +26,34 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <QVboxLayout>
+#include <QtWidgets>
 #include <NinEmu/Window/MemoryWindow.h>
 
 MemoryWindow::MemoryWindow(QWidget* parent)
 : QWidget(parent, Qt::Window)
 {
     QVBoxLayout* layout;
+    QLabel* label;
+
+    memset(_buffer, 0xff, 0x10000);
 
     setWindowTitle("Memory Viewer");
 
     layout = new QVBoxLayout;
-    setLayout(layout);
 
-    _hexView = new HexView(0x10000);
+    label = new QLabel("Memory");
+
+    _hexView = new HexView(_buffer, 0x10000);
     _hexView->show();
     _hexView->repaint();
 
-    layout->addWidget(_hexView);
+    layout->addWidget(label);
+    layout->addWidget(_hexView, 1);
+    setLayout(layout);
 }
 
 void MemoryWindow::refresh(NinState* state)
 {
-    ninDumpMemory(state, _hexView->buffer(), 0, 0x10000);
+    ninDumpMemory(state, _buffer, 0, 0x10000);
     _hexView->update();
 }

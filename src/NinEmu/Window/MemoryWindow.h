@@ -48,6 +48,7 @@ public slots:
 
 private:
     HexView*    _hexView;
+    uint8_t     _buffer[0x10000];
 };
 
 #endif
