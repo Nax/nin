@@ -46,8 +46,11 @@ public:
     virtual void paintGL() override;
     virtual void resizeGL(int w, int j) override;
 
-    void setPixelAspectRatio(float pixelAspectRatio);
     void setFit(bool fit);
+    void setIntegerScale(bool integerScale);
+    void setPixelAspectRatio(float pixelAspectRatio);
+    void setOverscan(int x, int y);
+
     void updateTexture(const char* texture);
 
 private:
@@ -56,12 +59,19 @@ private:
     std::mutex      _mutex;
     GLuint          _texture;
     char            _rawTexture[256 * 240 * 4];
-    float           _pixelAspectRatio;
     bool            _fit;
+    bool            _integerScale;
+    float           _pixelAspectRatio;
+    int             _xOverscan;
+    int             _yOverscan;
     float           _xMin;
     float           _xMax;
     float           _yMin;
     float           _yMax;
+    float           _texXMin;
+    float           _texXMax;
+    float           _texYMin;
+    float           _texYMax;
 };
 
 #endif

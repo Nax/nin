@@ -32,6 +32,7 @@
 #include <NinEmu/Core/Audio.h>
 #include <NinEmu/Core/EmulatorWorker.h>
 #include <NinEmu/Core/Settings.h>
+#include <NinEmu/Menu/GraphicsMenu.h>
 #include <NinEmu/UI/RenderWidget.h>
 #include <NinEmu/Window/AudioVisualizerWindow.h>
 #include <NinEmu/Window/DebuggerWindow.h>
@@ -270,6 +271,14 @@ void MainWindow::createMenus()
     _windowMenu->addAction(_actionMemoryViewer);
     _windowMenu->addAction(_actionAudioVisualizer);
     _windowMenu->addAction(_actionDebugger);
+
+    _graphicsMenu = new GraphicsMenu(this);
+    connect(_graphicsMenu, &GraphicsMenu::fullscreen, this, &MainWindow::eventFullscreen);
+    connect(_graphicsMenu, &GraphicsMenu::fit, this, &MainWindow::eventFit);
+    connect(_graphicsMenu, &GraphicsMenu::integerScale, this, &MainWindow::eventIntegerScale);
+    connect(_graphicsMenu, &GraphicsMenu::aspectRatio, this, &MainWindow::eventAspectRatio);
+    connect(_graphicsMenu, &GraphicsMenu::overscan, this, &MainWindow::eventOverscan);
+    menuBar()->addMenu(_graphicsMenu);
 }
 
 void MainWindow::updateRecentFiles()
@@ -390,5 +399,63 @@ void MainWindow::openRom(const QString& filename)
         QByteArray rawFilename = filename.toUtf8();
         if (_emu->loadRom(rawFilename.data()))
             addToRecentFiles(filename);
+    }
+}
+
+void MainWindow::eventFullscreen(bool fullscreen)
+{
+    if (fullscreen)
+    {
+        showFullScreen();
+#if defined(WIN32) || defined(_WIN32)
+        menuBar()->hide();
+#endif
+    }
+    else
+    {
+        showNormal();
+        menuBar()->show();
+    }
+}
+
+void MainWindow::eventFit(bool fit)
+{
+    _render->setFit(fit);
+}
+
+void MainWindow::eventIntegerScale(bool integerScale)
+{
+    _render->setIntegerScale(integerScale);
+}
+
+void MainWindow::eventAspectRatio(AspectRatio aspectRatio)
+{
+    switch (aspectRatio)
+    {
+    case AspectRatio::Square:
+        _render->setPixelAspectRatio(1.0f);
+        break;
+    case AspectRatio::NTSC:
+        _render->setPixelAspectRatio(8.f / 7.f);
+        break;
+    }
+}
+
+void MainWindow::eventOverscan(Overscan overscan)
+{
+    switch (overscan)
+    {
+    case Overscan::None:
+        _render->setOverscan(0, 0);
+        break;
+    case Overscan::Small:
+        _render->setOverscan(0, 8);
+        break;
+    case Overscan::Medium:
+        _render->setOverscan(8, 16);
+        break;
+    case Overscan::Large:
+        _render->setOverscan(16, 24);
+        break;
     }
 }

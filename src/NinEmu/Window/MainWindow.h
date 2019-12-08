@@ -36,6 +36,8 @@
 #include <QString>
 
 #include <NinEmu/UI/RenderWidget.h>
+#include <NinEmu/UX/AspectRatio.h>
+#include <NinEmu/UX/Overscan.h>
 
 class EmulatorWorker;
 class Audio;
@@ -43,6 +45,9 @@ class MemoryWindow;
 class AudioVisualizerWindow;
 class DebuggerWindow;
 class Settings;
+
+class GraphicsMenu;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT;
@@ -71,6 +76,12 @@ private:
 
     void openRom(const QString& filename);
 
+    void eventFullscreen(bool fullscreen);
+    void eventFit(bool fit);
+    void eventIntegerScale(bool integerScale);
+    void eventAspectRatio(AspectRatio aspectRatio);
+    void eventOverscan(Overscan overscan);
+
     enum { MaxRecentFiles = 9 };
 
     Settings*       _settings;
@@ -95,9 +106,10 @@ private:
     QAction* _actionAudioVisualizer;
     QAction* _actionDebugger;
 
-    QMenu* _fileMenu;
-    QMenu* _emulationMenu;
-    QMenu* _windowMenu;
+    QMenu*          _fileMenu;
+    QMenu*          _emulationMenu;
+    QMenu*          _windowMenu;
+    GraphicsMenu*   _graphicsMenu;
 };
 
 #endif

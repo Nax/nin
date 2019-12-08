@@ -33,6 +33,8 @@ RenderWidget::RenderWidget(QWidget* parent)
 , _texture(0)
 , _pixelAspectRatio(1.0f)
 , _fit(false)
+, _xOverscan(0)
+, _yOverscan(0)
 {
     memset(_rawTexture, 0, 256 * 240 * 4);
     computeViewBox();
@@ -67,13 +69,13 @@ void RenderWidget::paintGL()
 
     glColor4f(1.f, 1.f, 1.f, 1.f);
     glBegin(GL_QUADS);
-    glTexCoord2f(0.f, 1.f);
+    glTexCoord2f(_texXMin, _texYMax);
     glVertex2f(_xMin, _yMin);
-    glTexCoord2f(0.f, 0.f);
+    glTexCoord2f(_texXMin, _texYMin);
     glVertex2f(_xMin, _yMax);
-    glTexCoord2f(1.f, 0.f);
+    glTexCoord2f(_texXMax, _texYMin);
     glVertex2f(_xMax, _yMax);
-    glTexCoord2f(1.f, 1.f);
+    glTexCoord2f(_texXMax, _texYMax);
     glVertex2f(_xMax, _yMin);
     _mutex.unlock();
 
@@ -103,6 +105,23 @@ void RenderWidget::setFit(bool fit)
     computeViewBox();
 }
 
+void RenderWidget::setIntegerScale(bool integerScale)
+{
+    std::unique_lock lock(_mutex);
+
+    _integerScale = integerScale;
+    computeViewBox();
+}
+
+void RenderWidget::setOverscan(int x, int y)
+{
+    std::unique_lock lock(_mutex);
+
+    _xOverscan = x;
+    _yOverscan = y;
+    computeViewBox();
+}
+
 void RenderWidget::updateTexture(const char* texture)
 {
     std::unique_lock lock(_mutex);
@@ -115,9 +134,24 @@ void RenderWidget::computeViewBox()
 {
     int w;
     int h;
+    float imageW;
+    float imageH;
     float xRatio;
     float yRatio;
+    float amplitude;
+    float tx;
+    float ty;
     float r;
+    float snap;
+
+    /* Compute the overscan texture */
+    tx = 1.f / 256.f;
+    ty = 1.f / 240.f;
+
+    _texXMin = _xOverscan * tx;
+    _texXMax = 1.f - (_xOverscan * tx);
+    _texYMin = _yOverscan * ty;
+    _texYMax = 1.f - (_yOverscan * ty);
 
     if (_fit)
     {
@@ -130,8 +164,10 @@ void RenderWidget::computeViewBox()
     {
         w = size().width();
         h = size().height();
-        xRatio = (float)w / 256.f;
-        yRatio = (float)h / 240.f;
+        imageW = ((256.f - 2 * _xOverscan) * _pixelAspectRatio);
+        imageH = (240.f - 2 * _yOverscan);
+        xRatio = (float)w / imageW;
+        yRatio = (float)h / imageH;
 
         if (yRatio > xRatio)
         {
@@ -140,6 +176,7 @@ void RenderWidget::computeViewBox()
             _xMax =  1.f;
             _yMin = -r;
             _yMax =  r;
+            amplitude = xRatio;
         }
         else
         {
@@ -148,6 +185,21 @@ void RenderWidget::computeViewBox()
             _xMax =  r;
             _yMin = -1.f;
             _yMax =  1.f;
+            amplitude = yRatio;
         }
+
+        if (_integerScale && amplitude > 1.f)
+        {
+            snap = floorf(amplitude) / amplitude;
+        }
+        else
+        {
+            snap = 1.f;
+        }
+
+        _xMin *= snap;
+        _xMax *= snap;
+        _yMin *= snap;
+        _yMax *= snap;
     }
 }
