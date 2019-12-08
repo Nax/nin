@@ -46,13 +46,22 @@ public:
     virtual void paintGL() override;
     virtual void resizeGL(int w, int j) override;
 
-public slots:
+    void setPixelAspectRatio(float pixelAspectRatio);
+    void setFit(bool fit);
     void updateTexture(const char* texture);
 
 private:
+    void computeViewBox();
+
     std::mutex      _mutex;
     GLuint          _texture;
     char            _rawTexture[256 * 240 * 4];
+    float           _pixelAspectRatio;
+    bool            _fit;
+    float           _xMin;
+    float           _xMax;
+    float           _yMin;
+    float           _yMax;
 };
 
 #endif

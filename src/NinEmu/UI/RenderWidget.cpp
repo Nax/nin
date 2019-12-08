@@ -31,8 +31,11 @@
 RenderWidget::RenderWidget(QWidget* parent)
 : QOpenGLWidget(parent)
 , _texture(0)
+, _pixelAspectRatio(1.0f)
+, _fit(false)
 {
     memset(_rawTexture, 0, 256 * 240 * 4);
+    computeViewBox();
 }
 
 RenderWidget::~RenderWidget()
@@ -61,24 +64,43 @@ void RenderWidget::paintGL()
 
     _mutex.lock();
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 256, 240, 0, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, _rawTexture);
-    _mutex.unlock();
 
     glColor4f(1.f, 1.f, 1.f, 1.f);
     glBegin(GL_QUADS);
     glTexCoord2f(0.f, 1.f);
-    glVertex2f(-1.f, -1.f);
+    glVertex2f(_xMin, _yMin);
     glTexCoord2f(0.f, 0.f);
-    glVertex2f(-1.f, 1.f);
+    glVertex2f(_xMin, _yMax);
     glTexCoord2f(1.f, 0.f);
-    glVertex2f(1.f, 1.f);
+    glVertex2f(_xMax, _yMax);
     glTexCoord2f(1.f, 1.f);
-    glVertex2f(1.f, -1.f);
+    glVertex2f(_xMax, _yMin);
+    _mutex.unlock();
+
     glEnd();
 }
 
 void RenderWidget::resizeGL(int w, int h)
 {
+    std::unique_lock lock(_mutex);
 
+    computeViewBox();
+}
+
+void RenderWidget::setPixelAspectRatio(float pixelAspectRatio)
+{
+    std::unique_lock lock(_mutex);
+
+    _pixelAspectRatio = pixelAspectRatio;
+    computeViewBox();
+}
+
+void RenderWidget::setFit(bool fit)
+{
+    std::unique_lock lock(_mutex);
+
+    _fit = fit;
+    computeViewBox();
 }
 
 void RenderWidget::updateTexture(const char* texture)
@@ -87,4 +109,45 @@ void RenderWidget::updateTexture(const char* texture)
 
     memcpy(_rawTexture, texture, 256 * 240 * 4);
     QOpenGLWidget::update();
+}
+
+void RenderWidget::computeViewBox()
+{
+    int w;
+    int h;
+    float xRatio;
+    float yRatio;
+    float r;
+
+    if (_fit)
+    {
+        _xMin = -1.f;
+        _xMax =  1.f;
+        _yMin = -1.f;
+        _yMax =  1.f;
+    }
+    else
+    {
+        w = size().width();
+        h = size().height();
+        xRatio = (float)w / 256.f;
+        yRatio = (float)h / 240.f;
+
+        if (yRatio > xRatio)
+        {
+            r = xRatio / yRatio;
+            _xMin = -1.f;
+            _xMax =  1.f;
+            _yMin = -r;
+            _yMax =  r;
+        }
+        else
+        {
+            r = yRatio / xRatio;
+            _xMin = -r;
+            _xMax =  r;
+            _yMin = -1.f;
+            _yMax =  1.f;
+        }
+    }
 }

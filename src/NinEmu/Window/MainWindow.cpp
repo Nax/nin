@@ -31,6 +31,7 @@
 
 #include <NinEmu/Core/Audio.h>
 #include <NinEmu/Core/EmulatorWorker.h>
+#include <NinEmu/Core/Settings.h>
 #include <NinEmu/UI/RenderWidget.h>
 #include <NinEmu/Window/AudioVisualizerWindow.h>
 #include <NinEmu/Window/DebuggerWindow.h>
@@ -46,6 +47,7 @@ MainWindow::MainWindow(QWidget* parent)
     int dx;
     int dy;
 
+    _settings = new Settings(this);
     _audio = new Audio(this);
     _emu = new EmulatorWorker(this);
     _emu->setAudioFrequency(48000);

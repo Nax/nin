@@ -42,6 +42,7 @@ class Audio;
 class MemoryWindow;
 class AudioVisualizerWindow;
 class DebuggerWindow;
+class Settings;
 class MainWindow : public QMainWindow
 {
     Q_OBJECT;
@@ -72,6 +73,7 @@ private:
 
     enum { MaxRecentFiles = 9 };
 
+    Settings*       _settings;
     EmulatorWorker* _emu;
     Audio*          _audio;
     RenderWidget*   _render;
