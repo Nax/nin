@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cmath>
 #include <NinEmu/UI/RenderWidget.h>
 
 RenderWidget::RenderWidget(QWidget* parent)
@@ -190,7 +191,7 @@ void RenderWidget::computeViewBox()
 
         if (_integerScale && amplitude > 1.f)
         {
-            snap = floorf(amplitude) / amplitude;
+            snap = std::floor(amplitude) / amplitude;
         }
         else
         {
