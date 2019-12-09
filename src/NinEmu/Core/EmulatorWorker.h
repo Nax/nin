@@ -75,6 +75,8 @@ private:
     void workerStepSingle();
     void closeRomRaw();
 
+    QString getSaveLocation(const QString& prefix, const QString& name);
+
     static void audioCallback(void* emu, const float* samples);
 
     enum class WorkerState

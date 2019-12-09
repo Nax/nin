@@ -27,8 +27,7 @@
  */
 
 #include <stdio.h>
-#include <QFileInfo>
-#include <QApplication>
+#include <QtCore>
 #include <NinEmu/Core/EmulatorWorker.h>
 
 EmulatorWorker::EmulatorWorker(QObject* parent)
@@ -93,9 +92,7 @@ bool EmulatorWorker::loadRom(const QString& path)
         _cyc = 0;
         _accumulator = 0;
 
-        QFileInfo info(path);
-        saveFile = info.path() + "/" + info.completeBaseName() + ".sav";
-        raw = saveFile.toUtf8();
+        raw = getSaveLocation("nes", path).toUtf8();
         ninSetSaveFile(_state, raw.data());
         ninAudioSetCallback(_state, &audioCallback, this);
         ninAudioSetFrequency(_state, _audioFrequency);
@@ -294,6 +291,26 @@ void EmulatorWorker::closeRomRaw()
         ninDestroyState(_state);
         _state = nullptr;
     }
+}
+
+QString EmulatorWorker::getSaveLocation(const QString& prefix, const QString& name)
+{
+    QFileInfo info(name);
+    QString ninDir;
+    QString saveDir;
+    QString saveName;
+    QString savePath;
+
+    ninDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    saveName = info.completeBaseName() + ".sav";
+    saveDir = ninDir + "/saves/" + prefix;
+    savePath = saveDir + "/" + saveName;
+
+    QDir dir(saveDir);
+    if (!dir.exists())
+        dir.mkpath(".");
+
+    return savePath;
 }
 
 void EmulatorWorker::audioCallback(void* arg, const float* samples)
