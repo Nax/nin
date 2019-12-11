@@ -2,17 +2,17 @@
 #
 # Copyright(c) 2019, Maxime Bacoux
 # All rights reserved.
-# 
+#
 # Redistributionand use in sourceand binary forms, with or without
 # modification, are permitted provided that the following conditions are met :
-# 
+#
 # 1. Redistributions of source code must retain the above copyright notice, this
 # list of conditionsand the following disclaimer.
-# 
+#
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 # this list of conditionsand the following disclaimer in the documentation
 # and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -31,7 +31,7 @@ option(SUPERBUILD "Build this project using a superbuild" ON)
 
 set(VERSION_MAJOR 0)
 set(VERSION_MINOR 6)
-set(VERSION_PATCH 1)
+set(VERSION_PATCH 2)
 set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 if (SUPERBUILD)
