@@ -1,7 +1,12 @@
 language: c
-os:
-  - windows
-  - osx
+jobs:
+  include:
+  - os: windows
+    env: ARCH=x64
+  - os: windows
+    env: ARCH=x86
+  - os: osx
+    env: ARCH=x64
 
 cache:
   directories:
@@ -15,11 +20,18 @@ install:
         curl -vLO http://download.qt.io/official_releases/online_installers/qt-unified-windows-x86-online.exe;
         ./qt-unified-windows-x86-online.exe --verbose --script tools/qt-installer-windows.qs;
       fi;
-      export CMAKE_PREFIX_PATH="C:/Qt/5.12.6/msvc2017_64";
+      if [ "$ARCH" = "x64" ]; then
+        export CMAKE_PREFIX_PATH="C:/Qt/5.12.6/msvc2017_64";
+        export CMAKE_ARCH=x64;
+      else
+        export CMAKE_PREFIX_PATH="C:/Qt/5.12.6/msvc2017";
+        export CMAKE_ARCH=Win32;
+      fi
     fi;
   - |
     if [ "$TRAVIS_OS_NAME" = "osx" ]; then
       if [ ! -e "/usr/local/opt/qt" ]; then
+        brew update
         brew install qt5;
       fi;
       export CMAKE_PREFIX_PATH="/usr/local/opt/qt";
@@ -29,7 +41,7 @@ install:
 script:
   - mkdir -p build
   - cd build
-  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then cmake .. -A x64 -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"; fi
+  - if [ "$TRAVIS_OS_NAME" = "windows" ]; then cmake .. -A ${CMAKE_ARCH} -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"; fi
   - cmake --build . --config Release --target package
 
