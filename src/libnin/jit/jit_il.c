@@ -72,15 +72,47 @@ static int compareVRegs(void const* a, void const* b)
     return ((int)(rb->death - rb->reg) - (int)(ra->death - ra->reg));
 }
 
+static int allocSingleReg(int count, int* min, int* max, int start, int end)
+{
+    for (int i = 0; i < count; ++i)
+    {
+        if (start >= max[i])
+        {
+            max[i] = end;
+            return i + 1;
+        }
+        if (end <= min[i])
+        {
+            min[i] = start;
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
 static void ninJitRegAlloc(NinJitCodeIL* il, int regCount)
 {
     NinJitVirtualReg vRegs[IL_MAX];
     int r;
-    int preg;
-    int sreg;
+    int pregMin[32];
+    int pregMax[32];
+    int sregMin[512];
+    int sregMax[512];
 
     memset(il->regs, 0, IL_MAX * 2);
     il->stackSize = 0;
+
+    for (int i = 0; i < 32; ++i)
+    {
+        pregMin[i] = -1;
+        pregMax[i] = -1;
+    }
+
+    for (int i = 0; i < 512; ++i)
+    {
+        sregMin[i] = -1;
+        sregMax[i] = -1;
+    }
 
     /* We compute the death of every virtual reg */
     for (int i = 0; i < il->count; ++i)
@@ -96,25 +128,22 @@ static void ninJitRegAlloc(NinJitCodeIL* il, int regCount)
     }
 
     /* We sort by decreasing lifetime */
-    qsort(vRegs, il->count, sizeof(*vRegs), &compareVRegs);
+    /* Note: this is dubious, a simple linear scan seems to produce better results */
+    // qsort(vRegs, il->count, sizeof(*vRegs), &compareVRegs);
 
-    /* We assign registers (TODO: better algo) */
-    preg = 0;
-    sreg = 0;
+    /* We assign registers */
     for (int i = 0; i < il->count; ++i)
     {
-        if (preg < regCount)
-        {
-            preg++;
-            il->regs[vRegs[i].reg] = preg;
-        }
+        if ((r = allocSingleReg(regCount, pregMin, pregMax, vRegs[i].reg, vRegs[i].death)))
+            il->regs[vRegs[i].reg] = r;
         else
         {
-            sreg++;
-            il->regs[vRegs[i].reg] = -sreg;
+            r = allocSingleReg(512, sregMin, sregMax, vRegs[i].reg, vRegs[i].death);
+            il->regs[vRegs[i].reg] = -r;
+            if (r > il->stackSize)
+                il->stackSize = r;
         }
     }
-    il->stackSize = sreg;
 }
 
 NIN_API void ninJitMakeIL(NinState* state, NinJitCodeIL* il, const NinJitSymOp* sym, int count)
@@ -153,6 +182,10 @@ NIN_API void ninJitMakeIL(NinState* state, NinJitCodeIL* il, const NinJitSymOp* 
             break;
         }
     }
+
+    ninJitIL(il, IL_OP_STORE, IL_ADDR(&state->cpu.regs[REG_Y]), refRegY);
+    ninJitIL(il, IL_OP_STORE, IL_ADDR(&state->cpu.regs[REG_X]), refRegX);
+    ninJitIL(il, IL_OP_STORE, IL_ADDR(&state->cpu.regs[REG_A]), refRegA);
 
     ninJitRegAlloc(il, 5);
     dumpIL(il);

@@ -21,10 +21,15 @@
 
 #define IL_MAX  1024
 
+#define IL_TYPE_NIL     0x00
+#define IL_TYPE_REG     0x01
+#define IL_TYPE_VALUE   0x02
+#define IL_TYPE_ADDR    0x03
+
 #define IL_NIL          0x00
-#define IL_REG(x)       (((x) << 2) | 0x01)
-#define IL_VALUE(x)     (((x) << 2) | 0x02)
-#define IL_ADDR(x)      ((((uintptr_t)(x)) << 2) | 0x03)
+#define IL_REG(x)       (((x) << 2) | IL_TYPE_REG)
+#define IL_VALUE(x)     (((x) << 2) | IL_TYPE_VALUE)
+#define IL_ADDR(x)      ((((uintptr_t)(x)) << 2) | IL_TYPE_ADDR)
 
 #define IL_OP_LOAD  0x00
 #define IL_OP_STORE 0x01
