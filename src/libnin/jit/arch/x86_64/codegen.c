@@ -188,7 +188,7 @@ static void emitBasicReg(NinJitBuffer* buffer, uint8_t reg1, uint8_t reg2, uint8
     ninJitBufferPush(buffer, tmp, 2);
 }
 
-static void emitOr(NinJitBuffer* buffer, const NinJitCodeIL* il, uint64_t a1, uint64_t a2, int16_t dst)
+static void emitBasic(NinJitBuffer* buffer, const NinJitCodeIL* il, uint64_t a1, uint64_t a2, int16_t dst, uint8_t opMod, uint8_t opReg)
 {
     int t1;
     int t2;
@@ -230,7 +230,7 @@ static void emitOr(NinJitBuffer* buffer, const NinJitCodeIL* il, uint64_t a1, ui
             /* The operation is in-place, we need to mov the value first */
             emitRegMov32(buffer, reg1, regDest);
         }
-        emitBasicImm(buffer, regDest, v2, 1);
+        emitBasicImm(buffer, regDest, v2, opMod);
     }
     else
     {
@@ -249,7 +249,7 @@ static void emitOr(NinJitBuffer* buffer, const NinJitCodeIL* il, uint64_t a1, ui
         /* If reg1 is still not the dst, we need to insert a mov */
         if (reg1 != regDest)
             emitRegMov32(buffer, reg1, regDest);
-        emitBasicReg(buffer, regDest, reg2, 0x09);
+        emitBasicReg(buffer, regDest, reg2, opReg);
     }
 }
 
@@ -301,7 +301,13 @@ NIN_API NINJITFUNC ninCompileIL(NinState* state, NinJitCodeIL* il)
             emitStoreRegRel8(&buffer, il->regs[i], state, (void*)GET_VALUE(il->arg1[i]));
             break;
         case IL_OP_OR:
-            emitOr(&buffer, il, il->arg1[i], il->arg2[i], il->regs[i]);
+            emitBasic(&buffer, il, il->arg1[i], il->arg2[i], il->regs[i], 1, 0x09);
+            break;
+        case IL_OP_AND:
+            emitBasic(&buffer, il, il->arg1[i], il->arg2[i], il->regs[i], 4, 0x21);
+            break;
+        case IL_OP_XOR:
+            emitBasic(&buffer, il, il->arg1[i], il->arg2[i], il->regs[i], 6, 0x31);
             break;
         }
     }
