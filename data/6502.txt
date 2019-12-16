@@ -1,0 +1,19 @@
+# This file is used to generate code to implement the 6502 JIT.
+# It is somewhat similar to the 6502 microcode
+# Format:
+# <bitmask> <nmi> <irq> <size> <symOp>
+
+1xx000x0 0 0 1 addr_imm
+xxx010x1 0 0 1 addr_imm
+xxx001xx 0 0 1 addr_zeropage
+xxx000x1 0 0 1 addr_zeropage_indirect_x
+xxx100x1 0 0 1 addr_zeropage_indirect_y
+
+000xxx01 0 0 0 op_ora
+001xxx01 0 0 0 op_and
+010xxx01 0 0 0 op_eor
+011xxx01 0 0 0 op_adc
+100xxx01 0 0 0 op_sta
+101xxx01 0 0 0 op_lda
+110xxx01 0 0 0 op_cmp
+111xxx01 0 0 0 op_sbc

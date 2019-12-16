@@ -273,6 +273,8 @@ static void instruction(NinState* state, uint8_t tmp)
 
 NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
 {
+    NINJITFUNC jitFunc;
+
     uint8_t tmp;
     uint16_t op;
     uint8_t isIRQ;
@@ -281,6 +283,13 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
     state->cyc = 0;
     for (;;)
     {
+        /* JIT DEBUG */
+        jitFunc = ninJitGetFunction(state, state->cpu.pc);
+        if (jitFunc)
+        {
+            jitFunc(state);
+        }
+
         isIRQ = ((((state->cpu.p) & PFLAG_I) == 0) && state->irq);
 
         op = ninMemoryRead8(state, state->cpu.pc);

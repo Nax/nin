@@ -30,6 +30,7 @@
 #define LIBNIN_H
 
 #include <nin/nin.h>
+#include <libnin/jit/jit.h>
 #include <stdlib.h>
 
 #define UNUSED(x)   ((void)x)
@@ -372,7 +373,7 @@ struct NinState_ {
     NinCPU              cpu;
     NinPPU              ppu;
     NinAPU              apu;
-    uint8_t*            ram;
+    uint8_t             ram[0x800];
     uint8_t*            vram;
     uint8_t*            palettes;
     union {
@@ -393,6 +394,7 @@ struct NinState_ {
     uint8_t*            prgRom;
     uint32_t            prgRomSize;
     uint8_t*            prgRomBank[4];
+    uint8_t             prgRomBankIndex[4];
     uint8_t*            prgRam;
     uint16_t            prgRamSize;
     uint16_t            chrBankCount;
@@ -418,6 +420,7 @@ struct NinState_ {
     uint16_t            oldVmemAddr;
     NinSystem           system;
     NinFds              fds;
+    NinJit              jit;
 };
 
 #define IRQ_APU_FRAME       0x01

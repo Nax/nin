@@ -31,6 +31,7 @@
 NIN_API void ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, uint8_t bank)
 {
     state->prgRomBank[slot] = state->prgRom + (bank & (state->prgBankCount - 1)) * 0x2000;
+    state->prgRomBankIndex[slot] = bank;
 }
 
 NIN_API void ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, uint8_t bank)
