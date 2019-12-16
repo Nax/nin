@@ -42,9 +42,10 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     NinError err;
 
     state = zalloc(sizeof(*state));
+    ninJitInit(state);
+
     state->backBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
     state->frontBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
-    state->ram = zalloc(RAM_SIZE);
     state->vram = zalloc(VRAM_SIZE);
     state->palettes = zalloc(0x20);
     state->oam = zalloc(256);
