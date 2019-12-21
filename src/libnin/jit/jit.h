@@ -2,6 +2,7 @@
 #define LIBNIN_JIT_H 1
 
 #include <nin/nin.h>
+#include <libnin/jit/jit_sym.h>
 
 #define JIT_ENTRY_CACHE_SIZE    1024
 
@@ -18,6 +19,8 @@
 #define SYMOP_OP_LDA 0x25
 #define SYMOP_OP_CMP 0x26
 #define SYMOP_OP_SBC 0x27
+
+#define SYMOP_BRANCH 0x80
 
 #define IL_MAX  1024
 
@@ -79,7 +82,7 @@ typedef struct {
 } NinJitBuffer;
 
 NIN_API NINJITFUNC  ninCompileIL(NinState* state, NinJitCodeIL* il);
-NIN_API void        ninJitMakeIL(NinState* state, NinJitCodeIL* il, const NinJitSymOp* sym, int count);
+NIN_API void        ninJitMakeIL(NinState* state, NinJitCodeIL* il, uint32_t paddr);
 NIN_API void        ninJitInit(NinState* state);
 NIN_API NINJITFUNC  ninJitGetFunction(NinState* state, uint16_t pc);
 

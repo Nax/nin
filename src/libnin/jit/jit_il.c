@@ -58,7 +58,7 @@ static int getReg(uint64_t ref)
 {
     if ((ref & 0x03) != 0x01)
         return -1;
-    return (ref >> 2);
+    return ((int)ref >> 2);
 }
 
 static int compareVRegs(void const* a, void const* b)
@@ -146,41 +146,87 @@ static void ninJitRegAlloc(NinJitCodeIL* il, int regCount)
     }
 }
 
-NIN_API void ninJitMakeIL(NinState* state, NinJitCodeIL* il, const NinJitSymOp* sym, int count)
+#define PANIC(n)   do { printf("--- PANIC --- %s:%d (0x%02x)\n", __FILE__, __LINE__, (n)); fflush(stdout); getchar(); } while (0)
+
+static uint64_t ninJitAddrRead(NinState* state, NinJitCodeIL* il, uint8_t addrMode, uint16_t addr, uint64_t x, uint64_t y)
+{
+    switch (addrMode)
+    {
+    case SYM_ADDR_IMM:
+        return (((uint8_t)addr << 2) | IL_TYPE_VALUE);
+    default:
+        PANIC(addrMode);
+        return 0;
+    }
+}
+
+static int isBasicBlockTerminator(int op)
+{
+    switch (op)
+    {
+    case SYM_OP_BRK:
+    case SYM_OP_JMP:
+    case SYM_OP_JSR:
+    case SYM_OP_RTS:
+    case SYM_OP_RTI:
+    case SYM_OP_BCC:
+    case SYM_OP_BCS:
+    case SYM_OP_BEQ:
+    case SYM_OP_BMI:
+    case SYM_OP_BNE:
+    case SYM_OP_BPL:
+    case SYM_OP_BVC:
+    case SYM_OP_BVS:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+#define BAD_OP()  do { printf("--- JIT BAD OP: 0x%02x ---\n", sym->operation); fflush(stdout); getchar(); } while (0)
+
+NIN_API void ninJitMakeIL(NinState* state, NinJitCodeIL* il, uint32_t paddr)
 {
     uint64_t refValue;
     uint64_t refRegA;
     uint64_t refRegX;
     uint64_t refRegY;
+    uint32_t paddrMax;
+    int end;
+    const SymInstr* sym;
+    uint16_t addr;
 
     il->count = 0;
+    paddrMax = (paddr & ~0x1fff) + 0x2000;
+    end = 0;
 
     refRegA = ninJitIL(il, IL_OP_LOAD, IL_ADDR(&state->cpu.regs[REG_A]), IL_NIL);
     refRegX = ninJitIL(il, IL_OP_LOAD, IL_ADDR(&state->cpu.regs[REG_X]), IL_NIL);
     refRegY = ninJitIL(il, IL_OP_LOAD, IL_ADDR(&state->cpu.regs[REG_Y]), IL_NIL);
 
-    for (int i = 0; i < count; ++i)
+    for (;;)
     {
-        const NinJitSymOp* currentOp = &sym[i];
+        if (end || il->count + 16 > IL_MAX || paddr + 3 > paddrMax)
+            break;
 
-        switch (currentOp->op)
+        paddr += ninJitDecodeSym(state, &sym, &addr, paddr);
+
+        switch (sym->operation)
         {
-        case SYMOP_ADDR_IMM:
-            refValue = IL_VALUE(sym->addr);
+        case SYM_OP_LDA:
+            refRegA = ninJitAddrRead(state, il, sym->addressingMode, addr, refRegX, refRegY);
             break;
-        case SYMOP_ADDR_ZEROPAGE:
-            refValue = ninJitIL(il, IL_OP_LOAD, IL_ADDR(state->ram + currentOp->addr), IL_NIL);
+        case SYM_OP_SEI:
             break;
-        case SYMOP_OP_ORA:
-            refRegA = ninJitIL(il, IL_OP_OR, refRegA, refValue);
+        case SYM_OP_CLD:
             break;
-        case SYMOP_OP_AND:
-            refRegA = ninJitIL(il, IL_OP_AND, refRegA, refValue);
-            break;
-        case SYMOP_OP_EOR:
-            refRegA = ninJitIL(il, IL_OP_XOR, refRegA, refValue);
+        default:
+            BAD_OP();
             break;
         }
+
+        /* Check for basic block terminators */
+        end = isBasicBlockTerminator(sym->operation);
     }
 
     ninJitIL(il, IL_OP_STORE, IL_ADDR(&state->cpu.regs[REG_Y]), refRegY);
