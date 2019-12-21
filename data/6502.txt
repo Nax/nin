@@ -17,3 +17,5 @@ xxx100x1 0 0 1 addr_zeropage_indirect_y
 101xxx01 0 0 0 op_lda
 110xxx01 0 0 0 op_cmp
 111xxx01 0 0 0 op_sbc
+
+xxx10000 0 0 0 branch
