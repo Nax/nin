@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <stdio.h>
 #include <string.h>
 #include <libnin/libnin.h>
 
@@ -164,7 +165,7 @@ NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE
         fread(state->chrRom, state->chrRomSize, 1, f);
 
     /* Check that the file was actually long enough */
-    if (ftell(f) < sizeof(NinRomHeader) + state->prgRomSize + state->chrRomSize + state->trainerSize)
+    if ((unsigned long)ftell(f) < sizeof(NinRomHeader) + state->prgRomSize + state->chrRomSize + state->trainerSize)
     {
         fclose(f);
         return NIN_ERROR_BAD_FILE;

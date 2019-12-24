@@ -61,12 +61,6 @@ static uint8_t stackPop8(NinState* state)
     return ninMemoryRead8(state, 0x100 | state->cpu.regs[REG_S]);
 }
 
-static void stackPush16(NinState* state, uint16_t value)
-{
-    stackPush8(state, value >> 8);
-    stackPush8(state, value & 0xff);
-}
-
 static uint8_t asl(NinState* state, uint8_t v)
 {
     state->cpu.p &= ~PFLAG_C;
@@ -262,7 +256,7 @@ static void instruction(NinState* state, uint8_t tmp)
 /*
  * Pseudo ops:
  *  0x100: IRQ
- *  0x101: NMI            
+ *  0x101: NMI
  */
 
 #define ICASE1(n)   case n: instruction<(n)>(state, tmp); break
