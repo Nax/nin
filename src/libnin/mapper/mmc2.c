@@ -67,7 +67,6 @@ void ninPrgWriteHandlerCommonMMC2_MMC4(NinState* state, uint16_t addr, uint8_t v
 
 void ninPrgWriteHandlerMMC2(NinState* state, uint16_t addr, uint8_t value)
 {
-    NinMapperRegsMMC2* mmc2 = &state->mapperRegs.mmc2;
     ninPrgWriteHandlerCommonMMC2_MMC4(state, addr, value);
     switch (addr & 0xf000)
     {

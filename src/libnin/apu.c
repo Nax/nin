@@ -458,23 +458,6 @@ static void dmcTick(NinState* state)
     }
 }
 
-static float ninHiPass(NinState* state, float sample, unsigned index, float coeff, float gain)
-{
-    float newSample;
-    float a1;
-    float b0;
-    float b1;
-
-    a1 = coeff;
-    b1 = (1.f + a1) * 0.5f * gain;
-    b0 = -b1;
-
-    newSample = b0 * sample + b1 * state->audioSampleHiLastRaw[index] + a1 * state->audioSampleHiLast[index];
-    state->audioSampleHiLastRaw[index] = sample;
-    state->audioSampleHiLast[index] = newSample;
-    return newSample;
-}
-
 static void ninApuFrameQuarter(NinState* state)
 {
     triangleClockQuarter(state);
