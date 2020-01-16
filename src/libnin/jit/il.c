@@ -1,6 +1,9 @@
 #include <string.h>
 #include <libnin/libnin.h>
+#include <libnin/jit/il.h>
 #include <libnin/jit/jit.h>
+
+FLAT_LIST_IMPL(NinJitIlList, ninJitIlList, NinJitIlInstr)
 
 static uint64_t ninJitIL(NinJitCodeIL* il, uint8_t op, uint64_t arg1, uint64_t arg2)
 {

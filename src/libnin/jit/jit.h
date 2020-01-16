@@ -3,6 +3,7 @@
 
 #include <nin/nin.h>
 #include <libnin/jit/jit_sym.h>
+#include <libnin/jit/jit_instr.h>
 
 #define JIT_ENTRY_CACHE_SIZE    1024
 
