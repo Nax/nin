@@ -76,7 +76,7 @@ void ninPrgWriteHandlerMMC2(NinState* state, uint16_t addr, uint8_t value)
     }
 }
 
-NIN_API void ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr)
+void ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr)
 {
     NinMapperRegsMMC2* mmc2 = &state->mapperRegs.mmc2;
 

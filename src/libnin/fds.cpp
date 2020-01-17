@@ -32,7 +32,7 @@
 #define FDS             (state->fds)
 #define FDS_CLOCK_MAX   (149)
 
-NIN_API uint8_t ninFdsRegRead(NinState* state, uint16_t addr)
+uint8_t ninFdsRegRead(NinState* state, uint16_t addr)
 {
     uint8_t value;
 
@@ -66,7 +66,7 @@ NIN_API uint8_t ninFdsRegRead(NinState* state, uint16_t addr)
     return value;
 }
 
-NIN_API void ninFdsRegWrite(NinState* state, uint16_t addr, uint8_t value)
+void ninFdsRegWrite(NinState* state, uint16_t addr, uint8_t value)
 {
     switch (addr)
     {
@@ -110,7 +110,7 @@ NIN_API void ninFdsRegWrite(NinState* state, uint16_t addr, uint8_t value)
     }
 }
 
-NIN_API void ninFdsCycle(NinState* state)
+void ninFdsCycle(NinState* state)
 {
     uint8_t tmp;
     int skip;

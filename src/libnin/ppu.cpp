@@ -32,7 +32,7 @@
 
 #define RT state->ppu.rt
 
-NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
+uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
 {
     uint8_t value;
     uint8_t mask;
@@ -105,7 +105,7 @@ NIN_API uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
     return value;
 }
 
-NIN_API void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
+void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
 {
     state->ppu.latch = value;
 

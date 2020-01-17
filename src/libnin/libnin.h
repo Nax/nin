@@ -429,78 +429,78 @@ struct NinState_ {
 
 void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
-NIN_API uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
-NIN_API uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
-NIN_API void        ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
+uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
+uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
+void        ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
+void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
 
-NIN_API uint8_t     ninMemoryReadNES(NinState* state, uint16_t addr);
-NIN_API uint8_t     ninMemoryReadFDS(NinState* state, uint16_t addr);
-NIN_API void        ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void        ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value);
+uint8_t     ninMemoryReadNES(NinState* state, uint16_t addr);
+uint8_t     ninMemoryReadFDS(NinState* state, uint16_t addr);
+void        ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value);
+void        ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value);
 
-NIN_API uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
-NIN_API void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
+uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
+void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 
 void        ninSetFlagNMI(NinState* state, uint8_t flag);
 void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
 
-NIN_API uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
-NIN_API void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
+uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
+void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
-NIN_API uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
-NIN_API void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
+uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
+void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
-NIN_API int         ninPpuRunCycles(NinState* state, uint16_t cycles);
-NIN_API void        ninRunCyclesAPU(NinState* state, size_t cycles);
+int         ninPpuRunCycles(NinState* state, uint16_t cycles);
+void        ninRunCyclesAPU(NinState* state, size_t cycles);
 
-NIN_API void ninSetIRQ(NinState* state, uint8_t flag);
-NIN_API void ninClearIRQ(NinState* state, uint8_t flag);
+void        ninSetIRQ(NinState* state, uint8_t flag);
+void        ninClearIRQ(NinState* state, uint8_t flag);
 
 /* Audio */
-NIN_API void    ninAudioSetFrequencySource(NinState* state, uint32_t freq);
-NIN_API void    ninAudioPushSample(NinState* state, float sample);
+void    ninAudioSetFrequencySource(NinState* state, uint32_t freq);
+void    ninAudioPushSample(NinState* state, float sample);
 
 /* Region */
-NIN_API void    ninRegionApply(NinState* state);
+void    ninRegionApply(NinState* state);
 
 /* Mapper handlers */
-NIN_API void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerMMC2(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerUXROM_180(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void    ninPrgWriteHandlerColorDreams(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerMMC2(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerUXROM_180(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerColorDreams(NinState* state, uint16_t addr, uint8_t value);
 
-NIN_API void    ninPrgWriteHandlerCommonMMC2_MMC4(NinState* state, uint16_t addr, uint8_t value);
+void    ninPrgWriteHandlerCommonMMC2_MMC4(NinState* state, uint16_t addr, uint8_t value);
 
-NIN_API void    ninPpuMonitorHandlerNull(NinState* state, uint16_t addr);
-NIN_API void    ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr);
-NIN_API void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
+void    ninPpuMonitorHandlerNull(NinState* state, uint16_t addr);
+void    ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr);
+void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
 
 /* Bank */
-NIN_API void    ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, uint8_t bank);
-NIN_API void    ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, uint8_t bank);
-NIN_API void    ninBankSwitchPrgRom32k(NinState* state, uint8_t bank);
+void    ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, uint8_t bank);
+void    ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, uint8_t bank);
+void    ninBankSwitchPrgRom32k(NinState* state, uint8_t bank);
 
-NIN_API void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, uint8_t bank);
-NIN_API void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, uint8_t bank);
-NIN_API void    ninBankSwitchChrRom8k(NinState* state, uint8_t bank);
+void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, uint8_t bank);
+void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, uint8_t bank);
+void    ninBankSwitchChrRom8k(NinState* state, uint8_t bank);
 
 /* mirror.c */
-NIN_API void    ninMirrorA(NinState* state);
-NIN_API void    ninMirrorB(NinState* state);
-NIN_API void    ninMirrorH(NinState* state);
-NIN_API void    ninMirrorV(NinState* state);
+void    ninMirrorA(NinState* state);
+void    ninMirrorB(NinState* state);
+void    ninMirrorH(NinState* state);
+void    ninMirrorV(NinState* state);
 
 /* fds.c */
-NIN_API uint8_t     ninFdsRegRead(NinState* state, uint16_t addr);
-NIN_API void        ninFdsRegWrite(NinState* state, uint16_t addr, uint8_t value);
-NIN_API void        ninFdsCycle(NinState* state);
+uint8_t     ninFdsRegRead(NinState* state, uint16_t addr);
+void        ninFdsRegWrite(NinState* state, uint16_t addr, uint8_t value);
+void        ninFdsCycle(NinState* state);
 
 #endif

@@ -114,7 +114,7 @@ void ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value)
     }
 }
 
-NIN_API void ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr)
+void ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr)
 {
     if (addr >= 0x3f00)
         return;

@@ -36,7 +36,7 @@ NIN_API void ninAudioSetFrequency(NinState* state, uint32_t freq)
     audio->dividerNum = freq;
 }
 
-NIN_API void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
+void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
 {
     NinAudio* audio = &state->audio;
 
@@ -108,7 +108,7 @@ static double ninQualityHiPass(NinAudio* audio, double sample)
     return audio->hiPassY[3];
 }
 
-NIN_API void ninAudioPushSample(NinState* state, float sample)
+void ninAudioPushSample(NinState* state, float sample)
 {
     NinAudio* audio = &state->audio;
 

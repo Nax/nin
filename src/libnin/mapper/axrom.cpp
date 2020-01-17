@@ -28,7 +28,7 @@
 
 #include <libnin/libnin.h>
 
-NIN_API void ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value)
+void ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value)
 {
     (void)addr;
     uint8_t nametable;

@@ -28,7 +28,7 @@
 
 #include <libnin/libnin.h>
 
-NIN_API void ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value)
+void ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value)
 {
     (void)addr;
     ninBankSwitchPrgRom32k(state, (value >> 4) & 0x3);
