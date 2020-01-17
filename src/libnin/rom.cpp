@@ -117,7 +117,7 @@ NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE
     if (!nes2)
         state->region = NIN_REGION_NTSC;
     else
-        state->region = header->nes2.region;
+        state->region = (NinRegion)header->nes2.region;
 
     /* Load the header misc. info */
     state->mapper = (header->mapperHi << 4) | header->mapperLo;
@@ -149,10 +149,10 @@ NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE
         state->chrRamSize = 0x2000;
 
     /* Allocate the various components */
-    state->prgRom = zalloc(state->prgRomSize);
-    state->prgRam = zalloc(state->prgRamSize);
-    state->chrRom = zalloc(state->chrRomSize);
-    state->chrRam = zalloc(state->chrRamSize);
+    state->prgRom = zalloc<uint8_t>(state->prgRomSize);
+    state->prgRam = zalloc<uint8_t>(state->prgRamSize);
+    state->chrRom = zalloc<uint8_t>(state->chrRomSize);
+    state->chrRam = zalloc<uint8_t>(state->chrRamSize);
 
     /* Compute bank counts */
     state->prgBankCount = state->prgRomSize / 0x2000;
@@ -291,15 +291,15 @@ NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE
 
     /* PRG ROM is the FDS BIOS */
     state->prgRomSize = 0x2000;
-    state->prgRom = zalloc(state->prgRomSize);
+    state->prgRom = zalloc<uint8_t>(state->prgRomSize);
 
     /* PRG RAM is included as well */
     state->prgRamSize = 0x8000;
-    state->prgRam = zalloc(state->prgRamSize);
+    state->prgRam = zalloc<uint8_t>(state->prgRamSize);
 
     /* As is CHR RAM */
     state->chrRamSize = 0x2000;
-    state->chrRam = zalloc(state->chrRamSize);
+    state->chrRam = zalloc<uint8_t>(state->chrRamSize);
     for (int i = 0; i < 8; ++i)
     {
         state->chrBank[i] = state->chrRam + i * 0x400;
@@ -308,7 +308,7 @@ NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE
     /* We need the number of disk sides */
     state->diskSides = header->prgRomSize;
     state->diskDataSize = 0x14000;
-    state->diskData = zalloc(state->diskDataSize);
+    state->diskData = zalloc<uint8_t>(state->diskDataSize);
     loadDisk(state->diskData, f);
 
     /* We won't need the ROM from now on */

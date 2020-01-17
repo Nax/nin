@@ -75,11 +75,12 @@ typedef void    (*NinMemoryWriteHandler)(struct NinState_* state, uint16_t addr,
 
 #define CLOCK_RATE_NTSC     1789773
 
-inline static void* zalloc(size_t size)
+template <typename T>
+inline static T* zalloc(size_t count)
 {
-    if (size)
-        return calloc(1, size);
-    return NULL;
+    if (count)
+        return new T[count]();
+    return nullptr;
 }
 
 typedef struct {
@@ -447,8 +448,8 @@ void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
 NIN_API uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
 NIN_API void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
-uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
-void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
+NIN_API uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
+NIN_API void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
 NIN_API int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 NIN_API void        ninRunCyclesAPU(NinState* state, size_t cycles);

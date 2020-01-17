@@ -41,13 +41,13 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     NinState* state;
     NinError err;
 
-    state = zalloc(sizeof(*state));
-    state->backBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
-    state->frontBuffer = zalloc(BITMAP_X * BITMAP_Y * sizeof(uint32_t));
-    state->ram = zalloc(RAM_SIZE);
-    state->vram = zalloc(VRAM_SIZE);
-    state->palettes = zalloc(0x20);
-    state->oam = zalloc(256);
+    state = new NinState();
+    state->backBuffer = new uint32_t[BITMAP_X * BITMAP_Y]();
+    state->frontBuffer = new uint32_t[BITMAP_X * BITMAP_Y]();
+    state->ram = new uint8_t[RAM_SIZE]();
+    state->vram = new uint8_t[VRAM_SIZE]();
+    state->palettes = new uint8_t[0x20]();
+    state->oam = new uint8_t[0x100]();
 
     state->apu.noise.feedback = 1;
     state->apu.dmc.address = 0x8000;
@@ -68,21 +68,24 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
 
 void ninDestroyState(NinState* state)
 {
-    ninSyncSave(state);
-    if (state->saveFile)
-        fclose(state->saveFile);
+    if (state)
+    {
+        ninSyncSave(state);
+        if (state->saveFile)
+            fclose(state->saveFile);
 
-    free(state->backBuffer);
-    free(state->frontBuffer);
-    free(state->ram);
-    free(state->vram);
-    free(state->palettes);
-    free(state->oam);
-    free(state->prgRam);
-    free(state->prgRom);
-    free(state->chrRam);
-    free(state->chrRom);
-    free(state);
+        delete [] state->backBuffer;
+        delete [] state->frontBuffer;
+        delete [] state->ram;
+        delete [] state->vram;
+        delete [] state->palettes;
+        delete [] state->oam;
+        delete [] state->prgRam;
+        delete [] state->prgRom;
+        delete [] state->chrRam;
+        delete [] state->chrRom;
+        delete state;
+    }
 }
 
 const uint32_t* ninGetScreenBuffer(NinState* state)
