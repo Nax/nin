@@ -534,6 +534,6 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
 
         /* Emit the sample */
         sample = ninMix(triangleSample, pulseSample[0], pulseSample[1], noiseSample, APU.dmc.output);
-        ninAudioPushSample(state, sample);
+        state->audio.push(sample);
     }
 }

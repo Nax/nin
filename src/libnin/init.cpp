@@ -51,7 +51,7 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
 
     state->apu.noise.feedback = 1;
     state->apu.dmc.address = 0x8000;
-    state->audio.dividerNum = 48000;
+    state->audio.setTargetFrequency(48000);
 
     if ((err = ninLoadRom(state, path)) != NIN_OK)
     {

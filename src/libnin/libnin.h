@@ -29,8 +29,9 @@
 #ifndef LIBNIN_H
 #define LIBNIN_H
 
-#include <nin/nin.h>
 #include <stdlib.h>
+#include <nin/nin.h>
+#include <libnin/Audio.h>
 
 #define UNUSED(x)   ((void)x)
 
@@ -61,17 +62,14 @@
 
 #define DEBUG_LEVEL 0
 
-typedef void    (*NinPrgWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
-typedef void    (*NinPpuMonitorHandler)(struct NinState_* state, uint16_t addr);
-typedef uint8_t (*NinMemoryReadHandler)(struct NinState_* state, uint16_t addr);
-typedef void    (*NinMemoryWriteHandler)(struct NinState_* state, uint16_t addr, uint8_t value);
+typedef void    (*NinPrgWriteHandler)(NinState* state, uint16_t addr, uint8_t value);
+typedef void    (*NinPpuMonitorHandler)(NinState* state, uint16_t addr);
+typedef uint8_t (*NinMemoryReadHandler)(NinState* state, uint16_t addr);
+typedef void    (*NinMemoryWriteHandler)(NinState* state, uint16_t addr, uint8_t value);
 
 #define MIRRORING_HORIZONTAL    0
 #define MIRRORING_VERTICAL      1
 #define MIRRORING_QUAD          2
-
-#define AUDIO_BUFFER_SIZE_SOURCE_NTSC     221
-#define AUDIO_BUFFER_SIZE_TARGET          1024
 
 #define CLOCK_RATE_NTSC     1789773
 
@@ -304,20 +302,6 @@ typedef struct {
     uint8_t             resetClock;
 } NinAPU;
 
-typedef struct {
-    float               samplesDst[AUDIO_BUFFER_SIZE_TARGET];
-    double              loPassX[6];
-    double              loPassY[6];
-    double              hiPassX[4];
-    double              hiPassY[4];
-    uint16_t            samplesCursorDst;
-    uint32_t            dividerNum;
-    uint32_t            dividerDen;
-    uint32_t            dividerClock;
-    NINAUDIOCALLBACK    callback;
-    void*               callbackArg;
-} NinAudio;
-
 typedef struct
 {
     uint32_t            clockRate;
@@ -353,11 +337,11 @@ typedef struct {
     uint8_t     endOfDisk:1;
 } NinFds;
 
-struct NinState_ {
+struct NinState {
     FILE*               saveFile;
     NinRegion           region;
     NinRegionData       regionData;
-    NinAudio            audio;
+    Audio               audio;
     uint16_t            mapper;
     uint8_t             battery;
     uint8_t             mirroring;
@@ -456,10 +440,6 @@ void        ninRunCyclesAPU(NinState* state, size_t cycles);
 
 void        ninSetIRQ(NinState* state, uint8_t flag);
 void        ninClearIRQ(NinState* state, uint8_t flag);
-
-/* Audio */
-void    ninAudioSetFrequencySource(NinState* state, uint32_t freq);
-void    ninAudioPushSample(NinState* state, float sample);
 
 /* Region */
 void    ninRegionApply(NinState* state);

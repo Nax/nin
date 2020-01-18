@@ -67,5 +67,5 @@ void ninRegionApply(NinState* state)
         break;
     }
 
-    ninAudioSetFrequencySource(state, r->clockRate);
+    state->audio.setSourceFrequency(r->clockRate);
 }

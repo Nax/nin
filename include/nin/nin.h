@@ -48,7 +48,7 @@ typedef enum {
     NIN_ERROR_UNKNOWN_MAPPER
 } NinError;
 
-typedef struct NinState_ NinState;
+typedef struct NinState NinState;
 typedef void (*NINAUDIOCALLBACK)(void*, const float*);
 
 #define NIN_AUDIO_SAMPLE_SIZE   1024

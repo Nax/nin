@@ -26,105 +26,118 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <math.h>
+#include <cmath>
 #include <libnin/libnin.h>
+#include <libnin/Audio.h>
 
-NIN_API void ninAudioSetFrequency(NinState* state, uint32_t freq)
+Audio::Audio()
+: _callback(nullptr)
+, _callbackArg(nullptr)
+, _sourceFrequency(0)
+, _targetFrequency(0)
+, _accumulator(0)
+, _samplesCursor(0)
+, _loPassX()
+, _loPassY()
+, _hiPassX()
+, _hiPassY()
 {
-    NinAudio* audio = &state->audio;
 
-    audio->dividerNum = freq;
 }
 
-void ninAudioSetFrequencySource(NinState* state, uint32_t freq)
+Audio::~Audio()
 {
-    NinAudio* audio = &state->audio;
 
-    audio->dividerDen = freq;
 }
 
-NIN_API void ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg)
+void Audio::setCallback(NINAUDIOCALLBACK callback, void* arg)
 {
-    NinAudio* audio = &state->audio;
-
-    audio->callback = callback;
-    audio->callbackArg = arg;
+    _callback = callback;
+    _callbackArg = arg;
 }
 
-static double ninQualityLoPass(NinAudio* audio, double sample)
+void Audio::setSourceFrequency(std::uint32_t freq)
 {
-    static const float kGain = 6.259598570e+07;
-
-    audio->loPassX[0] = audio->loPassX[1];
-    audio->loPassX[1] = audio->loPassX[2];
-    audio->loPassX[2] = audio->loPassX[3];
-    audio->loPassX[3] = audio->loPassX[4];
-    audio->loPassX[4] = audio->loPassX[5];
-
-    audio->loPassX[5] = sample / kGain;
-
-    audio->loPassY[0] = audio->loPassY[1];
-    audio->loPassY[1] = audio->loPassY[2];
-    audio->loPassY[2] = audio->loPassY[3];
-    audio->loPassY[3] = audio->loPassY[4];
-    audio->loPassY[4] = audio->loPassY[5];
-
-    audio->loPassY[5] = (
-        (audio->loPassX[0] + audio->loPassX[5])
-        + 5 * (audio->loPassX[1] + audio->loPassX[4])
-        + 10 * (audio->loPassX[2] + audio->loPassX[3])
-        + 0.8337693903 * audio->loPassY[0]
-        - 4.3203944730 * audio->loPassY[1]
-        + 8.9577480484 * audio->loPassY[2]
-        - 9.2893615611 * audio->loPassY[3]
-        + 4.8182380843 * audio->loPassY[4]
-        );
-
-    return audio->loPassY[5];
+    _sourceFrequency = freq;
 }
 
-static double ninQualityHiPass(NinAudio* audio, double sample)
+void Audio::setTargetFrequency(std::uint32_t freq)
 {
-    static const float kGain = 1.000654713;
-
-    audio->hiPassX[0] = audio->hiPassX[1];
-    audio->hiPassX[1] = audio->hiPassX[2];
-    audio->hiPassX[2] = audio->hiPassX[3];
-
-    audio->hiPassX[3] = sample / kGain;
-
-    audio->hiPassY[0] = audio->hiPassY[1];
-    audio->hiPassY[1] = audio->hiPassY[2];
-    audio->hiPassY[2] = audio->hiPassY[3];
-
-    audio->hiPassY[3] = (
-        (audio->hiPassX[3] - audio->hiPassX[0])
-        + 3 * (audio->hiPassX[1] - audio->hiPassX[2])
-        + 0.9986918594 * audio->hiPassY[0]
-        - 2.9973828628 * audio->hiPassY[1]
-        + 2.9986910031 * audio->hiPassY[2]
-        );
-
-    return audio->hiPassY[3];
+    _targetFrequency = freq;
 }
 
-void ninAudioPushSample(NinState* state, float sample)
+void Audio::push(float sample)
 {
-    NinAudio* audio = &state->audio;
-
     /* We push samples into a ring buffer */
-    sample = ninQualityLoPass(audio, sample);
-    audio->dividerClock += audio->dividerNum;
-    if (audio->dividerClock >= audio->dividerDen)
+    sample = loPass(sample);
+    _accumulator += _targetFrequency;
+    if (_accumulator >= _sourceFrequency)
     {
-        sample = ninQualityHiPass(audio, sample);
-        audio->dividerClock -= audio->dividerDen;
-        audio->samplesDst[audio->samplesCursorDst++] = sample;
-        if (audio->samplesCursorDst >= AUDIO_BUFFER_SIZE_TARGET)
+        sample = hiPass(sample);
+        _accumulator -= _sourceFrequency;
+        _samples[_samplesCursor++] = sample;
+        if (_samplesCursor >= NIN_AUDIO_SAMPLE_SIZE)
         {
-            audio->samplesCursorDst = 0;
-            if (audio->callback)
-                audio->callback(audio->callbackArg, audio->samplesDst);
+            _samplesCursor = 0;
+            if (_callback)
+                _callback(_callbackArg, _samples);
         }
     }
+}
+
+double Audio::loPass(double sample)
+{
+    static constexpr const double kGain = 6.259598570e+07;
+
+    _loPassX[0] = _loPassX[1];
+    _loPassX[1] = _loPassX[2];
+    _loPassX[2] = _loPassX[3];
+    _loPassX[3] = _loPassX[4];
+    _loPassX[4] = _loPassX[5];
+
+    _loPassX[5] = sample / kGain;
+
+    _loPassY[0] = _loPassY[1];
+    _loPassY[1] = _loPassY[2];
+    _loPassY[2] = _loPassY[3];
+    _loPassY[3] = _loPassY[4];
+    _loPassY[4] = _loPassY[5];
+
+    _loPassY[5] = (
+        (_loPassX[0] + _loPassX[5])
+        + 5 * (_loPassX[1] + _loPassX[4])
+        + 10 * (_loPassX[2] + _loPassX[3])
+        + 0.8337693903 * _loPassY[0]
+        - 4.3203944730 * _loPassY[1]
+        + 8.9577480484 * _loPassY[2]
+        - 9.2893615611 * _loPassY[3]
+        + 4.8182380843 * _loPassY[4]
+        );
+
+    return _loPassY[5];
+}
+
+double Audio::hiPass(double sample)
+{
+    static constexpr const double kGain = 1.000654713;
+
+    _hiPassX[0] = _hiPassX[1];
+    _hiPassX[1] = _hiPassX[2];
+    _hiPassX[2] = _hiPassX[3];
+
+    _hiPassX[3] = sample / kGain;
+
+    _hiPassY[0] = _hiPassY[1];
+    _hiPassY[1] = _hiPassY[2];
+    _hiPassY[2] = _hiPassY[3];
+
+    _hiPassY[3] = (
+        (_hiPassX[3] - _hiPassX[0])
+        + 3 * (_hiPassX[1] - _hiPassX[2])
+        + 0.9986918594 * _hiPassY[0]
+        - 2.9973828628 * _hiPassY[1]
+        + 2.9986910031 * _hiPassY[2]
+        );
+
+    return _hiPassY[3];
 }
