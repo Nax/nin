@@ -275,7 +275,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
     state->cyc = 0;
     for (;;)
     {
-        isIRQ = ((((state->cpu.p) & PFLAG_I) == 0) && state->irq);
+        isIRQ = ((((state->cpu.p) & PFLAG_I) == 0) && state->irq.high());
 
         op = ninMemoryRead8(state, state->cpu.pc);
         CYCLE();

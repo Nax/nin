@@ -38,7 +38,7 @@ static const uint8_t kTriangleSequence[32] = {
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 
-static const int8_t kPulseSequence[] = {
+static const uint8_t kPulseSequence[] = {
     0x02, /* 0 1 0 0 0 0 0 0 */
     0x06, /* 0 1 1 0 0 0 0 0 */
     0x1e, /* 0 1 1 1 1 0 0 0 */
@@ -65,8 +65,8 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
         if (APU.triangle.length)                value |= 0x04;
         if (APU.noise.length)                   value |= 0x08;
         if (APU.dmc.enabled)                    value |= 0x10;
-        if (state->irqFlags & IRQ_APU_FRAME)    value |= 0x40;
-        ninClearIRQ(state, IRQ_APU_FRAME);
+        if (state->irq.check(IRQ_APU_FRAME))    value |= 0x40;
+        state->irq.unset(IRQ_APU_FRAME);
         break;
     }
 
@@ -221,7 +221,7 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         APU.irqInhibit = !!(value & 0x40);
         if (APU.irqInhibit)
         {
-            ninClearIRQ(state, IRQ_APU_FRAME);
+            state->irq.unset(IRQ_APU_FRAME);
         }
         if (APU.mode)
         {
@@ -518,7 +518,7 @@ void ninRunCyclesAPU(NinState* state, size_t cycles)
         if (APU.frameCounter >= maxApuCycle - 1)
         {
             if (!APU.mode && !APU.irqInhibit)
-                ninSetIRQ(state, IRQ_APU_FRAME);
+                state->irq.set(IRQ_APU_FRAME);
         }
 
         if (APU.frameCounter == maxApuCycle + 1)

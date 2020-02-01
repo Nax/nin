@@ -41,18 +41,17 @@ uint8_t ninFdsRegRead(NinState* state, uint16_t addr)
     {
     case 0x4030: // Disk Status
         value = 0x80;
-        if (state->irqFlags & IRQ_FDS_TIMER) value |= 0x01;
+        if (state->irq.check(IRQ_FDS_TIMER)) value |= 0x01;
         if (FDS.transfered) value |= 0x02;
         FDS.transfered = 0;
         if (FDS.endOfDisk)
             value |= 0x40;
-        ninClearIRQ(state, IRQ_FDS_TRANSFER);
-        ninClearIRQ(state, IRQ_FDS_TIMER);
+        state->irq.unset(IRQ_FDS_TRANSFER | IRQ_FDS_TIMER);
         break;
     case 0x4031: // Disk Read
         value = FDS.latchRead;
         FDS.transfered = 0;
-        ninClearIRQ(state, IRQ_FDS_TRANSFER);
+        state->irq.unset(IRQ_FDS_TRANSFER);
         break;
     case 0x4032: // Disk Drive Status
         value = 0x40;
@@ -83,14 +82,14 @@ void ninFdsRegWrite(NinState* state, uint16_t addr, uint8_t value)
         FDS.irqEnabledTimer = !!(value & 0x02);
         FDS.irqTimer = FDS.irqReloadValue;
         if (!FDS.irqEnabledTimer)
-            ninClearIRQ(state, IRQ_FDS_TIMER);
+            state->irq.unset(IRQ_FDS_TIMER);
         break;
     case 0x4023:
         if (!(value & 0x01))
-            ninClearIRQ(state, IRQ_FDS_TIMER);
+            state->irq.unset(IRQ_FDS_TIMER);
         break;
     case 0x4024: // Disk write
-        ninClearIRQ(state, IRQ_FDS_TRANSFER);
+        state->irq.unset(IRQ_FDS_TRANSFER);
         FDS.transfered = 0;
         break;
     case 0x4025: // FDS Control
@@ -126,7 +125,7 @@ void ninFdsCycle(NinState* state)
             FDS.irqTimer--;
         else
         {
-            ninSetIRQ(state, IRQ_FDS_TIMER);
+            state->irq.set(IRQ_FDS_TIMER);
             if (FDS.irqReloadFlag)
                 FDS.irqTimer = FDS.irqReloadValue;
             else
@@ -177,7 +176,7 @@ void ninFdsCycle(NinState* state)
         FDS.latchRead = tmp;
         if (FDS.irqEnabledTransfer)
         {
-            ninSetIRQ(state, IRQ_FDS_TRANSFER);
+            state->irq.set(IRQ_FDS_TRANSFER);
         }
     }
 

@@ -106,7 +106,7 @@ void ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value)
         break;
     case 0xe000:
         state->irqScanlineEnabled = 0;
-        ninClearIRQ(state, IRQ_SCANLINE);
+        state->irq.unset(IRQ_SCANLINE);
         break;
     case 0xe001:
         state->irqScanlineEnabled = 1;
@@ -125,7 +125,7 @@ void ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr)
         {
             if (state->irqScanlineCounter == 0 && state->irqScanlineEnabled)
             {
-                ninSetIRQ(state, IRQ_SCANLINE);
+                state->irq.set(IRQ_SCANLINE);
             }
             if (state->irqScanlineCounter == 0 || state->irqScanlineReload)
             {

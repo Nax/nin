@@ -32,6 +32,7 @@
 #include <stdlib.h>
 #include <nin/nin.h>
 #include <libnin/Audio.h>
+#include <libnin/IRQ.h>
 
 #define UNUSED(x)   ((void)x)
 
@@ -390,8 +391,7 @@ struct NinState {
     uint8_t*            nametables[4];
     uint8_t             nmi:1;
     uint8_t             nmi2:1;
-    uint8_t             irq:1;
-    uint8_t             irqFlags;
+    IRQ                 irq;
     uint64_t            cyc;
     uint8_t             frame:1;
     uint8_t             frameOdd:1;
@@ -404,12 +404,6 @@ struct NinState {
     NinSystem           system;
     NinFds              fds;
 };
-
-#define IRQ_APU_FRAME       0x01
-#define IRQ_APU_DMC         0x02
-#define IRQ_SCANLINE        0x04
-#define IRQ_FDS_TRANSFER    0x08
-#define IRQ_FDS_TIMER       0x10
 
 void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
@@ -437,9 +431,6 @@ void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
 int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 void        ninRunCyclesAPU(NinState* state, size_t cycles);
-
-void        ninSetIRQ(NinState* state, uint8_t flag);
-void        ninClearIRQ(NinState* state, uint8_t flag);
 
 /* Region */
 void    ninRegionApply(NinState* state);

@@ -26,17 +26,31 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libnin/libnin.h>
+#ifndef LIBNIN_IRQ_H
+#define LIBNIN_IRQ_H 1
 
-void ninSetIRQ(NinState* state, uint8_t flag)
-{
-    state->irqFlags |= flag;
-    state->irq = 1;
-}
+#include <cstdint>
+#include <libnin/NonCopyable.h>
 
-void ninClearIRQ(NinState* state, uint8_t flag)
+#define IRQ_APU_FRAME       0x01
+#define IRQ_APU_DMC         0x02
+#define IRQ_SCANLINE        0x04
+#define IRQ_FDS_TRANSFER    0x08
+#define IRQ_FDS_TIMER       0x10
+
+class IRQ : private NonCopyable
 {
-    state->irqFlags &= ~flag;
-    if (!state->irqFlags)
-        state->irq = 0;
-}
+public:
+    IRQ() : _irq(0) {}
+
+    bool high() const { return !!_irq; }
+    bool check(std::uint8_t flag) const { return !!(_irq & flag); }
+
+    void set(std::uint8_t flag) { _irq |= flag; }
+    void unset(std::uint8_t flag) { _irq &= ~flag; }
+
+private:
+    std::uint8_t   _irq;
+};
+
+#endif
