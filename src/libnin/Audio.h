@@ -33,14 +33,14 @@
 #include <nin/nin.h>
 #include <libnin/NonCopyable.h>
 
+class HardwareSpecs;
 class Audio : private NonCopyable
 {
 public:
-    Audio();
+    Audio(const HardwareSpecs& hwSpecs);
     ~Audio();
 
     void setCallback(NINAUDIOCALLBACK callback, void* arg);
-    void setSourceFrequency(std::uint32_t freq);
     void setTargetFrequency(std::uint32_t freq);
 
     void push(float sample);
@@ -49,9 +49,10 @@ private:
     double loPass(double sample);
     double hiPass(double sample);
 
+    const HardwareSpecs& _hwSpecs;
+
     NINAUDIOCALLBACK    _callback;
     void*               _callbackArg;
-    std::uint32_t       _sourceFrequency;
     std::uint32_t       _targetFrequency;
     std::uint32_t       _accumulator;
     float               _samples[NIN_AUDIO_SAMPLE_SIZE];

@@ -104,6 +104,20 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     return NIN_ERROR_BAD_FILE;
 }
 
+static void applyRegion(NinState* state)
+{
+    switch (state->region)
+    {
+    case NIN_REGION_NTSC:
+    default:
+        state->hwSpecs = HardwareSpecs::NTSC;
+        break;
+    case NIN_REGION_PAL:
+        state->hwSpecs = HardwareSpecs::PAL;
+        break;
+    }
+}
+
 NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f)
 {
     int nes2;
@@ -280,7 +294,7 @@ NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE
         break;
     }
 
-    ninRegionApply(state);
+    applyRegion(state);
 
     return NIN_OK;
 }
@@ -335,7 +349,8 @@ NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE
     state->ppuMonitorHandler = &ninPpuMonitorHandlerNull;
     state->readHandler = &ninMemoryReadFDS;
     state->writeHandler = &ninMemoryWriteFDS;
-    ninRegionApply(state);
+
+    applyRegion(state);
 
     return NIN_OK;
 }

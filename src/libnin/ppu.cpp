@@ -531,7 +531,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
     while (cycles--)
     {
         if (RT.scanline < 240) scanline<false>(state);
-        if (RT.scanline == 241 + state->regionData.vblank) scanline<true>(state);
+        if (RT.scanline == 241 + state->hwSpecs.vblank) scanline<true>(state);
         if (RT.scanline == 241 && RT.cycle == 1)
         {
             if (!RT.inhibitNmi)
@@ -544,7 +544,7 @@ int ninPpuRunCycles(NinState* state, uint16_t cycles)
         {
             RT.cycle = 0;
             RT.scanline++;
-            if (RT.scanline == 242 + state->regionData.vblank)
+            if (RT.scanline == 242 + state->hwSpecs.vblank)
             {
                 swapBuffers(state);
                 RT.scanline = 0;

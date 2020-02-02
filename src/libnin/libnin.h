@@ -31,8 +31,10 @@
 
 #include <stdlib.h>
 #include <nin/nin.h>
+#include <libnin/APU.h>
 #include <libnin/Audio.h>
 #include <libnin/IRQ.h>
+#include <libnin/HardwareSpecs.h>
 
 #define UNUSED(x)   ((void)x)
 
@@ -303,20 +305,6 @@ typedef struct {
     uint8_t             resetClock;
 } NinAPU;
 
-typedef struct
-{
-    uint32_t            clockRate;
-    uint32_t            frameCycles;
-    uint32_t            frameDelay;
-    uint8_t             cycleExtraCounter;
-    uint8_t             cycleExtraIncrement;
-    uint8_t             firstVisibleScanline;
-    uint8_t             vblank;
-    const uint16_t*     apuFrameCycles;
-    const uint16_t*     apuNoisePeriod;
-    const uint16_t*     apuDmcPeriod;
-} NinRegionData;
-
 typedef struct {
     uint8_t     extPort;
     uint8_t     motor:1;
@@ -338,10 +326,16 @@ typedef struct {
     uint8_t     endOfDisk:1;
 } NinFds;
 
-struct NinState {
+struct NinState
+{
+    NinState();
+
+    HardwareSpecs       hwSpecs;
+    APU                 apu;
+    NinCPU              cpu;
+    NinPPU              ppu;
     FILE*               saveFile;
     NinRegion           region;
-    NinRegionData       regionData;
     Audio               audio;
     uint16_t            mapper;
     uint8_t             battery;
@@ -350,14 +344,8 @@ struct NinState {
     uint8_t             controllerLatch;
     uint32_t*           backBuffer;
     uint32_t*           frontBuffer;
-    float               audioSampleLoLast;
-    float               audioSampleHiLast[2];
-    float               audioSampleHiLastRaw[2];
     uint16_t            audioSamplesCount;
     uint32_t            audioCycles;
-    NinCPU              cpu;
-    NinPPU              ppu;
-    NinAPU              apu;
     uint8_t*            ram;
     uint8_t*            vram;
     uint8_t*            palettes;
@@ -426,14 +414,7 @@ void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
 uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
 void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 
-uint8_t     ninApuRegRead(NinState* state, uint16_t reg);
-void        ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value);
-
 int         ninPpuRunCycles(NinState* state, uint16_t cycles);
-void        ninRunCyclesAPU(NinState* state, size_t cycles);
-
-/* Region */
-void    ninRegionApply(NinState* state);
 
 /* Mapper handlers */
 void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);

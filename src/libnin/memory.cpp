@@ -71,17 +71,17 @@ static void ioWrite(NinState* state, uint8_t port, uint8_t value)
         //getchar();
         state->cyc += 1;
         ninPpuRunCycles(state, 3);
-        ninRunCyclesAPU(state, 1);
+        state->apu.tick(1);
         for (uint16_t i = 0; i < 256; ++i)
         {
             tmp = ninMemoryRead8(state, addr | i);
             state->cyc++;
             ninPpuRunCycles(state, 3);
-            ninRunCyclesAPU(state, 1);
+            state->apu.tick(1);
             state->oam[state->ppu.oamAddr++] = tmp;
             state->cyc++;
             ninPpuRunCycles(state, 3);
-            ninRunCyclesAPU(state, 1);
+            state->apu.tick(1);
         }
         break;
     case 0x16:
@@ -105,7 +105,7 @@ uint8_t ninMemoryReadNES(NinState* state, uint16_t addr)
         case 0x16:
             return ioRead(state, addr & 0xff);
         default:
-            return ninApuRegRead(state, addr & 0xff);
+            return state->apu.regRead(addr & 0xff);
         }
     }
     else if (addr < 0x6000)
@@ -141,7 +141,7 @@ uint8_t ninMemoryReadFDS(NinState* state, uint16_t addr)
         case 0x16:
             return ioRead(state, addr & 0xff);
         default:
-            return ninApuRegRead(state, addr & 0xff);
+            return state->apu.regRead(addr & 0xff);
         }
     }
     else if (addr < 0x4100)
@@ -185,7 +185,7 @@ void ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value)
             ioWrite(state, addr & 0xff, value);
             break;
         default:
-            ninApuRegWrite(state, addr & 0xff, value);
+            state->apu.regWrite(addr & 0xff, value);
             break;
         }
     }
@@ -217,7 +217,7 @@ void ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value)
             ioWrite(state, addr & 0xff, value);
             break;
         default:
-            ninApuRegWrite(state, addr & 0xff, value);
+            state->apu.regWrite(addr & 0xff, value);
             break;
         }
     }

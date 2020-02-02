@@ -41,7 +41,7 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     NinState* state;
     NinError err;
 
-    state = new NinState();
+    state = new NinState{};
     state->backBuffer = new uint32_t[BITMAP_X * BITMAP_Y]();
     state->frontBuffer = new uint32_t[BITMAP_X * BITMAP_Y]();
     state->ram = new uint8_t[RAM_SIZE]();
@@ -49,8 +49,6 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     state->palettes = new uint8_t[0x20]();
     state->oam = new uint8_t[0x100]();
 
-    state->apu.noise.feedback = 1;
-    state->apu.dmc.address = 0x8000;
     state->audio.setTargetFrequency(48000);
 
     if ((err = ninLoadRom(state, path)) != NIN_OK)

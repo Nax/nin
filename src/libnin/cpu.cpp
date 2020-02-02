@@ -153,14 +153,16 @@ static constexpr bool matchPattern(const char* pattern, uint16_t value)
 #define X(str)          if (matchPattern(str, N))
 #define CYCLE()         do {                                                        \
     state->cyc++;                                                                   \
-    ninRunCyclesAPU(state, 1);                                                      \
+    state->apu.tick(1);                                                             \
     state->frame |= ninPpuRunCycles(state, 3);                                      \
+    /*                                                                              \
     state->regionData.cycleExtraCounter += state->regionData.cycleExtraIncrement;   \
     if (state->regionData.cycleExtraCounter == 5)                                   \
     {                                                                               \
         state->regionData.cycleExtraCounter = 0;                                    \
         state->frame |= ninPpuRunCycles(state, 1);                                  \
     }                                                                               \
+    */                                                                              \
     ninFdsCycle(state);                                                             \
 } while (0)
 

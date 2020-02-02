@@ -27,30 +27,45 @@
  */
 
 #include <libnin/libnin.h>
+#include <libnin/APU.h>
+#include <libnin/IRQ.h>
+#include <libnin/HardwareSpecs.h>
 
-#define APU                         state->apu
-
-static void ninApuFrameQuarter(NinState* state);
-static void ninApuFrameHalf(NinState* state);
-
-static const uint8_t kTriangleSequence[32] = {
+static constexpr const std::uint8_t kTriangleSequence[32] = {
     15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
     0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
 };
 
-static const uint8_t kPulseSequence[] = {
+static constexpr const std::uint8_t kPulseSequence[] = {
     0x02, /* 0 1 0 0 0 0 0 0 */
     0x06, /* 0 1 1 0 0 0 0 0 */
     0x1e, /* 0 1 1 1 1 0 0 0 */
     0xf9, /* 1 0 0 1 1 1 1 1 */
 };
 
-static const uint8_t kLengthCounterLookup[32] = {
+static constexpr const std::uint8_t kLengthCounterLookup[32] = {
     10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,
     12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
 
-uint8_t ninApuRegRead(NinState* state, uint16_t reg)
+APU::APU(const HardwareSpecs& hwSpecs, IRQ& irq, Audio& audio)
+: _hwSpecs(hwSpecs)
+, _irq(irq)
+, _audio(audio)
+, _triangle{}
+, _pulse{}
+, _noise{}
+, _dmc{}
+, _frameCounter{}
+, _mode{}
+, _irqInhibit{}
+, _resetClock{}
+{
+    _noise.feedback = 1;
+    _dmc.address = 0x8000;
+}
+
+std::uint8_t APU::regRead(std::uint16_t reg)
 {
     uint8_t value;
 
@@ -59,41 +74,22 @@ uint8_t ninApuRegRead(NinState* state, uint16_t reg)
     {
     default:
         break;
+
     case 0x15:
-        if (APU.pulse[0].length)                value |= 0x01;
-        if (APU.pulse[1].length)                value |= 0x02;
-        if (APU.triangle.length)                value |= 0x04;
-        if (APU.noise.length)                   value |= 0x08;
-        if (APU.dmc.enabled)                    value |= 0x10;
-        if (state->irq.check(IRQ_APU_FRAME))    value |= 0x40;
-        state->irq.unset(IRQ_APU_FRAME);
+        if (_pulse[0].length)                   value |= 0x01;
+        if (_pulse[1].length)                   value |= 0x02;
+        if (_triangle.length)                   value |= 0x04;
+        if (_noise.length)                      value |= 0x08;
+        if (_dmc.enabled)                       value |= 0x10;
+        if (_irq.check(IRQ_APU_FRAME))          value |= 0x40;
+        _irq.unset(IRQ_APU_FRAME);
         break;
     }
 
     return value;
 }
 
-static void pulseUpdateTarget(NinState* state, unsigned c)
-{
-    NinChannelPulse* ch;
-    uint16_t tmp;
-
-    ch = &APU.pulse[c];
-    tmp = ch->timerPeriod >> ch->sweepShift;
-    if (ch->sweepNegate)
-        ch->sweepTarget = ch->timerPeriod - tmp - (1 - c);
-    else
-        ch->sweepTarget = ch->timerPeriod + tmp;
-}
-
-static void loadEnvelope(NinEnvelope* ev, uint8_t value)
-{
-    ev->halt = !!(value & 0x20);
-    ev->constant = !!(value & 0x10);
-    ev->volume = value & 0xf;
-}
-
-void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
+void APU::regWrite(std::uint16_t reg, std::uint8_t value)
 {
     unsigned i = (reg >> 2) & 1;
 
@@ -101,139 +97,376 @@ void ninApuRegWrite(NinState* state, uint16_t reg, uint8_t value)
     {
     case 0x00: // Pulse Envelope
     case 0x04:
-        APU.pulse[i].duty = kPulseSequence[value >> 6];
-        loadEnvelope(&APU.pulse[i].envelope, value);
+        _pulse[i].duty = kPulseSequence[value >> 6];
+        loadEnvelope(_pulse[i].envelope, value);
         break;
     case 0x01: // Pulse Sweep
     case 0x05:
-        APU.pulse[i].sweepEnable = !!(value & 0x80);
-        APU.pulse[i].sweepPeriod = (value >> 4) & 0x07;
-        APU.pulse[i].sweepNegate = !!(value & 0x08);
-        APU.pulse[i].sweepShift = value & 0x07;
-        APU.pulse[i].sweepReload = 1;
-        pulseUpdateTarget(state, i);
+        _pulse[i].sweepEnable = !!(value & 0x80);
+        _pulse[i].sweepPeriod = (value >> 4) & 0x07;
+        _pulse[i].sweepNegate = !!(value & 0x08);
+        _pulse[i].sweepShift = value & 0x07;
+        _pulse[i].sweepReload = 1;
+        pulseUpdateTarget(i);
         break;
     case 0x02: // Pulse Timer Lo
     case 0x06:
-        APU.pulse[i].timerPeriod &= 0xff00;
-        APU.pulse[i].timerPeriod |= value;
-        pulseUpdateTarget(state, i);
+        _pulse[i].timerPeriod &= 0xff00;
+        _pulse[i].timerPeriod |= value;
+        pulseUpdateTarget(i);
         break;
     case 0x03: // Pulse Timer Hi
     case 0x07:
-        APU.pulse[i].timerPeriod &= 0x00ff;
-        APU.pulse[i].timerPeriod |= ((value & 0x7) << 8);
-        APU.pulse[i].seqIndex = 0;
-        if (APU.pulse[i].enabled)
-            APU.pulse[i].length = kLengthCounterLookup[value >> 3];
-        pulseUpdateTarget(state, i);
-        APU.pulse[i].envelope.start = 1;
+        _pulse[i].timerPeriod &= 0x00ff;
+        _pulse[i].timerPeriod |= ((value & 0x7) << 8);
+        _pulse[i].seqIndex = 0;
+        if (_pulse[i].enabled)
+            _pulse[i].length = kLengthCounterLookup[value >> 3];
+        pulseUpdateTarget(i);
+        _pulse[i].envelope.start = 1;
         break;
     case 0x08:
         if (value & 0x80)
-            APU.triangle.control = 1;
+            _triangle.control = 1;
         else
-            APU.triangle.control = 0;
-        APU.triangle.linearReload = value & 0x7f;
+            _triangle.control = 0;
+        _triangle.linearReload = value & 0x7f;
         break;
     case 0x09:
         break;
     case 0x0a: // Triangle Timer Lo
-        APU.triangle.timerPeriod &= 0xff00;
-        APU.triangle.timerPeriod |= value;
+        _triangle.timerPeriod &= 0xff00;
+        _triangle.timerPeriod |= value;
         break;
     case 0x0b: // Triangle Timer Hi
-        APU.triangle.timerPeriod &= 0x00ff;
-        APU.triangle.timerPeriod |= ((value & 0x7) << 8);
-        if (APU.triangle.enabled) APU.triangle.length = kLengthCounterLookup[value >> 3];
-        APU.triangle.linearReloadFlag = 1;
+        _triangle.timerPeriod &= 0x00ff;
+        _triangle.timerPeriod |= ((value & 0x7) << 8);
+        if (_triangle.enabled) _triangle.length = kLengthCounterLookup[value >> 3];
+        _triangle.linearReloadFlag = 1;
         break;
     case 0xc: // Noise Envelope
-        loadEnvelope(&APU.noise.envelope, value);
+        loadEnvelope(_noise.envelope, value);
         break;
     case 0xe: // Noise Timer
-        APU.noise.mode = !!(value & 0x80);
-        APU.noise.timerPeriod = state->regionData.apuNoisePeriod[value & 0xf];
+        _noise.mode = !!(value & 0x80);
+        _noise.timerPeriod = _hwSpecs.apuNoisePeriod[value & 0xf];
         break;
     case 0xf: // Noise Length
-        if (APU.noise.enabled)
-            APU.noise.length = kLengthCounterLookup[value >> 3];
-        APU.noise.envelope.start = 1;
+        if (_noise.enabled)
+            _noise.length = kLengthCounterLookup[value >> 3];
+        _noise.envelope.start = 1;
         break;
     case 0x10: // DMC Config
-        APU.dmc.irqEnable = !!(value & 0x80);
-        APU.dmc.loop = !!(value & 0x40);
-        APU.dmc.timerPeriod = state->regionData.apuDmcPeriod[value & 0xf];
+        _dmc.irqEnable = !!(value & 0x80);
+        _dmc.loop = !!(value & 0x40);
+        _dmc.timerPeriod = _hwSpecs.apuDmcPeriod[value & 0xf];
         break;
     case 0x11: // DMC Load
-        APU.dmc.output = value & 0x7f;
+        _dmc.output = value & 0x7f;
         break;
     case 0x12: // DMC addr
-        APU.dmc.address = 0xc000 | ((uint16_t)value << 6);
+        _dmc.address = 0xc000 | ((uint16_t)value << 6);
         break;
     case 0x13: // DMC Length
-        APU.dmc.length = ((uint16_t)value << 4) | 1;
+        _dmc.length = ((uint16_t)value << 4) | 1;
         break;
     case 0x15: // STATUS
         if (value & 0x01)
-            APU.pulse[0].enabled = 1;
+            _pulse[0].enabled = 1;
         else
         {
-            APU.pulse[0].enabled = 0;
-            APU.pulse[0].length = 0;
+            _pulse[0].enabled = 0;
+            _pulse[0].length = 0;
         }
         if (value & 0x02)
-            APU.pulse[1].enabled = 1;
+            _pulse[1].enabled = 1;
         else
         {
-            APU.pulse[1].enabled = 0;
-            APU.pulse[1].length = 0;
+            _pulse[1].enabled = 0;
+            _pulse[1].length = 0;
         }
         if (value & 0x04)
         {
-            APU.triangle.enabled = 1;
+            _triangle.enabled = 1;
         }
         else
         {
-            APU.triangle.enabled = 0;
-            APU.triangle.length = 0;
+            _triangle.enabled = 0;
+            _triangle.length = 0;
         }
         if (value & 0x08)
         {
-            APU.noise.enabled = 1;
+            _noise.enabled = 1;
         }
         else
         {
-            APU.noise.enabled = 0;
-            APU.noise.length = 0;
+            _noise.enabled = 0;
+            _noise.length = 0;
         }
         if (value & 0x10)
         {
-            APU.dmc.enabled = 1;
+            _dmc.enabled = 1;
         }
         else
         {
-            APU.dmc.enabled = 0;
+            _dmc.enabled = 0;
         }
         break;
     case 0x17:
-        APU.mode = !!(value & 0x80);
-        APU.irqInhibit = !!(value & 0x40);
-        if (APU.irqInhibit)
+        _mode = !!(value & 0x80);
+        _irqInhibit = !!(value & 0x40);
+        if (_irqInhibit)
         {
-            state->irq.unset(IRQ_APU_FRAME);
+            _irq.unset(IRQ_APU_FRAME);
         }
-        if (APU.mode)
+        if (_mode)
         {
-            ninApuFrameQuarter(state);
-            ninApuFrameHalf(state);
+            frameQuarter();
+            frameHalf();
         }
-        APU.resetClock = (APU.frameCounter & 0x01) ? 4 : 3;
+        _resetClock = (_frameCounter & 0x01) ? 4 : 3;
         break;
     }
 }
 
-static float ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise, uint8_t dmc)
+void APU::tick(std::size_t cycles)
+{
+    float sample;
+    uint8_t triangleSample;
+    uint8_t pulseSample[2];
+    uint8_t noiseSample;
+    uint8_t dmcSample;
+    size_t maxApuCycle;
+
+    maxApuCycle = _hwSpecs.apuFrameCycles[3 + _mode];
+    while (cycles--)
+    {
+        if (_resetClock)
+        {
+            _resetClock--;
+            if (_resetClock == 0)
+                _frameCounter = 0;
+        }
+
+        tickTriangle();
+        if (!(_frameCounter & 0x1))
+        {
+            tickPulse(0);
+            tickPulse(1);
+            tickNoise();
+            tickDMC();
+        }
+
+        if (_frameCounter == _hwSpecs.apuFrameCycles[0]
+            || _frameCounter == _hwSpecs.apuFrameCycles[1]
+            || _frameCounter == _hwSpecs.apuFrameCycles[2]
+            || _frameCounter == maxApuCycle)
+        {
+            frameQuarter();
+        }
+
+        if (_frameCounter == _hwSpecs.apuFrameCycles[1]
+            || _frameCounter == maxApuCycle)
+        {
+            frameHalf();
+        }
+
+        if (_frameCounter >= maxApuCycle - 1)
+        {
+            if (!_mode && !_irqInhibit)
+                _irq.set(IRQ_APU_FRAME);
+        }
+
+        if (_frameCounter == maxApuCycle + 1)
+            _frameCounter = 1;
+        else
+            _frameCounter++;;
+
+        /* Load the triangle sample */
+        triangleSample = sampleTriangle();
+        pulseSample[0] = samplePulse(0);
+        pulseSample[1] = samplePulse(1);
+        noiseSample = sampleNoise();
+        dmcSample = sampleDMC();
+
+        /* Emit the sample */
+        sample = mix(triangleSample, pulseSample[0], pulseSample[1], noiseSample, dmcSample);
+        _audio.push(sample);
+    }
+}
+
+void APU::tickTriangle()
+{
+    if (_triangle.timerValue == 0)
+    {
+        _triangle.timerValue = _triangle.timerPeriod;
+        if (_triangle.length && _triangle.linear)
+        {
+            _triangle.seqIndex++;
+            _triangle.seqIndex &= 0x1f;
+        }
+    }
+    else
+    {
+        _triangle.timerValue--;
+    }
+}
+
+void APU::tickPulse(int n)
+{
+    ChannelPulse& ch = _pulse[n];
+
+    if (ch.timerValue == 0)
+    {
+        ch.timerValue = ch.timerPeriod;
+        ch.seqIndex++;
+        ch.seqIndex &= 0x07;
+    }
+    else
+    {
+        ch.timerValue--;
+    }
+}
+
+void APU::tickNoise()
+{
+    std::uint16_t tmp;
+    std::uint16_t mask;
+
+    if (_noise.timerValue)
+        _noise.timerValue--;
+    else
+    {
+        _noise.timerValue = _noise.timerPeriod;
+        mask = _noise.mode ? 0x40 : 0x02;
+        tmp = (!!(_noise.feedback & 0x01)) ^ (!!(_noise.feedback & mask));
+        _noise.feedback >>= 1;
+        _noise.feedback |= (tmp << 14);
+    }
+}
+
+void APU::tickDMC()
+{
+    std::uint8_t bit;
+
+    if (!_dmc.enabled)
+        return;
+    if (_dmc.timerValue)
+    {
+        _dmc.timerValue--;
+        return;
+    }
+    _dmc.timerValue = _dmc.timerPeriod;
+    if (_dmc.bitCount)
+    {
+        bit = _dmc.sampleBuffer & 0x01;
+        _dmc.sampleBuffer >>= 1;
+        _dmc.bitCount--;
+
+        if (bit && _dmc.output <= 125)
+            _dmc.output += 2;
+        if (!bit && _dmc.output >= 2)
+            _dmc.output -= 2;
+    }
+    if (!_dmc.bitCount && _dmc.length)
+    {
+        _dmc.length--;
+        // FIXME: Repair this once we inject the memory bus
+        // _dmc.sampleBuffer = ninMemoryRead8(state, _dmc.address | 0x8000);
+        _dmc.bitCount = 8;
+        _dmc.address++;
+    }
+}
+
+void APU::frameHalf()
+{
+    frameHalfTriangle();
+    frameHalfPulse(0);
+    frameHalfPulse(1);
+    frameHalfNoise();
+}
+
+void APU::frameHalfTriangle()
+{
+    if (_triangle.length && !_triangle.control)
+        _triangle.length--;
+}
+
+void APU::frameHalfPulse(int n)
+{
+    ChannelPulse& ch = _pulse[n];
+
+    if (ch.sweepEnable && ch.sweepValue == 0 && ch.sweepTarget < 0x800)
+    {
+        ch.timerPeriod = ch.sweepTarget;
+        pulseUpdateTarget(n);
+    }
+    if (ch.sweepValue == 0 || ch.sweepReload)
+    {
+        ch.sweepValue = ch.sweepPeriod;
+        ch.sweepReload = 0;
+    }
+    else
+    {
+        ch.sweepValue--;
+    }
+
+    if (ch.length && !ch.envelope.halt)
+        ch.length--;
+}
+
+void APU::frameHalfNoise()
+{
+    if (_noise.length && !_noise.envelope.halt)
+        _noise.length--;
+}
+
+void APU::frameQuarter()
+{
+    frameQuarterTriangle();
+
+    tickEnvelope(_pulse[0].envelope);
+    tickEnvelope(_pulse[1].envelope);
+    tickEnvelope(_noise.envelope);
+}
+
+void APU::frameQuarterTriangle()
+{
+    if (_triangle.linearReloadFlag)
+        _triangle.linear = _triangle.linearReload;
+    else if (_triangle.linear)
+        _triangle.linear--;
+    if (!_triangle.control)
+        _triangle.linearReloadFlag = 0;
+}
+
+uint8_t APU::sampleTriangle()
+{
+    return kTriangleSequence[_triangle.seqIndex];
+}
+
+uint8_t APU::samplePulse(int n)
+{
+    ChannelPulse& ch = _pulse[n];
+
+    if (!ch.enabled || ch.timerPeriod < 8 || !ch.length || ch.sweepTarget >= 0x800)
+        return 0;
+    return (ch.duty & (1 << ch.seqIndex)) ? sampleEnvelope(ch.envelope) : 0;
+}
+
+uint8_t APU::sampleNoise()
+{
+    if (!_noise.enabled || (_noise.feedback & 0x01) || !_noise.length)
+        return 0;
+    return sampleEnvelope(_noise.envelope);
+}
+
+uint8_t APU::sampleDMC()
+{
+    return _dmc.output;
+}
+
+float APU::mix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise, uint8_t dmc)
 {
     float fPulse;
     float fTND;
@@ -257,283 +490,51 @@ static float ninMix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t no
     return fPulse + fTND;
 }
 
-static void triangleClockQuarter(NinState* state)
+void APU::loadEnvelope(Envelope& ev, uint8_t value)
 {
-    NinChannelTriangle* channel;
-
-    channel = &APU.triangle;
-    if (channel->linearReloadFlag)
-        channel->linear = channel->linearReload;
-    else if (channel->linear)
-        channel->linear--;
-    if (!channel->control)
-        channel->linearReloadFlag = 0;
+    ev.halt = !!(value & 0x20);
+    ev.constant = !!(value & 0x10);
+    ev.volume = value & 0xf;
 }
 
-static void triangleClockHalf(NinState* state)
+void APU::tickEnvelope(Envelope& ev)
 {
-    if (APU.triangle.length && !APU.triangle.control)
-        APU.triangle.length--;
-}
-
-static void triangleTick(NinState* state)
-{
-    NinChannelTriangle* channel;
-
-    channel = &APU.triangle;
-    if (channel->timerValue == 0)
+    if (ev.start)
     {
-        channel->timerValue = channel->timerPeriod;
-        if (channel->length && channel->linear)
-        {
-            channel->seqIndex++;
-            channel->seqIndex &= 0x1f;
-        }
+        ev.start = 0;
+        ev.decay = 15;
+        ev.divider = ev.volume;
     }
     else
     {
-        channel->timerValue--;
-    }
-}
-
-static uint8_t sampleTriangle(NinState* state)
-{
-    NinChannelTriangle* channel;
-
-    channel = &APU.triangle;
-    return kTriangleSequence[channel->seqIndex];
-}
-
-static void envelopeTick(NinEnvelope* ev)
-{
-    if (ev->start)
-    {
-        ev->start = 0;
-        ev->decay = 15;
-        ev->divider = ev->volume;
-    }
-    else
-    {
-        if (ev->divider)
-            ev->divider--;
+        if (ev.divider)
+            ev.divider--;
         else
         {
-            ev->divider = ev->volume;
-            if (ev->decay)
-                ev->decay--;
-            else if (ev->halt)
-                ev->decay = 15;
+            ev.divider = ev.volume;
+            if (ev.decay)
+                ev.decay--;
+            else if (ev.halt)
+                ev.decay = 15;
         }
     }
 }
 
-static uint8_t sampleEnvelope(NinEnvelope* ev)
+std::uint8_t APU::sampleEnvelope(Envelope& ev)
 {
-    if (ev->constant)
-        return ev->volume;
-    return ev->decay;
+    if (ev.constant)
+        return ev.volume;
+    return ev.decay;
 }
 
-static void pulseClockHalf(NinState* state, unsigned c)
+void APU::pulseUpdateTarget(int n)
 {
-    NinChannelPulse* ch;
+    ChannelPulse& ch = _pulse[n];
+    std::uint16_t tmp;
 
-    ch = &APU.pulse[c];
-    if (ch->sweepEnable && ch->sweepValue == 0 && ch->sweepTarget < 0x800)
-    {
-        ch->timerPeriod = ch->sweepTarget;
-        pulseUpdateTarget(state, c);
-    }
-    if (ch->sweepValue == 0 || ch->sweepReload)
-    {
-        ch->sweepValue = ch->sweepPeriod;
-        ch->sweepReload = 0;
-    }
+    tmp = ch.timerPeriod >> ch.sweepShift;
+    if (ch.sweepNegate)
+        ch.sweepTarget = ch.timerPeriod - tmp - (1 - n);
     else
-    {
-        ch->sweepValue--;
-    }
-
-    if (ch->length && !ch->envelope.halt)
-        ch->length--;
-}
-
-static void pulseTick(NinState* state, unsigned c)
-{
-    NinChannelPulse* channel;
-
-    channel = &APU.pulse[c];
-    if (channel->timerValue == 0)
-    {
-        channel->timerValue = channel->timerPeriod;
-        channel->seqIndex++;
-        channel->seqIndex &= 0x07;
-    }
-    else
-    {
-        channel->timerValue--;
-    }
-}
-
-uint8_t samplePulse(NinState* state, unsigned c)
-{
-    NinChannelPulse* channel;
-
-    channel = &APU.pulse[c];
-    if (!channel->enabled || channel->timerPeriod < 8 || !channel->length || channel->sweepTarget >= 0x800)
-        return 0;
-    return (channel->duty & (1 << channel->seqIndex)) ? sampleEnvelope(&channel->envelope) : 0;
-}
-
-static void noiseClockHalf(NinState* state)
-{
-    NinChannelNoise* ch;
-
-    ch = &APU.noise;
-
-    if (ch->length && !ch->envelope.halt)
-        ch->length--;
-}
-
-static void noiseTick(NinState* state)
-{
-    NinChannelNoise* ch;
-    uint16_t tmp;
-    uint16_t mask;
-
-    ch = &APU.noise;
-    if (ch->timerValue)
-        ch->timerValue--;
-    else
-    {
-        ch->timerValue = ch->timerPeriod;
-        mask = ch->mode ? 0x40 : 0x02;
-        tmp = (!!(ch->feedback & 0x01)) ^ (!!(ch->feedback & mask));
-        ch->feedback >>= 1;
-        ch->feedback |= (tmp << 14);
-    }
-}
-
-static uint8_t sampleNoise(NinState* state)
-{
-    NinChannelNoise* ch;
-
-    ch = &APU.noise;
-    if (!ch->enabled || (ch->feedback & 0x01) || !ch->length)
-        return 0;
-    return sampleEnvelope(&ch->envelope);
-}
-
-static void dmcTick(NinState* state)
-{
-    NinChannelDMC* ch;
-    uint8_t bit;
-
-    ch = &APU.dmc;
-    if (!ch->enabled)
-        return;
-    if (ch->timerValue)
-    {
-        ch->timerValue--;
-        return;
-    }
-    ch->timerValue = ch->timerPeriod;
-    if (ch->bitCount)
-    {
-        bit = ch->sampleBuffer & 0x01;
-        ch->sampleBuffer >>= 1;
-        ch->bitCount--;
-
-        if (bit && ch->output <= 125)
-            ch->output += 2;
-        if (!bit && ch->output >= 2)
-            ch->output -= 2;
-    }
-    if (!ch->bitCount && ch->length)
-    {
-        ch->length--;
-        ch->sampleBuffer = ninMemoryRead8(state, ch->address | 0x8000);
-        ch->bitCount = 8;
-        ch->address++;
-    }
-}
-
-static void ninApuFrameQuarter(NinState* state)
-{
-    triangleClockQuarter(state);
-    envelopeTick(&APU.pulse[0].envelope);
-    envelopeTick(&APU.pulse[1].envelope);
-    envelopeTick(&APU.noise.envelope);
-}
-
-static void ninApuFrameHalf(NinState* state)
-{
-    triangleClockHalf(state);
-    pulseClockHalf(state, 0);
-    pulseClockHalf(state, 1);
-    noiseClockHalf(state);
-}
-
-void ninRunCyclesAPU(NinState* state, size_t cycles)
-{
-    float sample;
-    uint8_t triangleSample;
-    uint8_t pulseSample[2];
-    uint8_t noiseSample;
-    size_t maxApuCycle;
-
-    maxApuCycle = state->regionData.apuFrameCycles[3 + APU.mode];
-    while (cycles--)
-    {
-        if (APU.resetClock)
-        {
-            APU.resetClock--;
-            if (APU.resetClock == 0)
-                APU.frameCounter = 0;
-        }
-
-        triangleTick(state);
-        if (!(APU.frameCounter & 0x1))
-        {
-            pulseTick(state, 0);
-            pulseTick(state, 1);
-            noiseTick(state);
-            dmcTick(state);
-        }
-
-        if (APU.frameCounter == state->regionData.apuFrameCycles[0]
-            || APU.frameCounter == state->regionData.apuFrameCycles[1]
-            || APU.frameCounter == state->regionData.apuFrameCycles[2]
-            || APU.frameCounter == maxApuCycle)
-        {
-            ninApuFrameQuarter(state);
-        }
-
-        if (APU.frameCounter == state->regionData.apuFrameCycles[1]
-            || APU.frameCounter == maxApuCycle)
-        {
-            ninApuFrameHalf(state);
-        }
-
-        if (APU.frameCounter >= maxApuCycle - 1)
-        {
-            if (!APU.mode && !APU.irqInhibit)
-                state->irq.set(IRQ_APU_FRAME);
-        }
-
-        if (APU.frameCounter == maxApuCycle + 1)
-            APU.frameCounter = 1;
-        else
-            APU.frameCounter++;;
-
-        /* Load the triangle sample */
-        triangleSample = sampleTriangle(state);
-        pulseSample[0] = samplePulse(state, 0);
-        pulseSample[1] = samplePulse(state, 1);
-        noiseSample = sampleNoise(state);
-
-        /* Emit the sample */
-        sample = ninMix(triangleSample, pulseSample[0], pulseSample[1], noiseSample, APU.dmc.output);
-        state->audio.push(sample);
-    }
+        ch.sweepTarget = ch.timerPeriod + tmp;
 }

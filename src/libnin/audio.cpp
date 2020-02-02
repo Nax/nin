@@ -30,10 +30,10 @@
 #include <libnin/libnin.h>
 #include <libnin/Audio.h>
 
-Audio::Audio()
-: _callback(nullptr)
+Audio::Audio(const HardwareSpecs& hwSpecs)
+: _hwSpecs(hwSpecs)
+, _callback(nullptr)
 , _callbackArg(nullptr)
-, _sourceFrequency(0)
 , _targetFrequency(0)
 , _accumulator(0)
 , _samplesCursor(0)
@@ -56,11 +56,6 @@ void Audio::setCallback(NINAUDIOCALLBACK callback, void* arg)
     _callbackArg = arg;
 }
 
-void Audio::setSourceFrequency(std::uint32_t freq)
-{
-    _sourceFrequency = freq;
-}
-
 void Audio::setTargetFrequency(std::uint32_t freq)
 {
     _targetFrequency = freq;
@@ -71,10 +66,10 @@ void Audio::push(float sample)
     /* We push samples into a ring buffer */
     sample = loPass(sample);
     _accumulator += _targetFrequency;
-    if (_accumulator >= _sourceFrequency)
+    if (_accumulator >= _hwSpecs.clockRate)
     {
         sample = hiPass(sample);
-        _accumulator -= _sourceFrequency;
+        _accumulator -= _hwSpecs.clockRate;
         _samples[_samplesCursor++] = sample;
         if (_samplesCursor >= NIN_AUDIO_SAMPLE_SIZE)
         {
