@@ -27,14 +27,15 @@
  */
 
 #ifndef LIBNIN_H
-#define LIBNIN_H
+#define LIBNIN_H 1
 
 #include <stdlib.h>
 #include <nin/nin.h>
 #include <libnin/APU.h>
 #include <libnin/Audio.h>
+#include <libnin/DiskSystem.h>
 #include <libnin/IRQ.h>
-#include <libnin/HardwareSpecs.h>
+#include <libnin/HardwareInfo.h>
 
 #define UNUSED(x)   ((void)x)
 
@@ -221,122 +222,18 @@ typedef struct {
     uint8_t         race1:1;
 } NinPPU;
 
-typedef union {
-    uint8_t     raw;
-    struct {
-        unsigned shift:3;
-        unsigned negate:1;
-        unsigned divider:3;
-        unsigned enabled:1;
-    };
-} NinAudioSweep;
-
-typedef struct {
-    uint16_t    timerPeriod;
-    uint16_t    timerValue;
-    uint8_t     seqIndex;
-    uint8_t     linear;
-    uint8_t     linearReload:7;
-    uint8_t     linearReloadFlag:1;
-    uint8_t     length;
-    uint8_t     control:1;
-    uint8_t     enabled:1;
-} NinChannelTriangle;
-
-typedef struct {
-    uint8_t volume:4;
-    uint8_t decay:4;
-    uint8_t divider:4;
-    uint8_t halt:1;
-    uint8_t constant:1;
-    uint8_t start:1;
-} NinEnvelope;
-
-typedef struct {
-    uint16_t    timerPeriod;
-    uint16_t    timerValue;
-    uint8_t     seqIndex;
-    uint8_t     length;
-    uint8_t     duty;
-    NinEnvelope envelope;
-    uint8_t     sweepEnable:1;
-    uint8_t     sweepPeriod:4;
-    uint8_t     sweepValue:4;
-    uint8_t     sweepNegate:1;
-    uint8_t     sweepShift:3;
-    uint16_t    sweepTarget;
-    uint8_t     sweepReload:1;
-    uint8_t     enabled:1;
-} NinChannelPulse;
-
-typedef struct {
-    uint16_t        timerPeriod;
-    uint16_t        timerValue;
-    uint16_t        feedback;
-    uint8_t         length;
-    uint8_t         mode:1;
-    uint8_t         enabled:1;
-    NinEnvelope     envelope;
-} NinChannelNoise;
-
-typedef struct {
-    uint16_t        timerPeriod;
-    uint16_t        timerValue;
-    uint16_t        address;
-    uint16_t        length;
-    uint8_t         output;
-    uint8_t         irqEnable:1;
-    uint8_t         irq:1;
-    uint8_t         loop:1;
-    uint8_t         enabled:1;
-    uint8_t         sampleBuffer;
-    uint8_t         bitCount:4;
-    uint8_t         silence:1;
-} NinChannelDMC;
-
-typedef struct {
-    uint16_t            frameCounter;
-    NinChannelTriangle  triangle;
-    NinChannelPulse     pulse[2];
-    NinChannelNoise     noise;
-    NinChannelDMC       dmc;
-    uint8_t             mode:1;
-    uint8_t             irqInhibit:1;
-    uint8_t             resetClock;
-} NinAPU;
-
-typedef struct {
-    uint8_t     extPort;
-    uint8_t     motor:1;
-    uint8_t     noScan:1;
-    uint8_t     noWrite:1;
-    uint8_t     inData:1;
-    uint8_t     irqEnabledTransfer:1;
-    uint8_t     irqEnabledTimer:1;
-    uint8_t     irqReloadFlag:1;
-    uint16_t    irqReloadValue;
-    uint16_t    irqTimer;
-    uint8_t     transfered:1;
-    uint8_t     latchRead;
-    uint16_t    headClock;
-    uint32_t    headPos;
-    uint16_t    delay;
-    uint8_t     scanning:1;
-    uint8_t     skippedGap:1;
-    uint8_t     endOfDisk:1;
-} NinFds;
-
 struct NinState
 {
     NinState();
 
-    HardwareSpecs       hwSpecs;
+    HardwareInfo        info;
+    IRQ                 irq;
     APU                 apu;
+    Audio               audio;
+    DiskSystem          diskSystem;
     NinCPU              cpu;
     NinPPU              ppu;
     FILE*               saveFile;
-    NinRegion           region;
-    Audio               audio;
     uint16_t            mapper;
     uint8_t             battery;
     uint8_t             mirroring;
@@ -379,7 +276,6 @@ struct NinState
     uint8_t*            nametables[4];
     uint8_t             nmi:1;
     uint8_t             nmi2:1;
-    IRQ                 irq;
     uint64_t            cyc;
     uint8_t             frame:1;
     uint8_t             frameOdd:1;
@@ -389,11 +285,7 @@ struct NinState
     uint8_t             irqScanlineReloadValue;
     uint16_t            irqScanlineFilterShifter;
     uint16_t            oldVmemAddr;
-    NinSystem           system;
-    NinFds              fds;
 };
-
-void        ninApplyMapper(NinState* state, uint8_t mapperNum);
 
 uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
 uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
@@ -449,10 +341,5 @@ void    ninMirrorA(NinState* state);
 void    ninMirrorB(NinState* state);
 void    ninMirrorH(NinState* state);
 void    ninMirrorV(NinState* state);
-
-/* fds.c */
-uint8_t     ninFdsRegRead(NinState* state, uint16_t addr);
-void        ninFdsRegWrite(NinState* state, uint16_t addr, uint8_t value);
-void        ninFdsCycle(NinState* state);
 
 #endif

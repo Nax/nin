@@ -48,8 +48,8 @@ static constexpr const std::uint8_t kLengthCounterLookup[32] = {
     12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
 
-APU::APU(const HardwareSpecs& hwSpecs, IRQ& irq, Audio& audio)
-: _hwSpecs(hwSpecs)
+APU::APU(const HardwareInfo& info, IRQ& irq, Audio& audio)
+: _info(info)
 , _irq(irq)
 , _audio(audio)
 , _triangle{}
@@ -149,7 +149,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
         break;
     case 0xe: // Noise Timer
         _noise.mode = !!(value & 0x80);
-        _noise.timerPeriod = _hwSpecs.apuNoisePeriod[value & 0xf];
+        _noise.timerPeriod = _info.specs().apuNoisePeriod[value & 0xf];
         break;
     case 0xf: // Noise Length
         if (_noise.enabled)
@@ -159,7 +159,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
     case 0x10: // DMC Config
         _dmc.irqEnable = !!(value & 0x80);
         _dmc.loop = !!(value & 0x40);
-        _dmc.timerPeriod = _hwSpecs.apuDmcPeriod[value & 0xf];
+        _dmc.timerPeriod = _info.specs().apuDmcPeriod[value & 0xf];
         break;
     case 0x11: // DMC Load
         _dmc.output = value & 0x7f;
@@ -238,7 +238,7 @@ void APU::tick(std::size_t cycles)
     uint8_t dmcSample;
     size_t maxApuCycle;
 
-    maxApuCycle = _hwSpecs.apuFrameCycles[3 + _mode];
+    maxApuCycle = _info.specs().apuFrameCycles[3 + _mode];
     while (cycles--)
     {
         if (_resetClock)
@@ -257,15 +257,15 @@ void APU::tick(std::size_t cycles)
             tickDMC();
         }
 
-        if (_frameCounter == _hwSpecs.apuFrameCycles[0]
-            || _frameCounter == _hwSpecs.apuFrameCycles[1]
-            || _frameCounter == _hwSpecs.apuFrameCycles[2]
+        if (_frameCounter == _info.specs().apuFrameCycles[0]
+            || _frameCounter == _info.specs().apuFrameCycles[1]
+            || _frameCounter == _info.specs().apuFrameCycles[2]
             || _frameCounter == maxApuCycle)
         {
             frameQuarter();
         }
 
-        if (_frameCounter == _hwSpecs.apuFrameCycles[1]
+        if (_frameCounter == _info.specs().apuFrameCycles[1]
             || _frameCounter == maxApuCycle)
         {
             frameHalf();

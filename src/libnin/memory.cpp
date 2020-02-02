@@ -145,7 +145,7 @@ uint8_t ninMemoryReadFDS(NinState* state, uint16_t addr)
         }
     }
     else if (addr < 0x4100)
-        return ninFdsRegRead(state, addr);
+        return state->diskSystem.regRead(addr);
     else if (addr < 0x6000)
         return badIO(state, addr, 0);
     else if (addr < 0xe000)
@@ -222,7 +222,7 @@ void ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value)
         }
     }
     else if (addr < 0x4100)
-        ninFdsRegWrite(state, addr, value);
+        state->diskSystem.regWrite(addr, value);
     else if (addr < 0x6000)
         badIO(state, addr, 1);
     else if (addr < 0xe000)
@@ -340,7 +340,7 @@ NIN_API void ninDumpMemoryFDS(NinState* state, uint8_t* dst, uint16_t start, siz
 
 NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)
 {
-    switch (state->system)
+    switch (state->info.system())
     {
     case NIN_SYSTEM_NES:
         ninDumpMemoryNES(state, dst, start, len);

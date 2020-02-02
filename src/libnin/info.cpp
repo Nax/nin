@@ -33,16 +33,16 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
     switch (info)
     {
     case NIN_INFO_SYSTEM:
-        *dst = state->system;
+        *dst = state->info.system();
         break;
     case NIN_INFO_CLOCK_RATE:
-        *dst = state->hwSpecs.clockRate;
+        *dst = state->info.specs().clockRate;
         break;
     case NIN_INFO_FRAME_CYCLES:
-        *dst = state->hwSpecs.frameCycles;
+        *dst = state->info.specs().frameCycles;
         break;
     case NIN_INFO_FRAME_DELAY:
-        *dst = state->hwSpecs.frameDelay;
+        *dst = state->info.specs().frameDelay;
         break;
     case NIN_INFO_PC:
         *dst = state->cpu.pc;

@@ -163,7 +163,7 @@ static constexpr bool matchPattern(const char* pattern, uint16_t value)
         state->frame |= ninPpuRunCycles(state, 1);                                  \
     }                                                                               \
     */                                                                              \
-    ninFdsCycle(state);                                                             \
+    state->diskSystem.tick();                                                       \
 } while (0)
 
 #define READ(x)         do { tmp = ninMemoryRead8(state, (x)); } while (0)

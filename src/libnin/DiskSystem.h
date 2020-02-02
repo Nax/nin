@@ -26,41 +26,58 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBNIN_AUDIO_H
-#define LIBNIN_AUDIO_H 1
+#ifndef LIBNIN_DISK_SYSTEM_H
+#define LIBNIN_DISK_SYSTEM_H 1
 
+#include <cstdio>
 #include <cstdint>
-#include <nin/nin.h>
 #include <libnin/NonCopyable.h>
 
 class HardwareInfo;
-class Audio : private NonCopyable
+class IRQ;
+class DiskSystem : private NonCopyable
 {
 public:
-    Audio(const HardwareInfo& info);
-    ~Audio();
+    DiskSystem(const HardwareInfo& info, IRQ& irq);
+    ~DiskSystem();
 
-    void setCallback(NINAUDIOCALLBACK callback, void* arg);
-    void setTargetFrequency(std::uint32_t freq);
+    std::uint8_t    regRead(std::uint16_t addr);
+    void            regWrite(std::uint16_t addr, std::uint8_t value);
 
-    void push(float sample);
+    void tick();
+
+    void loadDisk(FILE* f);
+    void changeSide(std::uint8_t side);
 
 private:
-    double loPass(double sample);
-    double hiPass(double sample);
+    void loadDiskSide(FILE* f, std::uint8_t side);
 
     const HardwareInfo& _info;
+    IRQ&                _irq;
 
-    NINAUDIOCALLBACK    _callback;
-    void*               _callbackArg;
-    std::uint32_t       _targetFrequency;
-    std::uint32_t       _accumulator;
-    float               _samples[NIN_AUDIO_SAMPLE_SIZE];
-    std::uint16_t       _samplesCursor;
-    double              _loPassX[6];
-    double              _loPassY[6];
-    double              _hiPassX[4];
-    double              _hiPassY[4];
+    std::uint8_t*   _data;
+    std::uint8_t*   _dataCurrentDisk;
+
+    std::uint32_t   _headPos;
+    std::uint16_t   _headClock;
+    std::uint16_t   _delay;
+    std::uint16_t   _irqReloadValue;
+    std::uint16_t   _irqTimer;
+    std::uint8_t    _extPort;
+    std::uint8_t    _latchRead;
+    std::uint8_t    _sideCount;
+
+    std::uint8_t    _motor:1;
+    std::uint8_t    _noScan:1;
+    std::uint8_t    _noWrite:1;
+    std::uint8_t    _inData:1;
+    std::uint8_t    _irqEnabledTransfer:1;
+    std::uint8_t    _irqEnabledTimer:1;
+    std::uint8_t    _irqReloadFlag:1;
+    std::uint8_t    _transfered:1;
+    std::uint8_t    _scanning:1;
+    std::uint8_t    _skippedGap:1;
+    std::uint8_t    _endOfDisk:1;
 };
 
 #endif

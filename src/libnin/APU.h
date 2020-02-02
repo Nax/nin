@@ -33,13 +33,13 @@
 #include <cstdint>
 #include <libnin/NonCopyable.h>
 
-class HardwareSpecs;
+class HardwareInfo;
 class IRQ;
 class Audio;
 class APU : private NonCopyable
 {
 public:
-    APU(const HardwareSpecs& hwSpecs, IRQ& irq, Audio& audio);
+    APU(const HardwareInfo& info, IRQ& irq, Audio& audio);
 
     std::uint8_t    regRead(std::uint16_t reg);
     void            regWrite(std::uint16_t reg, std::uint8_t value);
@@ -140,7 +140,7 @@ private:
 
     void pulseUpdateTarget(int n);
 
-    const HardwareSpecs&    _hwSpecs;
+    const HardwareInfo&     _info;
     IRQ&                    _irq;
     Audio&                  _audio;
 
