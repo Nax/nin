@@ -37,6 +37,8 @@
 #define FDS_DISK_GAP0           3538
 #define FDS_DISK_GAP1           122
 
+using namespace libnin;
+
 DiskSystem::DiskSystem(const HardwareInfo& info, IRQ& irq)
 : _info(info)
 , _irq(irq)

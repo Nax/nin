@@ -1,5 +1,7 @@
 #include <libnin/HardwareInfo.h>
 
+using namespace libnin;
+
 HardwareInfo::HardwareInfo()
 {
     setRegion(NIN_REGION_NTSC);

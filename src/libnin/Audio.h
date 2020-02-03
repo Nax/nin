@@ -33,6 +33,9 @@
 #include <nin/nin.h>
 #include <libnin/NonCopyable.h>
 
+namespace libnin
+{
+
 class HardwareInfo;
 class Audio : private NonCopyable
 {
@@ -61,6 +64,8 @@ private:
     double              _loPassY[6];
     double              _hiPassX[4];
     double              _hiPassY[4];
+};
+
 };
 
 #endif

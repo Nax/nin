@@ -37,6 +37,8 @@
 #include <libnin/IRQ.h>
 #include <libnin/HardwareInfo.h>
 
+using namespace libnin;
+
 #define UNUSED(x)   ((void)x)
 
 #define RAM_SIZE    0x800

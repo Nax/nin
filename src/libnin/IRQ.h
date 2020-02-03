@@ -38,6 +38,9 @@
 #define IRQ_FDS_TRANSFER    0x08
 #define IRQ_FDS_TIMER       0x10
 
+namespace libnin
+{
+
 class IRQ : private NonCopyable
 {
 public:
@@ -51,6 +54,8 @@ public:
 
 private:
     std::uint8_t   _irq;
+};
+
 };
 
 #endif

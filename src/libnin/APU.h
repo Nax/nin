@@ -33,6 +33,9 @@
 #include <cstdint>
 #include <libnin/NonCopyable.h>
 
+namespace libnin
+{
+
 class HardwareInfo;
 class IRQ;
 class Audio;
@@ -152,6 +155,8 @@ private:
     std::uint8_t        _mode:1;
     std::uint8_t        _irqInhibit:1;
     std::uint8_t        _resetClock:1;
+};
+
 };
 
 #endif

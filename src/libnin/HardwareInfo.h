@@ -5,6 +5,9 @@
 #include <libnin/NonCopyable.h>
 #include <libnin/HardwareSpecs.h>
 
+namespace libnin
+{
+
 class HardwareInfo : NonCopyable
 {
 public:
@@ -21,6 +24,8 @@ private:
     NinRegion       _region;
     NinSystem       _system;
     HardwareSpecs   _specs;
+};
+
 };
 
 #endif

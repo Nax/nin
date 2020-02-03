@@ -33,6 +33,9 @@
 #include <cstdint>
 #include <libnin/NonCopyable.h>
 
+namespace libnin
+{
+
 class HardwareInfo;
 class IRQ;
 class DiskSystem : private NonCopyable
@@ -78,6 +81,8 @@ private:
     std::uint8_t    _scanning:1;
     std::uint8_t    _skippedGap:1;
     std::uint8_t    _endOfDisk:1;
+};
+
 };
 
 #endif
