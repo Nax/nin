@@ -273,7 +273,7 @@ static int memoryExtractOverlap(uint16_t start, size_t len, uint16_t regionStart
     return 1;
 }
 
-NIN_API void ninDumpMemoryNES(NinState* state, uint8_t* dst, uint16_t start, size_t len)
+void ninDumpMemoryNES(NinState* state, uint8_t* dst, uint16_t start, size_t len)
 {
     uint16_t oOff;
     size_t oLen;
@@ -304,7 +304,7 @@ NIN_API void ninDumpMemoryNES(NinState* state, uint8_t* dst, uint16_t start, siz
     }
 }
 
-NIN_API void ninDumpMemoryFDS(NinState* state, uint8_t* dst, uint16_t start, size_t len)
+void ninDumpMemoryFDS(NinState* state, uint8_t* dst, uint16_t start, size_t len)
 {
     uint16_t oOff;
     size_t oLen;

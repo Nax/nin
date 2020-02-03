@@ -33,8 +33,8 @@
 static const char kHeaderMagicNES[] = { 'N', 'E', 'S', '\x1a' };
 static const char kHeaderMagicFDS[] = { 'F', 'D', 'S', '\x1a' };
 
-NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f);
-NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE* f);
+static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f);
+static NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE* f);
 
 
 NIN_API NinError ninLoadRom(NinState* state, const char* path)
@@ -63,7 +63,7 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
     return NIN_ERROR_BAD_FILE;
 }
 
-NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f)
+static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f)
 {
     int nes2;
 
@@ -242,7 +242,7 @@ NIN_API NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE
     return NIN_OK;
 }
 
-NIN_API NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE* f)
+static NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE* f)
 {
     state->info.setSystem(NIN_SYSTEM_FDS);
 
