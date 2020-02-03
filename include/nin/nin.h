@@ -35,10 +35,28 @@
 #include <stdint.h>
 
 #if defined(__cplusplus)
-# define NIN_API extern "C"
+# define NIN_EXTERN extern "C"
 #else
-# define NIN_API
+# define NIN_EXTERN
 #endif
+
+#if defined(WIN32) || defined(_WIN32)
+# if defined(NIN_STATIC)
+#  define NIN_DECLSPEC
+# elif defined(NIN_DLL)
+#  define NIN_DECLSPEC __declspec(dllexport)
+# else
+#  define NIN_DECLSPEC __declspec(dllimport)
+# endif
+#else
+# if defined(NIN_STATIC)
+#  define NIN_DECLSPEC
+# else
+#  define NIN_DECLSPEC __attribute__ ((visibility("default")))
+# endif
+#endif
+
+#define NIN_API NIN_EXTERN NIN_DECLSPEC
 
 typedef enum {
     NIN_OK = 0,
