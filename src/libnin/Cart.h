@@ -33,13 +33,32 @@
 #include <cstdint>
 #include <libnin/NonCopyable.h>
 
+#define CART_PRG_ROM    0
+#define CART_PRG_RAM    1
+#define CART_CHR_ROM    2
+#define CART_CHR_RAM    3
+
 namespace libnin
 {
+
+struct CartSegment : private NonCopyable
+{
+    CartSegment() : base{}, bankCount{} {  }
+    ~CartSegment() { delete[] base; }
+
+    std::uint8_t*   base;
+    std::uint16_t   bankCount;
+};
 
 class Cart : private NonCopyable
 {
 public:
+    const CartSegment& segment(int id) const { return _segments[id]; };
 
+    void load(int id, std::uint16_t bankCount, std::FILE* file);
+
+private:
+    CartSegment   _segments[4];
 };
 
 };

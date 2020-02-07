@@ -42,7 +42,7 @@ NIN_API void ninSetSaveFile(NinState* state, const char* path)
     f = fopen(path, "r+b");
     if (f)
     {
-        fread(state->prgRam, state->prgRamSize, 1, f);
+        state->cart.load(CART_PRG_RAM, state->cart.segment(CART_PRG_RAM).bankCount, f);
         state->saveFile = f;
     }
 }
@@ -50,12 +50,13 @@ NIN_API void ninSetSaveFile(NinState* state, const char* path)
 NIN_API void ninSyncSave(NinState* state)
 {
     FILE* f;
+    const CartSegment& prgRam = state->cart.segment(CART_PRG_RAM);
 
     f = state->saveFile;
     if (!f)
         return;
 
     fseek(f, 0, SEEK_SET);
-    fwrite(state->prgRam, state->prgRamSize, 1, f);
+    fwrite(prgRam.base, prgRam.bankCount * 0x2000, 1, f);
     fflush(f);
 }

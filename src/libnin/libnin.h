@@ -33,13 +33,13 @@
 #include <nin/nin.h>
 #include <libnin/APU.h>
 #include <libnin/Audio.h>
+#include <libnin/Cart.h>
 #include <libnin/DiskSystem.h>
 #include <libnin/IRQ.h>
 #include <libnin/HardwareInfo.h>
+#include <libnin/Util.h>
 
 using namespace libnin;
-
-#define UNUSED(x)   ((void)x)
 
 #define RAM_SIZE    0x800
 #define VRAM_SIZE   0x800
@@ -78,14 +78,6 @@ typedef void    (*NinMemoryWriteHandler)(NinState* state, uint16_t addr, uint8_t
 #define MIRRORING_QUAD          2
 
 #define CLOCK_RATE_NTSC     1789773
-
-template <typename T>
-inline static T* zalloc(size_t count)
-{
-    if (count)
-        return new T[count]();
-    return nullptr;
-}
 
 typedef struct {
     uint8_t reserved[8];
@@ -229,6 +221,7 @@ struct NinState
     NinState();
 
     HardwareInfo        info;
+    Cart                cart;
     IRQ                 irq;
     APU                 apu;
     Audio               audio;
@@ -259,20 +252,7 @@ struct NinState
     NinMemoryReadHandler    readHandler;
     NinMemoryWriteHandler   writeHandler;
 
-    uint8_t             diskSides;
-    uint32_t            diskDataSize;
-    uint8_t*            diskData;
-    uint8_t             prgBankCount;
-    uint8_t*            prgRom;
-    uint32_t            prgRomSize;
     uint8_t*            prgRomBank[4];
-    uint8_t*            prgRam;
-    uint16_t            prgRamSize;
-    uint16_t            chrBankCount;
-    uint8_t*            chrRom;
-    uint32_t            chrRomSize;
-    uint8_t*            chrRam;
-    uint32_t            chrRamSize;
     uint8_t*            chrBank[8];
     uint32_t            trainerSize;
     uint8_t*            nametables[4];
@@ -330,13 +310,13 @@ void    ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr);
 void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
 
 /* Bank */
-void    ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, uint8_t bank);
-void    ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, uint8_t bank);
-void    ninBankSwitchPrgRom32k(NinState* state, uint8_t bank);
+void    ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, int16_t bank);
+void    ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, int16_t bank);
+void    ninBankSwitchPrgRom32k(NinState* state, int16_t bank);
 
-void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, uint8_t bank);
-void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, uint8_t bank);
-void    ninBankSwitchChrRom8k(NinState* state, uint8_t bank);
+void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, int16_t bank);
+void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, int16_t bank);
+void    ninBankSwitchChrRom8k(NinState* state, int16_t bank);
 
 /* mirror.c */
 void    ninMirrorA(NinState* state);

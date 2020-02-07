@@ -37,15 +37,15 @@ static void updateBank(NinState* state)
     {
         ninBankSwitchPrgRom8k(state, 0, mmc3->bank[6]);
         ninBankSwitchPrgRom8k(state, 1, mmc3->bank[7]);
-        ninBankSwitchPrgRom8k(state, 2, state->prgBankCount * 2 - 2);
-        ninBankSwitchPrgRom8k(state, 3, state->prgBankCount * 2 - 1);
+        ninBankSwitchPrgRom8k(state, 2, -2);
+        ninBankSwitchPrgRom8k(state, 3, -1);
     }
     else
     {
-        ninBankSwitchPrgRom8k(state, 0, state->prgBankCount * 2 - 2);
+        ninBankSwitchPrgRom8k(state, 0, -2);
         ninBankSwitchPrgRom8k(state, 1, mmc3->bank[7]);
         ninBankSwitchPrgRom8k(state, 2, mmc3->bank[6]);
-        ninBankSwitchPrgRom8k(state, 3, state->prgBankCount * 2 - 1);
+        ninBankSwitchPrgRom8k(state, 3, -1);
     }
 
     if (mmc3->bankModeChrRom == 0)

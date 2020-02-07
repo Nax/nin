@@ -64,7 +64,7 @@ static void bankSwitch(NinState* state)
         break;
     case 3:
         ninBankSwitchPrgRom16k(state, 0, mmc1->prgBank & 0xff);
-        ninBankSwitchPrgRom16k(state, 1, state->prgBankCount - 1);
+        ninBankSwitchPrgRom16k(state, 1, state->cart.segment(CART_PRG_ROM).bankCount - 1);
         break;
     }
 }

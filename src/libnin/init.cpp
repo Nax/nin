@@ -78,10 +78,6 @@ void ninDestroyState(NinState* state)
         delete [] state->vram;
         delete [] state->palettes;
         delete [] state->oam;
-        delete [] state->prgRam;
-        delete [] state->prgRom;
-        delete [] state->chrRam;
-        delete [] state->chrRom;
         delete state;
     }
 }

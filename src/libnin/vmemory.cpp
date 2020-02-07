@@ -67,7 +67,7 @@ void ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
     addr = addr & 0x3fff;
     if (addr < 0x2000)
     {
-        if (state->chrRam)
+        if (state->cart.segment(CART_CHR_RAM).base)
             state->chrBank[addr / 0x400][addr & 0x3ff] = value;
         else
             badIO(state, addr, 1);

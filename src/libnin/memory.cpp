@@ -112,8 +112,9 @@ uint8_t ninMemoryReadNES(NinState* state, uint16_t addr)
         return badIO(state, addr, 0);
     else if (addr < 0x8000)
     {
-        if ((addr & 0x1fff) < state->prgRamSize)
-            return state->prgRam[addr & 0x1fff];
+        const CartSegment& prgRam = state->cart.segment(CART_PRG_RAM);
+        if (prgRam.base)
+            return prgRam.base[addr & 0x1fff];
         else
             return badIO(state, addr, 0);
     }
@@ -149,9 +150,9 @@ uint8_t ninMemoryReadFDS(NinState* state, uint16_t addr)
     else if (addr < 0x6000)
         return badIO(state, addr, 0);
     else if (addr < 0xe000)
-        return state->prgRam[addr - 0x6000];
+        return state->cart.segment(CART_PRG_RAM).base[addr - 0x6000];
     else
-        return state->prgRom[addr & 0x1fff];
+        return state->cart.segment(CART_PRG_ROM).base[addr & 0x1fff];
 }
 
 uint8_t ninMemoryRead8(NinState* state, uint16_t addr)
@@ -193,8 +194,9 @@ void ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value)
         badIO(state, addr, 1);
     else if (addr < 0x8000)
     {
-        if ((addr & 0x1fff) < state->prgRamSize)
-            state->prgRam[addr & 0x1fff] = value;
+        const CartSegment& prgRam = state->cart.segment(CART_PRG_RAM);
+        if (prgRam.base)
+            prgRam.base[addr & 0x1fff] = value;
         else
             badIO(state, addr, 1);
     }
@@ -227,7 +229,7 @@ void ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value)
         badIO(state, addr, 1);
     else if (addr < 0xe000)
     {
-        state->prgRam[addr - 0x6000] = value;
+        state->cart.segment(CART_PRG_RAM).base[addr - 0x6000] = value;
     }
     else
         state->prgWriteHandler(state, addr, value);
@@ -328,13 +330,13 @@ void ninDumpMemoryFDS(NinState* state, uint8_t* dst, uint16_t start, size_t len)
     /* 0x6000-0xdfff, PRG RAM */
     if (memoryExtractOverlap(start, len, 0x6000, 0x8000, &oOff, &oLen, &dOff))
     {
-        memcpy(dst + dOff, state->prgRam + oOff, oLen);
+        memcpy(dst + dOff, state->cart.segment(CART_PRG_RAM).base + oOff, oLen);
     }
 
     /* 0xe000-0xffff, PRG ROM */
     if (memoryExtractOverlap(start, len, 0xe000, 0x2000, &oOff, &oLen, &dOff))
     {
-        memcpy(dst + dOff, state->prgRom + oOff, oLen);
+        memcpy(dst + dOff, state->cart.segment(CART_PRG_ROM).base + oOff, oLen);
     }
 }
 

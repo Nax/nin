@@ -66,6 +66,10 @@ NIN_API NinError ninLoadRom(NinState* state, const char* path)
 static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE* f)
 {
     int nes2;
+    std::uint16_t prgRomBankCount;
+    std::uint16_t prgRamBankCount;
+    std::uint16_t chrRomBankCount;
+    std::uint16_t chrRamBankCount;
 
     nes2 = 0;
     /* Check for the nes2 signature */
@@ -92,43 +96,37 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
     {
         state->mirroring = MIRRORING_HORIZONTAL;
     }
+
     state->battery = header->battery;
     state->trainerSize = header->trainer ? 0x200 : 0;
-    state->prgRomSize = 0x4000 * header->prgRomSize;
-    state->chrRomSize = 0x2000 * header->chrRomSize;
-    state->prgRamSize = 0x2000;
+
+    prgRomBankCount = header->prgRomSize * 2;
+    prgRamBankCount = 1;
+    chrRomBankCount = header->chrRomSize * 8;
+    chrRamBankCount = chrRomBankCount ? 0 : 8;
 
     /* Zero is an error for PRG but allowed for CHR */
-    if (!state->prgRomSize)
+    if (!prgRomBankCount)
     {
         fclose(f);
         return NIN_ERROR_BAD_FILE;
     }
-    if (!state->chrRomSize)
-        state->chrRamSize = 0x2000;
 
     /* Allocate the various components */
-    state->prgRom = zalloc<uint8_t>(state->prgRomSize);
-    state->prgRam = zalloc<uint8_t>(state->prgRamSize);
-    state->chrRom = zalloc<uint8_t>(state->chrRomSize);
-    state->chrRam = zalloc<uint8_t>(state->chrRamSize);
+    state->cart.load(CART_PRG_ROM, prgRomBankCount, f);
+    state->cart.load(CART_PRG_RAM, prgRamBankCount, nullptr);
+    state->cart.load(CART_CHR_ROM, chrRomBankCount, f);
+    state->cart.load(CART_CHR_RAM, chrRamBankCount, nullptr);
 
-    /* Compute bank counts */
-    state->prgBankCount = state->prgRomSize / 0x2000;
-    state->chrBankCount = (state->chrRomSize ? state->chrRomSize : state->chrRamSize) / 0x400;
-
-    /* Actually read the ROM */
-    fread(state->prgRam + 0x1000, state->trainerSize, 1, f);
-    fread(state->prgRom, state->prgRomSize, 1, f);
-    if (state->chrRom)
-        fread(state->chrRom, state->chrRomSize, 1, f);
 
     /* Check that the file was actually long enough */
+    /*
     if ((unsigned long)ftell(f) < sizeof(NinRomHeader) + state->prgRomSize + state->chrRomSize + state->trainerSize)
     {
         fclose(f);
         return NIN_ERROR_BAD_FILE;
     }
+    */
 
     /* We won't need the ROM from now on */
     fclose(f);
@@ -155,25 +153,9 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
     state->readHandler = &ninMemoryReadNES;
     state->writeHandler = &ninMemoryWriteNES;
 
-    state->prgRomBank[0] = state->prgRom;
-    state->prgRomBank[1] = state->prgRom + 0x2000;
-    state->prgRomBank[2] = state->prgRom + (state->prgBankCount - 2) * 0x2000;
-    state->prgRomBank[3] = state->prgRom + (state->prgBankCount - 1) * 0x2000;
-
-    if (state->chrRom)
-    {
-        for (int i = 0; i < 8; ++i)
-        {
-            state->chrBank[i] = state->chrRom + i * 0x400;
-        }
-    }
-    else
-    {
-        for (int i = 0; i < 8; ++i)
-        {
-            state->chrBank[i] = state->chrRam + i * 0x400;
-        }
-    }
+    ninBankSwitchPrgRom16k(state, 0, 0);
+    ninBankSwitchPrgRom16k(state, 1, -1);
+    ninBankSwitchChrRom8k(state, 0);
 
     /* Mapper-specific logic */
     switch (state->mapper)
@@ -204,8 +186,7 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
         break;
     case 7:
         /* AXROM */
-        state->prgRomBank[0] = state->prgRom;
-        state->prgRomBank[1] = state->prgRom + 0x4000;
+        ninBankSwitchPrgRom8k(state, 1, 2);
         for (int i = 0; i < 4; ++i)
             state->nametables[i] = state->vram;
         state->prgWriteHandler = &ninPrgWriteHandlerAXROM;
@@ -214,16 +195,14 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
         /* MMC2 */
         state->prgWriteHandler = &ninPrgWriteHandlerMMC2;
         state->ppuMonitorHandler = &ninPpuMonitorHandlerMMC2;
-        state->prgRomBank[1] = state->prgRom + (state->prgBankCount - 3) * 0x2000;
-        state->prgRomBank[2] = state->prgRom + (state->prgBankCount - 2) * 0x2000;
-        state->prgRomBank[3] = state->prgRom + (state->prgBankCount - 1) * 0x2000;
+        ninBankSwitchPrgRom8k(state, 1, -3);
+        ninBankSwitchPrgRom8k(state, 2, -2);
+        ninBankSwitchPrgRom8k(state, 3, -1);
         break;
     case 10:
         /* MMC4 */
         state->prgWriteHandler = &ninPrgWriteHandlerMMC4;
         state->ppuMonitorHandler = &ninPpuMonitorHandlerMMC2;
-        state->prgRomBank[2] = state->prgRom + (state->prgBankCount - 2) * 0x2000;
-        state->prgRomBank[3] = state->prgRom + (state->prgBankCount - 1) * 0x2000;
         break;
     case 11:
         /* ColorDreams */
@@ -247,20 +226,12 @@ static NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE*
     state->info.setSystem(NIN_SYSTEM_FDS);
 
     /* PRG ROM is the FDS BIOS */
-    state->prgRomSize = 0x2000;
-    state->prgRom = zalloc<uint8_t>(state->prgRomSize);
+    state->cart.load(CART_PRG_ROM, 1, nullptr);
+    state->cart.load(CART_PRG_RAM, 4, nullptr);
+    state->cart.load(CART_CHR_ROM, 0, nullptr);
+    state->cart.load(CART_CHR_RAM, 8, nullptr);
 
-    /* PRG RAM is included as well */
-    state->prgRamSize = 0x8000;
-    state->prgRam = zalloc<uint8_t>(state->prgRamSize);
-
-    /* As is CHR RAM */
-    state->chrRamSize = 0x2000;
-    state->chrRam = zalloc<uint8_t>(state->chrRamSize);
-    for (int i = 0; i < 8; ++i)
-    {
-        state->chrBank[i] = state->chrRam + i * 0x400;
-    }
+    ninBankSwitchChrRom8k(state, 0);
 
     /* Load the disk */
     state->diskSystem.loadDisk(f);
@@ -300,7 +271,7 @@ NIN_API void ninLoadBiosFDS(NinState* state, const char* path)
     f = fopen(path, "rb");
     if (!f)
         return;
-    fread(state->prgRom, state->prgRomSize, 1, f);
+    state->cart.load(CART_PRG_ROM, 1, f);
     fclose(f);
     state->cpu.pc = ninMemoryRead16(state, 0xfffc);
 }
