@@ -27,8 +27,10 @@
  */
 
 #include <cmath>
-#include <libnin/libnin.h>
 #include <libnin/Audio.h>
+#include <libnin/HardwareInfo.h>
+
+using namespace libnin;
 
 Audio::Audio(const HardwareInfo& info)
 : _info(info)
@@ -37,10 +39,10 @@ Audio::Audio(const HardwareInfo& info)
 , _targetFrequency(0)
 , _accumulator(0)
 , _samplesCursor(0)
-, _loPassX()
-, _loPassY()
-, _hiPassX()
-, _hiPassY()
+, _loPassX{}
+, _loPassY{}
+, _hiPassX{}
+, _hiPassY{}
 {
 
 }

@@ -41,7 +41,7 @@ uint8_t ninVMemoryRead8(NinState* state, uint16_t addr)
     addr = addr & 0x3fff;
     //state->ppuMonitorHandler(state, addr);
     if (addr < 0x2000)
-        return state->chrBank[addr / 0x400][addr & 0x3ff];
+        return state->mapper.chr(addr / 0x400)[addr & 0x3ff];
     else if (addr < 0x2400)
         return state->mapper.nametable(0)[addr & 0x3ff];
     else if (addr < 0x2800)
@@ -68,7 +68,7 @@ void ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
     if (addr < 0x2000)
     {
         if (state->cart.segment(CART_CHR_RAM).base)
-            state->chrBank[addr / 0x400][addr & 0x3ff] = value;
+            state->mapper.chr(addr / 0x400)[addr & 0x3ff] = value;
         else
             badIO(state, addr, 1);
     }

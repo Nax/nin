@@ -88,6 +88,43 @@ void Mapper::bankPrg32k(std::int16_t bank)
     bankPrg8k(3, bank * 4 + 3);
 }
 
+void Mapper::bankChr1k(std::uint8_t slot, std::int16_t bank)
+{
+    const CartSegment& segRam = _cart.segment(CART_CHR_RAM);
+    const CartSegment& segRom = _cart.segment(CART_CHR_ROM);
+
+    if (segRam.base)
+    {
+        bank += segRam.bankCount;
+        _chr[slot] = segRam.base + (bank & (segRam.bankCount - 1)) * 0x400;
+    }
+    else
+    {
+        bank += segRom.bankCount;
+        _chr[slot] = segRom.base + (bank & (segRom.bankCount - 1)) * 0x400;
+    }
+}
+
+void Mapper::bankChr4k(std::uint8_t slot, std::int16_t bank)
+{
+    bankChr1k(slot * 4 + 0, bank * 4 + 0);
+    bankChr1k(slot * 4 + 1, bank * 4 + 1);
+    bankChr1k(slot * 4 + 2, bank * 4 + 2);
+    bankChr1k(slot * 4 + 3, bank * 4 + 3);
+}
+
+void Mapper::bankChr8k(std::int16_t bank)
+{
+    bankChr1k(0, bank * 8 + 0);
+    bankChr1k(1, bank * 8 + 1);
+    bankChr1k(2, bank * 8 + 2);
+    bankChr1k(3, bank * 8 + 3);
+    bankChr1k(4, bank * 8 + 4);
+    bankChr1k(5, bank * 8 + 5);
+    bankChr1k(6, bank * 8 + 6);
+    bankChr1k(7, bank * 8 + 7);
+}
+
 /* ROM CONFIG */
 /* Mapper-specific logic */
 

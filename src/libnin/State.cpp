@@ -3,10 +3,14 @@
 NinState::NinState()
 : memory{}
 , info{}
+, cart{}
+, irq{}
 , mapper{memory, cart}
 , audio(info)
 , apu(info, irq, audio)
 , diskSystem(info, irq)
+, cpu{}
+, ppu{}
 , saveFile{}
 , battery{}
 , mirroring{}
@@ -21,7 +25,6 @@ NinState::NinState()
 , mapperRegs{}
 , ppuMonitorHandler{}
 , readHandler{}
-, chrBank{}
 , nmi{}
 , nmi2{}
 , cyc{}

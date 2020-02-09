@@ -49,6 +49,7 @@ public:
     ~Mapper();
 
     std::uint8_t* prg(int i) { return _prg[i]; }
+    std::uint8_t* chr(int i) { return _chr[i]; }
     std::uint8_t* nametable(int i) { return _nametables[i]; }
 
     void configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor);
@@ -58,6 +59,10 @@ public:
     void bankPrg8k(std::uint8_t slot, std::int16_t bank);
     void bankPrg16k(std::uint8_t slot, std::int16_t bank);
     void bankPrg32k(std::int16_t bank);
+
+    void bankChr1k(std::uint8_t slot, std::int16_t bank);
+    void bankChr4k(std::uint8_t slot, std::int16_t bank);
+    void bankChr8k(std::int16_t bank);
 
 private:
     using WriteHandler = void(Mapper::*)(std::uint16_t, std::uint8_t);
@@ -71,6 +76,7 @@ private:
 
     WriteHandler    _writeHandler;
     std::uint8_t*   _prg[4];
+    std::uint8_t*   _chr[8];
     std::uint8_t*   _nametables[4];
 };
 

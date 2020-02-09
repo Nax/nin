@@ -227,8 +227,8 @@ struct NinState
     Cart                cart;
     IRQ                 irq;
     Mapper              mapper;
-    APU                 apu;
     Audio               audio;
+    APU                 apu;
     DiskSystem          diskSystem;
     NinCPU              cpu;
     NinPPU              ppu;
@@ -252,7 +252,6 @@ struct NinState
     NinMemoryReadHandler    readHandler;
     NinMemoryWriteHandler   writeHandler;
 
-    uint8_t*            chrBank[8];
     uint8_t             nmi:1;
     uint8_t             nmi2:1;
     uint64_t            cyc;
@@ -304,10 +303,5 @@ void    ninPrgWriteHandlerCommonMMC2_MMC4(NinState* state, uint16_t addr, uint8_
 void    ninPpuMonitorHandlerNull(NinState* state, uint16_t addr);
 void    ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr);
 void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
-
-/* Bank */
-void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, int16_t bank);
-void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, int16_t bank);
-void    ninBankSwitchChrRom8k(NinState* state, int16_t bank);
 
 #endif

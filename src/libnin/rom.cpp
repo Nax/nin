@@ -111,6 +111,7 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
         state->mapper.mirror(NIN_MIRROR_V);
     state->mapper.bankPrg16k(0, 0);
     state->mapper.bankPrg16k(1, -1);
+    state->mapper.bankChr8k(0);
     state->mapper.configure((header->mapperHi << 4) | header->mapperLo, 0);
 
     state->battery = header->battery;
@@ -128,7 +129,6 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
     /* Apply a default configuration suitable for most mappers */
     state->readHandler = &ninMemoryReadNES;
     state->writeHandler = &ninMemoryWriteNES;
-    ninBankSwitchChrRom8k(state, 0);
 
     return NIN_OK;
 }
@@ -143,7 +143,7 @@ static NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE*
     state->cart.load(CART_CHR_ROM, 0, nullptr);
     state->cart.load(CART_CHR_RAM, 8, nullptr);
 
-    ninBankSwitchChrRom8k(state, 0);
+    state->mapper.bankChr8k(0);
 
     /* Load the disk */
     state->diskSystem.loadDisk(f);
