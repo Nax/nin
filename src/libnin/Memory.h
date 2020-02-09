@@ -26,11 +26,24 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libnin/libnin.h>
+#ifndef LIBNIN_MEMORY_H
+#define LIBNIN_MEMORY_H 1
 
-void ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value)
+#include <cstdint>
+#include <libnin/NonCopyable.h>
+
+namespace libnin
 {
-    (void)addr;
-    ninBankSwitchPrgRom32k(state, (value >> 4) & 0x3);
-    ninBankSwitchChrRom8k(state, value & 0x3);
+
+class Memory : private NonCopyable
+{
+public:
+    Memory();
+
+    std::uint8_t ram[0x800];
+    std::uint8_t vram[0x800];
+};
+
 }
+
+#endif

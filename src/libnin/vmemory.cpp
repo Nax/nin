@@ -39,25 +39,25 @@ static uint8_t badIO(NinState* state, uint16_t addr, int write)
 uint8_t ninVMemoryRead8(NinState* state, uint16_t addr)
 {
     addr = addr & 0x3fff;
-    state->ppuMonitorHandler(state, addr);
+    //state->ppuMonitorHandler(state, addr);
     if (addr < 0x2000)
         return state->chrBank[addr / 0x400][addr & 0x3ff];
     else if (addr < 0x2400)
-        return state->nametables[0][addr & 0x3ff];
+        return state->mapper.nametable(0)[addr & 0x3ff];
     else if (addr < 0x2800)
-        return state->nametables[1][addr & 0x3ff];
+        return state->mapper.nametable(1)[addr & 0x3ff];
     else if (addr < 0x2c00)
-        return state->nametables[2][addr & 0x3ff];
+        return state->mapper.nametable(2)[addr & 0x3ff];
     else if (addr < 0x3000)
-        return state->nametables[3][addr & 0x3ff];
+        return state->mapper.nametable(3)[addr & 0x3ff];
     else if (addr < 0x3400)
-        return state->nametables[0][addr & 0x3ff];
+        return state->mapper.nametable(0)[addr & 0x3ff];
     else if (addr < 0x3800)
-        return state->nametables[1][addr & 0x3ff];
+        return state->mapper.nametable(1)[addr & 0x3ff];
     else if (addr < 0x3c00)
-        return state->nametables[2][addr & 0x3ff];
+        return state->mapper.nametable(2)[addr & 0x3ff];
     else if (addr < 0x3f00)
-        return state->nametables[3][addr & 0x3ff];
+        return state->mapper.nametable(3)[addr & 0x3ff];
     else
         return state->palettes[addr & 0x1f];
 }
@@ -73,21 +73,21 @@ void ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
             badIO(state, addr, 1);
     }
     else if (addr < 0x2400)
-        state->nametables[0][addr & 0x3ff] = value;
+        state->mapper.nametable(0)[addr & 0x3ff] = value;
     else if (addr < 0x2800)
-        state->nametables[1][addr & 0x3ff] = value;
+        state->mapper.nametable(1)[addr & 0x3ff] = value;
     else if (addr < 0x2c00)
-        state->nametables[2][addr & 0x3ff] = value;
+        state->mapper.nametable(2)[addr & 0x3ff] = value;
     else if (addr < 0x3000)
-        state->nametables[3][addr & 0x3ff] = value;
+        state->mapper.nametable(3)[addr & 0x3ff] = value;
     else if (addr < 0x3400)
-        state->nametables[0][addr & 0x3ff] = value;
+        state->mapper.nametable(0)[addr & 0x3ff] = value;
     else if (addr < 0x3800)
-        state->nametables[1][addr & 0x3ff] = value;
+        state->mapper.nametable(1)[addr & 0x3ff] = value;
     else if (addr < 0x3c00)
-        state->nametables[2][addr & 0x3ff] = value;
+        state->mapper.nametable(2)[addr & 0x3ff] = value;
     else if (addr < 0x3f00)
-        state->nametables[3][addr & 0x3ff] = value;
+        state->mapper.nametable(3)[addr & 0x3ff] = value;
     else
     {
         if ((addr & 0x03) == 0)

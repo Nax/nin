@@ -26,36 +26,46 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libnin/libnin.h>
+#ifndef LIBNIN_MAPPER_H
+#define LIBNIN_MAPPER_H 1
 
-void ninMirrorA(NinState* state)
+#include <cstdint>
+#include <libnin/NonCopyable.h>
+
+#define NIN_MIRROR_A 0
+#define NIN_MIRROR_B 1
+#define NIN_MIRROR_H 2
+#define NIN_MIRROR_V 3
+
+namespace libnin
 {
-    state->nametables[0] = state->vram + 0x000;
-    state->nametables[1] = state->vram + 0x000;
-    state->nametables[2] = state->vram + 0x000;
-    state->nametables[3] = state->vram + 0x000;
+
+class Memory;
+class Cart;
+class Mapper : private NonCopyable
+{
+public:
+    Mapper(Memory& memory, Cart& cart);
+    ~Mapper();
+
+    std::uint8_t* nametable(int i) { return _nametables[i]; }
+
+    void configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor);
+    void mirror(int mirrorMode);
+    void write(std::uint16_t addr, std::uint8_t value) { (this->*_writeHandler)(addr, value); }
+
+private:
+    using WriteHandler = void(Mapper::*)(std::uint16_t, std::uint8_t);
+
+    void write_NROM(std::uint16_t addr, std::uint8_t value);
+
+    Memory&     _memory;
+    Cart&       _cart;
+
+    WriteHandler    _writeHandler;
+    std::uint8_t*   _nametables[4];
+};
+
 }
 
-void ninMirrorB(NinState* state)
-{
-    state->nametables[0] = state->vram + 0x400;
-    state->nametables[1] = state->vram + 0x400;
-    state->nametables[2] = state->vram + 0x400;
-    state->nametables[3] = state->vram + 0x400;
-}
-
-void ninMirrorH(NinState* state)
-{
-    state->nametables[0] = state->vram + 0x000;
-    state->nametables[1] = state->vram + 0x400;
-    state->nametables[2] = state->vram + 0x000;
-    state->nametables[3] = state->vram + 0x400;
-}
-
-void ninMirrorV(NinState* state)
-{
-    state->nametables[0] = state->vram + 0x000;
-    state->nametables[1] = state->vram + 0x000;
-    state->nametables[2] = state->vram + 0x400;
-    state->nametables[3] = state->vram + 0x400;
-}
+#endif

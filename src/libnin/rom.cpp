@@ -83,19 +83,11 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
         state->info.setRegion((NinRegion)header->nes2.region);
 
     /* Load the header misc. info */
-    state->mapper = (header->mapperHi << 4) | header->mapperLo;
-    if (header->quadScreen)
-    {
-        state->mirroring = MIRRORING_QUAD;
-    }
-    else if (header->mirroring)
-    {
-        state->mirroring = MIRRORING_VERTICAL;
-    }
+    if (header->mirroring)
+        state->mapper.mirror(NIN_MIRROR_H);
     else
-    {
-        state->mirroring = MIRRORING_HORIZONTAL;
-    }
+        state->mapper.mirror(NIN_MIRROR_V);
+    state->mapper.configure((header->mapperHi << 4) | header->mapperLo, 0);
 
     state->battery = header->battery;
     state->trainerSize = header->trainer ? 0x200 : 0;
@@ -131,92 +123,13 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
     /* We won't need the ROM from now on */
     fclose(f);
 
-    /* Apply mirroring */
-    if (state->mirroring == MIRRORING_VERTICAL)
-    {
-        state->nametables[0] = state->vram + 0x000;
-        state->nametables[1] = state->vram + 0x400;
-        state->nametables[2] = state->vram + 0x000;
-        state->nametables[3] = state->vram + 0x400;
-    }
-    else
-    {
-        state->nametables[0] = state->vram + 0x000;
-        state->nametables[1] = state->vram + 0x000;
-        state->nametables[2] = state->vram + 0x400;
-        state->nametables[3] = state->vram + 0x400;
-    }
-
     /* Apply a default configuration suitable for most mappers */
-    state->prgWriteHandler = &ninPrgWriteHandlerNull;
-    state->ppuMonitorHandler = &ninPpuMonitorHandlerNull;
     state->readHandler = &ninMemoryReadNES;
     state->writeHandler = &ninMemoryWriteNES;
 
     ninBankSwitchPrgRom16k(state, 0, 0);
     ninBankSwitchPrgRom16k(state, 1, -1);
     ninBankSwitchChrRom8k(state, 0);
-
-    /* Mapper-specific logic */
-    switch (state->mapper)
-    {
-    default:
-        return NIN_ERROR_UNKNOWN_MAPPER;
-    case 0:
-        /* NROM */
-        break;
-    case 1:
-        /* MMC1 */
-        state->prgWriteHandler = &ninPrgWriteHandlerMMC1;
-        break;
-    case 2:
-        /* UxROM */
-        state->prgWriteHandler = &ninPrgWriteHandlerUXROM;
-        break;
-    case 3:
-        /* CNROM */
-        state->prgWriteHandler = &ninPrgWriteHandlerCNROM;
-        break;
-    case 4:
-        /* MMC3 */
-        state->prgWriteHandler = &ninPrgWriteHandlerMMC3;
-        state->ppuMonitorHandler = &ninPpuMonitorHandlerMMC3;
-        state->mapperRegs.mmc3.bank[6] = 0;
-        state->mapperRegs.mmc3.bank[7] = 1;
-        break;
-    case 7:
-        /* AXROM */
-        ninBankSwitchPrgRom8k(state, 1, 2);
-        for (int i = 0; i < 4; ++i)
-            state->nametables[i] = state->vram;
-        state->prgWriteHandler = &ninPrgWriteHandlerAXROM;
-        break;
-    case 9:
-        /* MMC2 */
-        state->prgWriteHandler = &ninPrgWriteHandlerMMC2;
-        state->ppuMonitorHandler = &ninPpuMonitorHandlerMMC2;
-        ninBankSwitchPrgRom8k(state, 1, -3);
-        ninBankSwitchPrgRom8k(state, 2, -2);
-        ninBankSwitchPrgRom8k(state, 3, -1);
-        break;
-    case 10:
-        /* MMC4 */
-        state->prgWriteHandler = &ninPrgWriteHandlerMMC4;
-        state->ppuMonitorHandler = &ninPpuMonitorHandlerMMC2;
-        break;
-    case 11:
-        /* ColorDreams */
-        state->prgWriteHandler = &ninPrgWriteHandlerColorDreams;
-        break;
-    case 66:
-        /* GXROM */
-        state->prgWriteHandler = &ninPrgWriteHandlerGXROM;
-        break;
-    case 180:
-        /* UxROM (180) */
-        state->prgWriteHandler = &ninPrgWriteHandlerUXROM_180;
-        break;
-    }
 
     return NIN_OK;
 }
@@ -239,25 +152,7 @@ static NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE*
     /* We won't need the ROM from now on */
     fclose(f);
 
-    /* Apply mirroring */
-    if (state->mirroring == MIRRORING_VERTICAL)
-    {
-        state->nametables[0] = state->vram + 0x000;
-        state->nametables[1] = state->vram + 0x400;
-        state->nametables[2] = state->vram + 0x000;
-        state->nametables[3] = state->vram + 0x400;
-    }
-    else
-    {
-        state->nametables[0] = state->vram + 0x000;
-        state->nametables[1] = state->vram + 0x000;
-        state->nametables[2] = state->vram + 0x400;
-        state->nametables[3] = state->vram + 0x400;
-    }
-
     /* TODO: Add an FDS mapper */
-    state->prgWriteHandler = &ninPrgWriteHandlerNull;
-    state->ppuMonitorHandler = &ninPpuMonitorHandlerNull;
     state->readHandler = &ninMemoryReadFDS;
     state->writeHandler = &ninMemoryWriteFDS;
 

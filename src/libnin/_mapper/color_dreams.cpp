@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if 0
+
 #include <libnin/libnin.h>
 
 void ninPrgWriteHandlerColorDreams(NinState* state, uint16_t addr, uint8_t value)
@@ -34,3 +36,5 @@ void ninPrgWriteHandlerColorDreams(NinState* state, uint16_t addr, uint8_t value
     ninBankSwitchPrgRom32k(state, value & 0x3);
     ninBankSwitchChrRom8k(state, (value >> 4));
 }
+
+#endif

@@ -35,8 +35,10 @@
 #include <libnin/Audio.h>
 #include <libnin/Cart.h>
 #include <libnin/DiskSystem.h>
-#include <libnin/IRQ.h>
 #include <libnin/HardwareInfo.h>
+#include <libnin/IRQ.h>
+#include <libnin/Mapper.h>
+#include <libnin/Memory.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
@@ -220,16 +222,17 @@ struct NinState
 {
     NinState();
 
+    Memory              memory;
     HardwareInfo        info;
     Cart                cart;
     IRQ                 irq;
+    Mapper              mapper;
     APU                 apu;
     Audio               audio;
     DiskSystem          diskSystem;
     NinCPU              cpu;
     NinPPU              ppu;
     FILE*               saveFile;
-    uint16_t            mapper;
     uint8_t             battery;
     uint8_t             mirroring;
     uint8_t             controller;
@@ -238,8 +241,6 @@ struct NinState
     uint32_t*           frontBuffer;
     uint16_t            audioSamplesCount;
     uint32_t            audioCycles;
-    uint8_t*            ram;
-    uint8_t*            vram;
     uint8_t*            palettes;
     union {
         uint8_t*        oam;
@@ -255,7 +256,6 @@ struct NinState
     uint8_t*            prgRomBank[4];
     uint8_t*            chrBank[8];
     uint32_t            trainerSize;
-    uint8_t*            nametables[4];
     uint8_t             nmi:1;
     uint8_t             nmi2:1;
     uint64_t            cyc;
@@ -291,7 +291,6 @@ void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 
 /* Mapper handlers */
-void    ninPrgWriteHandlerNull(NinState* state, uint16_t addr, uint8_t value);
 void    ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
 void    ninPrgWriteHandlerMMC2(NinState* state, uint16_t addr, uint8_t value);
 void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value);
@@ -317,11 +316,5 @@ void    ninBankSwitchPrgRom32k(NinState* state, int16_t bank);
 void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, int16_t bank);
 void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, int16_t bank);
 void    ninBankSwitchChrRom8k(NinState* state, int16_t bank);
-
-/* mirror.c */
-void    ninMirrorA(NinState* state);
-void    ninMirrorB(NinState* state);
-void    ninMirrorH(NinState* state);
-void    ninMirrorV(NinState* state);
 
 #endif

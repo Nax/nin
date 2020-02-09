@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if 0
+
 #include <libnin/libnin.h>
 
 static void applycMMC2(NinState* state)
@@ -101,3 +103,5 @@ void ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr)
         applycMMC2(state);
     }
 }
+
+#endif

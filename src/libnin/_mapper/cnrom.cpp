@@ -26,16 +26,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if 0
+
 #include <libnin/libnin.h>
 
-void ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value)
+void ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value)
 {
-    UNUSED(addr);
-    ninBankSwitchPrgRom16k(state, 0, value);
+    (void)addr;
+    ninBankSwitchChrRom8k(state, value & 0x3);
 }
 
-void ninPrgWriteHandlerUXROM_180(NinState* state, uint16_t addr, uint8_t value)
-{
-    UNUSED(addr);
-    ninBankSwitchPrgRom16k(state, 1, value);
-}
+#endif

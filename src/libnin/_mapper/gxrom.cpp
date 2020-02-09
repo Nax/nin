@@ -26,19 +26,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if 0
+
 #include <libnin/libnin.h>
 
-void ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value)
+void ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value)
 {
     (void)addr;
-    uint8_t nametable;
-    uint16_t nametableOffset;
-
-    nametable = (value >> 4) & 1;
-    nametableOffset = (uint16_t)nametable * 0x400;
-
-    ninBankSwitchPrgRom32k(state, value & 0xf);
-
-    for (int i = 0; i < 4; ++i)
-        state->nametables[i] = state->vram + nametableOffset;
+    ninBankSwitchPrgRom32k(state, (value >> 4) & 0x3);
+    ninBankSwitchChrRom8k(state, value & 0x3);
 }
+
+#endif

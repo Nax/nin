@@ -26,9 +26,20 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBNIN_MAPPER_H
-#define LIBNIN_MAPPER_H 1
+#if 0
 
-struct NinState;
+#include <libnin/libnin.h>
+
+void ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value)
+{
+    UNUSED(addr);
+    ninBankSwitchPrgRom16k(state, 0, value);
+}
+
+void ninPrgWriteHandlerUXROM_180(NinState* state, uint16_t addr, uint8_t value)
+{
+    UNUSED(addr);
+    ninBankSwitchPrgRom16k(state, 1, value);
+}
 
 #endif

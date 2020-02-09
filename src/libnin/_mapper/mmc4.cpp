@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if 0
+
 #include <libnin/libnin.h>
 
 void ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t value)
@@ -38,3 +40,5 @@ void ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t value)
         break;
     }
 }
+
+#endif

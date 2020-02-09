@@ -26,6 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if 0
+
 #include <libnin/libnin.h>
 
 static void updateBank(NinState* state)
@@ -141,3 +143,5 @@ void ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr)
         state->irqScanlineFilterShifter >>= 1;
     state->oldVmemAddr = addr;
 }
+
+#endif
