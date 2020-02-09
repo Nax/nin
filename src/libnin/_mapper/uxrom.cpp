@@ -26,20 +26,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if 0
+#include <libnin/Mapper.h>
+#include <libnin/Util.h>
 
-#include <libnin/libnin.h>
+using namespace libnin;
 
-void ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value)
+void Mapper::write_UXROM(std::uint16_t addr, std::uint8_t value)
 {
     UNUSED(addr);
-    ninBankSwitchPrgRom16k(state, 0, value);
+    bankPrg16k(0, value);
 }
 
-void ninPrgWriteHandlerUXROM_180(NinState* state, uint16_t addr, uint8_t value)
+void Mapper::write_UXROM180(std::uint16_t addr, std::uint8_t value)
 {
     UNUSED(addr);
-    ninBankSwitchPrgRom16k(state, 1, value);
+    bankPrg16k(1, value);
 }
-
-#endif

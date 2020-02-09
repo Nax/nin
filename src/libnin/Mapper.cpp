@@ -22,7 +22,16 @@ void Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
     switch (mapperMajor)
     {
     case 0:
+        /* NROM */
         _writeHandler = &Mapper::write_NROM;
+        break;
+    case 2:
+        /* UxROM (180) */
+        _writeHandler = &Mapper::write_UXROM;
+        break;
+    case 180:
+        /* UxROM (180) */
+        _writeHandler = &Mapper::write_UXROM180;
         break;
     }
 }
@@ -56,6 +65,27 @@ void Mapper::mirror(int mirrorMode)
         _nametables[3] = _memory.vram + 0x400;
         break;
     }
+}
+
+void Mapper::bankPrg8k(std::uint8_t slot, std::int16_t bank)
+{
+    const CartSegment& seg = _cart.segment(CART_PRG_ROM);
+    bank += seg.bankCount;
+    _prg[slot] = seg.base + (bank & (seg.bankCount - 1)) * 0x2000;
+}
+
+void Mapper::bankPrg16k(std::uint8_t slot, std::int16_t bank)
+{
+    bankPrg8k(slot * 2 + 0, bank * 2 + 0);
+    bankPrg8k(slot * 2 + 1, bank * 2 + 1);
+}
+
+void Mapper::bankPrg32k(std::int16_t bank)
+{
+    bankPrg8k(0, bank * 4 + 0);
+    bankPrg8k(1, bank * 4 + 1);
+    bankPrg8k(2, bank * 4 + 2);
+    bankPrg8k(3, bank * 4 + 3);
 }
 
 /* ROM CONFIG */

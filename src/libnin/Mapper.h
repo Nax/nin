@@ -48,21 +48,29 @@ public:
     Mapper(Memory& memory, Cart& cart);
     ~Mapper();
 
+    std::uint8_t* prg(int i) { return _prg[i]; }
     std::uint8_t* nametable(int i) { return _nametables[i]; }
 
     void configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor);
     void mirror(int mirrorMode);
     void write(std::uint16_t addr, std::uint8_t value) { (this->*_writeHandler)(addr, value); }
 
+    void bankPrg8k(std::uint8_t slot, std::int16_t bank);
+    void bankPrg16k(std::uint8_t slot, std::int16_t bank);
+    void bankPrg32k(std::int16_t bank);
+
 private:
     using WriteHandler = void(Mapper::*)(std::uint16_t, std::uint8_t);
 
     void write_NROM(std::uint16_t addr, std::uint8_t value);
+    void write_UXROM(std::uint16_t addr, std::uint8_t value);
+    void write_UXROM180(std::uint16_t addr, std::uint8_t value);
 
     Memory&     _memory;
     Cart&       _cart;
 
     WriteHandler    _writeHandler;
+    std::uint8_t*   _prg[4];
     std::uint8_t*   _nametables[4];
 };
 

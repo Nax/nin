@@ -28,27 +28,6 @@
 
 #include <libnin/libnin.h>
 
-void ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, int16_t bank)
-{
-    const CartSegment& seg = state->cart.segment(CART_PRG_ROM);
-    bank += seg.bankCount;
-    state->prgRomBank[slot] = seg.base + (bank & (seg.bankCount - 1)) * 0x2000;
-}
-
-void ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, int16_t bank)
-{
-    ninBankSwitchPrgRom8k(state, slot * 2 + 0, bank * 2 + 0);
-    ninBankSwitchPrgRom8k(state, slot * 2 + 1, bank * 2 + 1);
-}
-
-void ninBankSwitchPrgRom32k(NinState* state, int16_t bank)
-{
-    ninBankSwitchPrgRom8k(state, 0, bank * 4 + 0);
-    ninBankSwitchPrgRom8k(state, 1, bank * 4 + 1);
-    ninBankSwitchPrgRom8k(state, 2, bank * 4 + 2);
-    ninBankSwitchPrgRom8k(state, 3, bank * 4 + 3);
-}
-
 void ninBankSwitchChrRom1k(NinState* state, uint8_t slot, int16_t bank)
 {
     const CartSegment& segRam = state->cart.segment(CART_CHR_RAM);

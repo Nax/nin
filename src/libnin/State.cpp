@@ -19,12 +19,9 @@ NinState::NinState()
 , palettes{}
 , oam{}
 , mapperRegs{}
-, prgWriteHandler{}
 , ppuMonitorHandler{}
 , readHandler{}
-, prgRomBank{}
 , chrBank{}
-, trainerSize{}
 , nmi{}
 , nmi2{}
 , cyc{}

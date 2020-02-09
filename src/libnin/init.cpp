@@ -62,7 +62,7 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     return NIN_OK;
 }
 
-void ninDestroyState(NinState* state)
+NIN_API void ninDestroyState(NinState* state)
 {
     if (state)
     {

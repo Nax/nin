@@ -75,3 +75,36 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
         break;
     }
 }
+
+NIN_API void ninSetSaveFile(NinState* state, const char* path)
+{
+    FILE* f;
+
+    if (!state->battery)
+        return;
+
+    f = fopen(path, "ab");
+    if (f)
+        fclose(f);
+
+    f = fopen(path, "r+b");
+    if (f)
+    {
+        state->cart.load(CART_PRG_RAM, state->cart.segment(CART_PRG_RAM).bankCount, f);
+        state->saveFile = f;
+    }
+}
+
+NIN_API void ninSyncSave(NinState* state)
+{
+    FILE* f;
+    const CartSegment& prgRam = state->cart.segment(CART_PRG_RAM);
+
+    f = state->saveFile;
+    if (!f)
+        return;
+
+    fseek(f, 0, SEEK_SET);
+    fwrite(prgRam.base, prgRam.bankCount * 0x2000, 1, f);
+    fflush(f);
+}

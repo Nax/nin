@@ -248,14 +248,11 @@ struct NinState
     };
 
     NinMapperRegs           mapperRegs;
-    NinPrgWriteHandler      prgWriteHandler;
     NinPpuMonitorHandler    ppuMonitorHandler;
     NinMemoryReadHandler    readHandler;
     NinMemoryWriteHandler   writeHandler;
 
-    uint8_t*            prgRomBank[4];
     uint8_t*            chrBank[8];
-    uint32_t            trainerSize;
     uint8_t             nmi:1;
     uint8_t             nmi2:1;
     uint64_t            cyc;
@@ -309,10 +306,6 @@ void    ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr);
 void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
 
 /* Bank */
-void    ninBankSwitchPrgRom8k(NinState* state, uint8_t slot, int16_t bank);
-void    ninBankSwitchPrgRom16k(NinState* state, uint8_t slot, int16_t bank);
-void    ninBankSwitchPrgRom32k(NinState* state, int16_t bank);
-
 void    ninBankSwitchChrRom1k(NinState* state, uint8_t slot, int16_t bank);
 void    ninBankSwitchChrRom4k(NinState* state, uint8_t slot, int16_t bank);
 void    ninBankSwitchChrRom8k(NinState* state, int16_t bank);

@@ -76,22 +76,7 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
     if (header->magicNes2 == 0x2)
         nes2 = 1;
 
-    /* Load the region */
-    if (!nes2)
-        state->info.setRegion(NIN_REGION_NTSC);
-    else
-        state->info.setRegion((NinRegion)header->nes2.region);
-
-    /* Load the header misc. info */
-    if (header->mirroring)
-        state->mapper.mirror(NIN_MIRROR_H);
-    else
-        state->mapper.mirror(NIN_MIRROR_V);
-    state->mapper.configure((header->mapperHi << 4) | header->mapperLo, 0);
-
-    state->battery = header->battery;
-    state->trainerSize = header->trainer ? 0x200 : 0;
-
+    /* Get the length of every segment */
     prgRomBankCount = header->prgRomSize * 2;
     prgRamBankCount = 1;
     chrRomBankCount = header->chrRomSize * 8;
@@ -104,11 +89,31 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
         return NIN_ERROR_BAD_FILE;
     }
 
-    /* Allocate the various components */
+    /* Load data from the cart */
     state->cart.load(CART_PRG_ROM, prgRomBankCount, f);
     state->cart.load(CART_PRG_RAM, prgRamBankCount, nullptr);
     state->cart.load(CART_CHR_ROM, chrRomBankCount, f);
     state->cart.load(CART_CHR_RAM, chrRamBankCount, nullptr);
+
+    /* We won't need the ROM from now on */
+    fclose(f);
+
+    /* Load the region */
+    if (!nes2)
+        state->info.setRegion(NIN_REGION_NTSC);
+    else
+        state->info.setRegion((NinRegion)header->nes2.region);
+
+    /* Load the header misc. info */
+    if (header->mirroring)
+        state->mapper.mirror(NIN_MIRROR_H);
+    else
+        state->mapper.mirror(NIN_MIRROR_V);
+    state->mapper.bankPrg16k(0, 0);
+    state->mapper.bankPrg16k(1, -1);
+    state->mapper.configure((header->mapperHi << 4) | header->mapperLo, 0);
+
+    state->battery = header->battery;
 
 
     /* Check that the file was actually long enough */
@@ -120,15 +125,9 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
     }
     */
 
-    /* We won't need the ROM from now on */
-    fclose(f);
-
     /* Apply a default configuration suitable for most mappers */
     state->readHandler = &ninMemoryReadNES;
     state->writeHandler = &ninMemoryWriteNES;
-
-    ninBankSwitchPrgRom16k(state, 0, 0);
-    ninBankSwitchPrgRom16k(state, 1, -1);
     ninBankSwitchChrRom8k(state, 0);
 
     return NIN_OK;

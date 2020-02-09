@@ -119,13 +119,13 @@ uint8_t ninMemoryReadNES(NinState* state, uint16_t addr)
             return badIO(state, addr, 0);
     }
     else if (addr < 0xa000)
-        return state->prgRomBank[0][addr & 0x1fff];
+        return state->mapper.prg(0)[addr & 0x1fff];
     else if (addr < 0xc000)
-        return state->prgRomBank[1][addr & 0x1fff];
+        return state->mapper.prg(1)[addr & 0x1fff];
     else if (addr < 0xe000)
-        return state->prgRomBank[2][addr & 0x1fff];
+        return state->mapper.prg(2)[addr & 0x1fff];
     else
-        return state->prgRomBank[3][addr & 0x1fff];
+        return state->mapper.prg(3)[addr & 0x1fff];
 }
 
 uint8_t ninMemoryReadFDS(NinState* state, uint16_t addr)
@@ -201,7 +201,7 @@ void ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value)
             badIO(state, addr, 1);
     }
     else
-        state->prgWriteHandler(state, addr, value);
+        state->mapper.write(addr, value);
 }
 
 void ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value)
@@ -232,7 +232,7 @@ void ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value)
         state->cart.segment(CART_PRG_RAM).base[addr - 0x6000] = value;
     }
     else
-        state->prgWriteHandler(state, addr, value);
+        state->mapper.write(addr, value);
 }
 
 void ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
@@ -301,7 +301,7 @@ void ninDumpMemoryNES(NinState* state, uint8_t* dst, uint16_t start, size_t len)
     {
         if (memoryExtractOverlap(start, len, 0x8000 + i * 0x2000, 0x2000, &oOff, &oLen, &dOff))
         {
-            memcpy(dst + dOff, state->prgRomBank[i] + oOff, oLen);
+            memcpy(dst + dOff, state->mapper.prg(i) + oOff, oLen);
         }
     }
 }
