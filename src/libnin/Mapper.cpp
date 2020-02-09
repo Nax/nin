@@ -29,6 +29,10 @@ void Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
         /* UxROM (180) */
         _writeHandler = &Mapper::write_UXROM;
         break;
+    case 3:
+        /* CNROM */
+        _writeHandler = &Mapper::write_CNROM;
+        break;
     case 180:
         /* UxROM (180) */
         _writeHandler = &Mapper::write_UXROM180;
