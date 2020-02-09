@@ -33,6 +33,10 @@ void Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
         /* CNROM */
         _writeHandler = &Mapper::write_CNROM;
         break;
+    case 11:
+        /* ColorDreams */
+        _writeHandler = &Mapper::write_ColorDreams;
+        break;
     case 66:
         /* GXROM */
         _writeHandler = &Mapper::write_GXROM;
