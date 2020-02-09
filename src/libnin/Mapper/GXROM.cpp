@@ -26,15 +26,14 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if 0
+#include <libnin/Mapper.h>
+#include <libnin/Util.h>
 
-#include <libnin/libnin.h>
+using namespace libnin;
 
-void ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value)
+void Mapper::write_GXROM(std::uint16_t addr, std::uint8_t value)
 {
-    (void)addr;
-    ninBankSwitchPrgRom32k(state, (value >> 4) & 0x3);
-    ninBankSwitchChrRom8k(state, value & 0x3);
+    UNUSED(addr);
+    bankPrg32k((value >> 4) & 0x3);
+    bankChr8k(value & 0x3);
 }
-
-#endif
