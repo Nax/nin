@@ -72,6 +72,7 @@ private:
     void write_UXROM180(std::uint16_t addr, std::uint8_t value);
     void write_CNROM(std::uint16_t addr, std::uint8_t value);
     void write_GXROM(std::uint16_t addr, std::uint8_t value);
+    void write_AXROM(std::uint16_t addr, std::uint8_t value);
     void write_ColorDreams(std::uint16_t addr, std::uint8_t value);
 
     Memory&     _memory;

@@ -33,6 +33,12 @@ void Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
         /* CNROM */
         _writeHandler = &Mapper::write_CNROM;
         break;
+    case 7:
+        /* AXROM */
+        bankPrg8k(1, 2);
+        mirror(NIN_MIRROR_A);
+        _writeHandler = &Mapper::write_AXROM;
+        break;
     case 11:
         /* ColorDreams */
         _writeHandler = &Mapper::write_ColorDreams;
