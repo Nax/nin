@@ -125,17 +125,6 @@ typedef struct {
     uint8_t     p2;
 } NinCPU;
 
-typedef struct {
-    uint8_t bankSelect:3;
-    uint8_t bank[8];
-    uint8_t bankModePrgRom:1;
-    uint8_t bankModeChrRom:1;
-} NinMapperRegsMMC3;
-
-typedef union {
-    NinMapperRegsMMC3 mmc3;
-} NinMapperRegs;
-
 typedef union {
     uint8_t raw[4];
     struct {
@@ -224,7 +213,6 @@ struct NinState
         NinSprite*      oamSprites;
     };
 
-    NinMapperRegs           mapperRegs;
     NinMemoryReadHandler    readHandler;
     NinMemoryWriteHandler   writeHandler;
 
@@ -233,12 +221,6 @@ struct NinState
     uint64_t            cyc;
     uint8_t             frame:1;
     uint8_t             frameOdd:1;
-    uint8_t             irqScanlineEnabled:1;
-    uint8_t             irqScanlineReload:1;
-    uint8_t             irqScanlineCounter;
-    uint8_t             irqScanlineReloadValue;
-    uint16_t            irqScanlineFilterShifter;
-    uint16_t            oldVmemAddr;
 };
 
 uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);

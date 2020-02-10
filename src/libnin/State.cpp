@@ -5,7 +5,7 @@ NinState::NinState()
 , info{}
 , cart{}
 , irq{}
-, mapper{memory, cart}
+, mapper{memory, cart, irq}
 , audio(info)
 , apu(info, irq, audio)
 , diskSystem(info, irq)
@@ -22,18 +22,11 @@ NinState::NinState()
 , audioCycles{}
 , palettes{}
 , oam{}
-, mapperRegs{}
 , readHandler{}
 , nmi{}
 , nmi2{}
 , cyc{}
 , frame{}
 , frameOdd{}
-, irqScanlineEnabled{}
-, irqScanlineReload{}
-, irqScanlineCounter{}
-, irqScanlineReloadValue{}
-, irqScanlineFilterShifter{}
-, oldVmemAddr{}
 {
 }

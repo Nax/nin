@@ -42,10 +42,11 @@ namespace libnin
 
 class Memory;
 class Cart;
+class IRQ;
 class Mapper : private NonCopyable
 {
 public:
-    Mapper(Memory& memory, Cart& cart);
+    Mapper(Memory& memory, Cart& cart, IRQ& irq);
     ~Mapper();
 
     std::uint8_t* prg(int i) { return _prg[i]; }
@@ -91,6 +92,21 @@ private:
         std::uint8_t latch1:1;
     };
 
+    struct MMC3
+    {
+        std::uint8_t bankSelect:3;
+        std::uint8_t bank[8];
+        std::uint8_t bankModePrgRom:1;
+        std::uint8_t bankModeChrRom:1;
+
+        std::uint8_t    irqScanlineEnabled:1;
+        std::uint8_t    irqScanlineReload:1;
+        std::uint8_t    irqScanlineCounter;
+        std::uint8_t    irqScanlineReloadValue;
+        std::uint16_t   irqScanlineFilterShifter;
+        std::uint16_t   oldVmemAddr;
+    };
+
     void write_NROM(std::uint16_t addr, std::uint8_t value);
     void write_UXROM(std::uint16_t addr, std::uint8_t value);
     void write_UXROM180(std::uint16_t addr, std::uint8_t value);
@@ -100,10 +116,12 @@ private:
     void write_ColorDreams(std::uint16_t addr, std::uint8_t value);
     void write_MMC1(std::uint16_t addr, std::uint8_t value);
     void write_MMC2(std::uint16_t addr, std::uint8_t value);
+    void write_MMC3(std::uint16_t addr, std::uint8_t value);
     void write_MMC4(std::uint16_t addr, std::uint8_t value);
 
     void videoRead_NULL(std::uint16_t);
     void videoRead_MMC2(std::uint16_t);
+    void videoRead_MMC3(std::uint16_t);
 
     void mmc1RegWrite(std::uint16_t addr, std::uint8_t value);
     void mmc1BankPrg();
@@ -113,8 +131,11 @@ private:
     void mmc2Common(std::uint16_t addr, std::uint8_t value);
     void mmc2Apply();
 
-    Memory&     _memory;
-    Cart&       _cart;
+    void mmc3Apply();
+
+    Memory& _memory;
+    Cart&   _cart;
+    IRQ&    _irq;
 
     WriteHandler        _writeHandler;
     VideoReadHandler    _videoReadHandler;
@@ -127,6 +148,7 @@ private:
     {
         MMC1 _mmc1;
         MMC2 _mmc2;
+        MMC3 _mmc3;
     };
 };
 
