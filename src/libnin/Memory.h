@@ -42,6 +42,7 @@ public:
 
     std::uint8_t ram[0x800];
     std::uint8_t vram[0x800];
+    std::uint8_t palettes[0x20];
 };
 
 }

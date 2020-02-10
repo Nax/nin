@@ -6,6 +6,7 @@ NinState::NinState()
 , cart{}
 , irq{}
 , mapper{memory, cart, irq}
+, busVideo{memory, cart, mapper}
 , audio{info}
 , apu{info, irq, mapper, audio}
 , diskSystem{info, irq}
@@ -18,7 +19,6 @@ NinState::NinState()
 , controllerLatch{}
 , backBuffer{}
 , frontBuffer{}
-, palettes{}
 , oam{}
 , readHandler{}
 , nmi{}

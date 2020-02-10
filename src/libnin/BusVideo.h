@@ -26,62 +26,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libnin/libnin.h>
+#ifndef LIBNIN_BUS_VIDEO_H
+#define LIBNIN_BUS_VIDEO_H 1
 
-static void initCPU(NinState* state)
+#include <cstdint>
+#include <libnin/NonCopyable.h>
+
+namespace libnin
 {
-    state->cpu.p = PFLAG_I;
-    state->cpu.pc = ninMemoryRead16(state, 0xfffc);
-    state->cpu.regs[REG_S] = 0xfd;
-    state->cyc = 7;
+
+class Memory;
+class Cart;
+class Mapper;
+class BusVideo : private NonCopyable
+{
+public:
+    BusVideo(Memory& memory, Cart& cart, Mapper& mapper);
+
+    std::uint8_t    read(std::uint16_t addr);
+    void            write(std::uint16_t addr, std::uint8_t value);
+
+private:
+    Memory& _memory;
+    Cart&   _cart;
+    Mapper& _mapper;
+};
+
 }
 
-NIN_API NinError ninCreateState(NinState** dst, const char* path)
-{
-    NinState* state;
-    NinError err;
 
-    state = new NinState{};
-    state->backBuffer = new uint32_t[BITMAP_X * BITMAP_Y]();
-    state->frontBuffer = new uint32_t[BITMAP_X * BITMAP_Y]();
-    state->oam = new uint8_t[0x100]();
-
-    state->audio.setTargetFrequency(48000);
-
-    if ((err = ninLoadRom(state, path)) != NIN_OK)
-    {
-        ninDestroyState(state);
-        *dst = NULL;
-        return err;
-    }
-
-    initCPU(state);
-
-    *dst = state;
-    return NIN_OK;
-}
-
-NIN_API void ninDestroyState(NinState* state)
-{
-    if (state)
-    {
-        ninSyncSave(state);
-        if (state->saveFile)
-            fclose(state->saveFile);
-
-        delete [] state->backBuffer;
-        delete [] state->frontBuffer;
-        delete [] state->oam;
-        delete state;
-    }
-}
-
-const uint32_t* ninGetScreenBuffer(NinState* state)
-{
-    return state->frontBuffer;
-}
-
-void ninSetInput(NinState* state, uint8_t input)
-{
-    state->controller = input;
-}
+#endif

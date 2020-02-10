@@ -26,76 +26,88 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libnin/libnin.h>
+#include <libnin/BusVideo.h>
+#include <libnin/Cart.h>
+#include <libnin/Mapper.h>
+#include <libnin/Memory.h>
 
-static uint8_t badIO(NinState* state, uint16_t addr, int write)
+using namespace libnin;
+
+static std::uint8_t badIO(std::uint16_t addr, int write)
 {
-    printf("PPU bad IO at 0x%04x, PC: 0x%04x (%c)\n", addr, state->cpu.pc, write ? 'w' : 'r');
+    printf("PPU bad IO at 0x%04x (%c)\n", addr, write ? 'w' : 'r');
     fflush(stdout);
-    //getchar();
     return 0;
 }
 
-uint8_t ninVMemoryRead8(NinState* state, uint16_t addr)
+BusVideo::BusVideo(Memory& memory, Cart& cart, Mapper& mapper)
+: _memory(memory)
+, _cart(cart)
+, _mapper(mapper)
 {
-    addr = addr & 0x3fff;
-    state->mapper.videoRead(addr);
-    if (addr < 0x2000)
-        return state->mapper.chr(addr / 0x400)[addr & 0x3ff];
-    else if (addr < 0x2400)
-        return state->mapper.nametable(0)[addr & 0x3ff];
-    else if (addr < 0x2800)
-        return state->mapper.nametable(1)[addr & 0x3ff];
-    else if (addr < 0x2c00)
-        return state->mapper.nametable(2)[addr & 0x3ff];
-    else if (addr < 0x3000)
-        return state->mapper.nametable(3)[addr & 0x3ff];
-    else if (addr < 0x3400)
-        return state->mapper.nametable(0)[addr & 0x3ff];
-    else if (addr < 0x3800)
-        return state->mapper.nametable(1)[addr & 0x3ff];
-    else if (addr < 0x3c00)
-        return state->mapper.nametable(2)[addr & 0x3ff];
-    else if (addr < 0x3f00)
-        return state->mapper.nametable(3)[addr & 0x3ff];
-    else
-        return state->palettes[addr & 0x1f];
+
 }
 
-void ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value)
+std::uint8_t BusVideo::read(std::uint16_t addr)
 {
-    addr = addr & 0x3fff;
+    addr &= 0x3fff;
+    _mapper.videoRead(addr);
+    if (addr < 0x2000)
+        return _mapper.chr(addr / 0x400)[addr & 0x3ff];
+    else if (addr < 0x2400)
+        return _mapper.nametable(0)[addr & 0x3ff];
+    else if (addr < 0x2800)
+        return _mapper.nametable(1)[addr & 0x3ff];
+    else if (addr < 0x2c00)
+        return _mapper.nametable(2)[addr & 0x3ff];
+    else if (addr < 0x3000)
+        return _mapper.nametable(3)[addr & 0x3ff];
+    else if (addr < 0x3400)
+        return _mapper.nametable(0)[addr & 0x3ff];
+    else if (addr < 0x3800)
+        return _mapper.nametable(1)[addr & 0x3ff];
+    else if (addr < 0x3c00)
+        return _mapper.nametable(2)[addr & 0x3ff];
+    else if (addr < 0x3f00)
+        return _mapper.nametable(3)[addr & 0x3ff];
+    else
+        return _memory.palettes[addr & 0x1f];
+}
+
+void BusVideo::write(std::uint16_t addr, std::uint8_t value)
+{
+    addr &= 0x3fff;
     if (addr < 0x2000)
     {
-        if (state->cart.segment(CART_CHR_RAM).base)
-            state->mapper.chr(addr / 0x400)[addr & 0x3ff] = value;
+        if (_cart.segment(CART_CHR_RAM).base)
+            _mapper.chr(addr / 0x400)[addr & 0x3ff] = value;
         else
-            badIO(state, addr, 1);
+            badIO(addr, 1);
     }
     else if (addr < 0x2400)
-        state->mapper.nametable(0)[addr & 0x3ff] = value;
+        _mapper.nametable(0)[addr & 0x3ff] = value;
     else if (addr < 0x2800)
-        state->mapper.nametable(1)[addr & 0x3ff] = value;
+        _mapper.nametable(1)[addr & 0x3ff] = value;
     else if (addr < 0x2c00)
-        state->mapper.nametable(2)[addr & 0x3ff] = value;
+        _mapper.nametable(2)[addr & 0x3ff] = value;
     else if (addr < 0x3000)
-        state->mapper.nametable(3)[addr & 0x3ff] = value;
+        _mapper.nametable(3)[addr & 0x3ff] = value;
     else if (addr < 0x3400)
-        state->mapper.nametable(0)[addr & 0x3ff] = value;
+        _mapper.nametable(0)[addr & 0x3ff] = value;
     else if (addr < 0x3800)
-        state->mapper.nametable(1)[addr & 0x3ff] = value;
+        _mapper.nametable(1)[addr & 0x3ff] = value;
     else if (addr < 0x3c00)
-        state->mapper.nametable(2)[addr & 0x3ff] = value;
+        _mapper.nametable(2)[addr & 0x3ff] = value;
     else if (addr < 0x3f00)
-        state->mapper.nametable(3)[addr & 0x3ff] = value;
+        _mapper.nametable(3)[addr & 0x3ff] = value;
     else
     {
         if ((addr & 0x03) == 0)
         {
-            state->palettes[addr & 0x0f] = value;
-            state->palettes[0x10 | (addr & 0x0f)] = value;
+            _memory.palettes[addr & 0x0f] = value;
+            _memory.palettes[0x10 | (addr & 0x0f)] = value;
         }
         else
-            state->palettes[addr & 0x1f] = value;
+            _memory.palettes[addr & 0x1f] = value;
     }
 }

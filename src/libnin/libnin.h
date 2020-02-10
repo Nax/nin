@@ -33,6 +33,7 @@
 #include <nin/nin.h>
 #include <libnin/APU.h>
 #include <libnin/Audio.h>
+#include <libnin/BusVideo.h>
 #include <libnin/Cart.h>
 #include <libnin/DiskSystem.h>
 #include <libnin/HardwareInfo.h>
@@ -193,6 +194,7 @@ struct NinState
     Cart                cart;
     IRQ                 irq;
     Mapper              mapper;
+    BusVideo            busVideo;
     Audio               audio;
     APU                 apu;
     DiskSystem          diskSystem;
@@ -205,7 +207,6 @@ struct NinState
     uint8_t             controllerLatch;
     uint32_t*           backBuffer;
     uint32_t*           frontBuffer;
-    uint8_t*            palettes;
     union {
         uint8_t*        oam;
         NinSprite*      oamSprites;
@@ -230,9 +231,6 @@ uint8_t     ninMemoryReadNES(NinState* state, uint16_t addr);
 uint8_t     ninMemoryReadFDS(NinState* state, uint16_t addr);
 void        ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value);
 void        ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value);
-
-uint8_t     ninVMemoryRead8(NinState* state, uint16_t addr);
-void        ninVMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
 
 void        ninSetFlagNMI(NinState* state, uint8_t flag);
 void        ninUnsetFlagNMI(NinState* state, uint8_t flag);

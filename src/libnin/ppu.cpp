@@ -88,13 +88,13 @@ uint8_t ninPpuRegRead(NinState* state, uint16_t reg)
         mask = 0xff;
         if ((state->ppu.rt.v & 0x3f00) == 0x3f00)
         {
-            value = ninVMemoryRead8(state, state->ppu.rt.v);
-            state->ppu.readBuf = ninVMemoryRead8(state, state->ppu.rt.v & 0x2fff);
+            value = state->busVideo.read(state->ppu.rt.v);
+            state->ppu.readBuf = state->busVideo.read(state->ppu.rt.v & 0x2fff);
         }
         else
         {
             value = state->ppu.readBuf;
-            state->ppu.readBuf = ninVMemoryRead8(state, state->ppu.rt.v);
+            state->ppu.readBuf = state->busVideo.read(state->ppu.rt.v);
         }
         state->ppu.rt.v += (state->ppu.controller & 0x04) ? 32 : 1;
         break;
@@ -174,7 +174,7 @@ void ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value)
         state->ppu.w ^= 1;
         break;
     case 0x07: //PPUDATA
-        ninVMemoryWrite8(state, state->ppu.rt.v, value);
+        state->busVideo.write(state->ppu.rt.v, value);
         state->ppu.rt.v += ((state->ppu.controller & 0x04) ? 32 : 1);
         break;
     }
@@ -303,20 +303,20 @@ static void bgFetch(NinState* state, uint16_t x)
     switch (x & 0x07)
     {
     case 0x01:
-        RT.latchName = ninVMemoryRead8(state, 0x2000 | (RT.v & 0xfff));
+        RT.latchName = state->busVideo.read(0x2000 | (RT.v & 0xfff));
         break;
     case 0x03:
-        RT.latchAttr = ninVMemoryRead8(state, 0x23c0 | (RT.v & 0x0c00) | ((RT.v >> 4) & 0x38) | ((RT.v >> 2) & 0x07));
+        RT.latchAttr = state->busVideo.read(0x23c0 | (RT.v & 0x0c00) | ((RT.v >> 4) & 0x38) | ((RT.v >> 2) & 0x07));
         if (RT.v & 0x02)
             RT.latchAttr >>= 2;
         if ((RT.v >> 5) & 0x02)
             RT.latchAttr >>= 4;
         break;
     case 0x05:
-        RT.latchTileLo = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0x0000) | RT.latchName << 4 | ((RT.v >> 12) & 0x07));
+        RT.latchTileLo = state->busVideo.read(((state->ppu.controller & 0x10) ? 0x1000 : 0x0000) | RT.latchName << 4 | ((RT.v >> 12) & 0x07));
         break;
     case 0x07:
-        RT.latchTileHi = ninVMemoryRead8(state, ((state->ppu.controller & 0x10) ? 0x1000 : 0x0000) | RT.latchName << 4 | 0x08 | ((RT.v >> 12) & 0x07));
+        RT.latchTileHi = state->busVideo.read(((state->ppu.controller & 0x10) ? 0x1000 : 0x0000) | RT.latchName << 4 | 0x08 | ((RT.v >> 12) & 0x07));
         RT.v = _incX(RT.v);
         break;
     default:
@@ -351,7 +351,7 @@ static void emitPixel(NinState* state, uint16_t x)
         addr = 0x3F00;
         if (bgIndex)
             addr = 0x3F00 | (palette << 2) | bgIndex;
-        color = ninVMemoryRead8(state, addr) & 0x3f;
+        color = state->busVideo.read(addr) & 0x3f;
     }
     else
     {
@@ -376,7 +376,7 @@ static void emitPixel(NinState* state, uint16_t x)
                 if (spIndex && (!(RT.latchSpriteBitmapAttr[i] & 0x20) || !bgIndex))
                 {
                     addr = 0x3F10 | (palette << 2) | spIndex;
-                    color = ninVMemoryRead8(state, addr) & 0x3f;
+                    color = state->busVideo.read(addr) & 0x3f;
                     break;
                 }
             }
@@ -461,8 +461,8 @@ static void spriteEvaluation(NinState* state, uint16_t cycle)
 
             RT.latchSpriteBitmapX[n] = RT.oam2[n].x;
             RT.latchSpriteBitmapAttr[n] = RT.oam2[n].raw[2];
-            RT.latchSpriteBitmapLo[n] = ninVMemoryRead8(state, addr);
-            RT.latchSpriteBitmapHi[n] = ninVMemoryRead8(state, addr | 0x08);
+            RT.latchSpriteBitmapLo[n] = state->busVideo.read(addr);
+            RT.latchSpriteBitmapHi[n] = state->busVideo.read(addr | 0x08);
 
             if (RT.oam2[n].xFlip)
             {
