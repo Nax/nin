@@ -67,6 +67,18 @@ public:
 private:
     using WriteHandler = void(Mapper::*)(std::uint16_t, std::uint8_t);
 
+    struct MMC1
+    {
+        std::uint8_t shift;
+        std::uint8_t count;
+        std::uint8_t mirroring:2;
+        std::uint8_t prgBankMode:2;
+        std::uint8_t chrBankMode:1;
+        std::uint8_t chrBank0:5;
+        std::uint8_t chrBank1:5;
+        std::uint8_t prgBank:4;
+    };
+
     void write_NROM(std::uint16_t addr, std::uint8_t value);
     void write_UXROM(std::uint16_t addr, std::uint8_t value);
     void write_UXROM180(std::uint16_t addr, std::uint8_t value);
@@ -74,6 +86,12 @@ private:
     void write_GXROM(std::uint16_t addr, std::uint8_t value);
     void write_AXROM(std::uint16_t addr, std::uint8_t value);
     void write_ColorDreams(std::uint16_t addr, std::uint8_t value);
+    void write_MMC1(std::uint16_t addr, std::uint8_t value);
+
+    void mmc1RegWrite(std::uint16_t addr, std::uint8_t value);
+    void mmc1BankPrg();
+    void mmc1BankChr();
+    void mmc1Mirror();
 
     Memory&     _memory;
     Cart&       _cart;
@@ -82,6 +100,11 @@ private:
     std::uint8_t*   _prg[4];
     std::uint8_t*   _chr[8];
     std::uint8_t*   _nametables[4];
+
+    union
+    {
+        MMC1 _mmc1;
+    };
 };
 
 }
