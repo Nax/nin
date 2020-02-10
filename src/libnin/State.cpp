@@ -6,9 +6,9 @@ NinState::NinState()
 , cart{}
 , irq{}
 , mapper{memory, cart, irq}
-, audio(info)
-, apu(info, irq, audio)
-, diskSystem(info, irq)
+, audio{info}
+, apu{info, irq, audio}
+, diskSystem{info, irq}
 , cpu{}
 , ppu{}
 , saveFile{}
@@ -18,8 +18,6 @@ NinState::NinState()
 , controllerLatch{}
 , backBuffer{}
 , frontBuffer{}
-, audioSamplesCount{}
-, audioCycles{}
 , palettes{}
 , oam{}
 , readHandler{}

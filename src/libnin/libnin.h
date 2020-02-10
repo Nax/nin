@@ -205,8 +205,6 @@ struct NinState
     uint8_t             controllerLatch;
     uint32_t*           backBuffer;
     uint32_t*           frontBuffer;
-    uint16_t            audioSamplesCount;
-    uint32_t            audioCycles;
     uint8_t*            palettes;
     union {
         uint8_t*        oam;
