@@ -7,7 +7,7 @@ NinState::NinState()
 , irq{}
 , mapper{memory, cart, irq}
 , audio{info}
-, apu{info, irq, audio}
+, apu{info, irq, mapper, audio}
 , diskSystem{info, irq}
 , cpu{}
 , ppu{}

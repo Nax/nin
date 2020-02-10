@@ -38,11 +38,12 @@ namespace libnin
 
 class HardwareInfo;
 class IRQ;
+class Mapper;
 class Audio;
 class APU : private NonCopyable
 {
 public:
-    APU(const HardwareInfo& info, IRQ& irq, Audio& audio);
+    APU(const HardwareInfo& info, IRQ& irq, Mapper& mapper, Audio& audio);
 
     std::uint8_t    regRead(std::uint16_t reg);
     void            regWrite(std::uint16_t reg, std::uint8_t value);
@@ -130,10 +131,12 @@ private:
     void frameHalfPulse(int n);
     void frameHalfNoise();
 
-    uint8_t sampleTriangle();
-    uint8_t samplePulse(int n);
-    uint8_t sampleNoise();
-    uint8_t sampleDMC();
+    std::uint8_t sampleTriangle();
+    std::uint8_t samplePulse(int n);
+    std::uint8_t sampleNoise();
+    std::uint8_t sampleDMC();
+
+    std::uint8_t dmcMemoryRead(std::uint16_t addr);
 
     float mix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise, uint8_t dmc);
 
@@ -145,6 +148,7 @@ private:
 
     const HardwareInfo&     _info;
     IRQ&                    _irq;
+    Mapper&                 _mapper;
     Audio&                  _audio;
 
     ChannelTriangle     _triangle;

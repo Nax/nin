@@ -29,6 +29,7 @@
 #include <libnin/libnin.h>
 #include <libnin/APU.h>
 #include <libnin/IRQ.h>
+#include <libnin/Mapper.h>
 #include <libnin/HardwareSpecs.h>
 
 static constexpr const std::uint8_t kTriangleSequence[32] = {
@@ -48,9 +49,10 @@ static constexpr const std::uint8_t kLengthCounterLookup[32] = {
     12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
 };
 
-APU::APU(const HardwareInfo& info, IRQ& irq, Audio& audio)
+APU::APU(const HardwareInfo& info, IRQ& irq, Mapper& mapper, Audio& audio)
 : _info(info)
 , _irq(irq)
+, _mapper(mapper)
 , _audio(audio)
 , _triangle{}
 , _pulse{}
@@ -371,8 +373,7 @@ void APU::tickDMC()
     if (!_dmc.bitCount && _dmc.length)
     {
         _dmc.length--;
-        // FIXME: Repair this once we inject the memory bus
-        // _dmc.sampleBuffer = ninMemoryRead8(state, _dmc.address | 0x8000);
+        _dmc.sampleBuffer = dmcMemoryRead(_dmc.address);
         _dmc.bitCount = 8;
         _dmc.address++;
     }
@@ -440,12 +441,12 @@ void APU::frameQuarterTriangle()
         _triangle.linearReloadFlag = 0;
 }
 
-uint8_t APU::sampleTriangle()
+std::uint8_t APU::sampleTriangle()
 {
     return kTriangleSequence[_triangle.seqIndex];
 }
 
-uint8_t APU::samplePulse(int n)
+std::uint8_t APU::samplePulse(int n)
 {
     ChannelPulse& ch = _pulse[n];
 
@@ -454,16 +455,21 @@ uint8_t APU::samplePulse(int n)
     return (ch.duty & (1 << ch.seqIndex)) ? sampleEnvelope(ch.envelope) : 0;
 }
 
-uint8_t APU::sampleNoise()
+std::uint8_t APU::sampleNoise()
 {
     if (!_noise.enabled || (_noise.feedback & 0x01) || !_noise.length)
         return 0;
     return sampleEnvelope(_noise.envelope);
 }
 
-uint8_t APU::sampleDMC()
+std::uint8_t APU::sampleDMC()
 {
     return _dmc.output;
+}
+
+std::uint8_t APU::dmcMemoryRead(std::uint16_t addr)
+{
+    return _mapper.prg((addr & 0x6000) >> 13)[addr & 0x1fff];
 }
 
 float APU::mix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise, uint8_t dmc)
