@@ -71,7 +71,6 @@ using namespace libnin;
 #define DEBUG_LEVEL 0
 
 typedef void    (*NinPrgWriteHandler)(NinState* state, uint16_t addr, uint8_t value);
-typedef void    (*NinPpuMonitorHandler)(NinState* state, uint16_t addr);
 typedef uint8_t (*NinMemoryReadHandler)(NinState* state, uint16_t addr);
 typedef void    (*NinMemoryWriteHandler)(NinState* state, uint16_t addr, uint8_t value);
 
@@ -127,15 +126,6 @@ typedef struct {
 } NinCPU;
 
 typedef struct {
-    uint8_t bankLatch0Lo;
-    uint8_t bankLatch0Hi;
-    uint8_t bankLatch1Lo;
-    uint8_t bankLatch1Hi;
-    uint8_t latch0:1;
-    uint8_t latch1:1;
-} NinMapperRegsMMC2;
-
-typedef struct {
     uint8_t bankSelect:3;
     uint8_t bank[8];
     uint8_t bankModePrgRom:1;
@@ -143,7 +133,6 @@ typedef struct {
 } NinMapperRegsMMC3;
 
 typedef union {
-    NinMapperRegsMMC2 mmc2;
     NinMapperRegsMMC3 mmc3;
 } NinMapperRegs;
 
@@ -236,7 +225,6 @@ struct NinState
     };
 
     NinMapperRegs           mapperRegs;
-    NinPpuMonitorHandler    ppuMonitorHandler;
     NinMemoryReadHandler    readHandler;
     NinMemoryWriteHandler   writeHandler;
 
@@ -275,21 +263,7 @@ void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
 int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 
 /* Mapper handlers */
-void    ninPrgWriteHandlerMMC1(NinState* state, uint16_t addr, uint8_t value);
-void    ninPrgWriteHandlerMMC2(NinState* state, uint16_t addr, uint8_t value);
 void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value);
 void    ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t value);
-void    ninPrgWriteHandlerUXROM(NinState* state, uint16_t addr, uint8_t value);
-void    ninPrgWriteHandlerUXROM_180(NinState* state, uint16_t addr, uint8_t value);
-void    ninPrgWriteHandlerCNROM(NinState* state, uint16_t addr, uint8_t value);
-void    ninPrgWriteHandlerAXROM(NinState* state, uint16_t addr, uint8_t value);
-void    ninPrgWriteHandlerGXROM(NinState* state, uint16_t addr, uint8_t value);
-void    ninPrgWriteHandlerColorDreams(NinState* state, uint16_t addr, uint8_t value);
-
-void    ninPrgWriteHandlerCommonMMC2_MMC4(NinState* state, uint16_t addr, uint8_t value);
-
-void    ninPpuMonitorHandlerNull(NinState* state, uint16_t addr);
-void    ninPpuMonitorHandlerMMC2(NinState* state, uint16_t addr);
-void    ninPpuMonitorHandlerMMC3(NinState* state, uint16_t addr);
 
 #endif

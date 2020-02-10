@@ -55,6 +55,7 @@ public:
     void configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor);
     void mirror(int mirrorMode);
     void write(std::uint16_t addr, std::uint8_t value) { (this->*_writeHandler)(addr, value); }
+    void videoRead(std::uint16_t addr) { (this->*_videoReadHandler)(addr); }
 
     void bankPrg8k(std::uint8_t slot, std::int16_t bank);
     void bankPrg16k(std::uint8_t slot, std::int16_t bank);
@@ -66,6 +67,7 @@ public:
 
 private:
     using WriteHandler = void(Mapper::*)(std::uint16_t, std::uint8_t);
+    using VideoReadHandler = void(Mapper::*)(std::uint16_t);
 
     struct MMC1
     {
@@ -79,6 +81,16 @@ private:
         std::uint8_t prgBank:4;
     };
 
+    struct MMC2
+    {
+        std::uint8_t bankLatch0Lo;
+        std::uint8_t bankLatch0Hi;
+        std::uint8_t bankLatch1Lo;
+        std::uint8_t bankLatch1Hi;
+        std::uint8_t latch0:1;
+        std::uint8_t latch1:1;
+    };
+
     void write_NROM(std::uint16_t addr, std::uint8_t value);
     void write_UXROM(std::uint16_t addr, std::uint8_t value);
     void write_UXROM180(std::uint16_t addr, std::uint8_t value);
@@ -87,16 +99,25 @@ private:
     void write_AXROM(std::uint16_t addr, std::uint8_t value);
     void write_ColorDreams(std::uint16_t addr, std::uint8_t value);
     void write_MMC1(std::uint16_t addr, std::uint8_t value);
+    void write_MMC2(std::uint16_t addr, std::uint8_t value);
+
+    void videoRead_NULL(std::uint16_t);
+    void videoRead_MMC2(std::uint16_t);
 
     void mmc1RegWrite(std::uint16_t addr, std::uint8_t value);
     void mmc1BankPrg();
     void mmc1BankChr();
     void mmc1Mirror();
 
+    void mmc2Common(std::uint16_t addr, std::uint8_t value);
+    void mmc2Apply();
+
     Memory&     _memory;
     Cart&       _cart;
 
-    WriteHandler    _writeHandler;
+    WriteHandler        _writeHandler;
+    VideoReadHandler    _videoReadHandler;
+
     std::uint8_t*   _prg[4];
     std::uint8_t*   _chr[8];
     std::uint8_t*   _nametables[4];
@@ -104,6 +125,7 @@ private:
     union
     {
         MMC1 _mmc1;
+        MMC2 _mmc2;
     };
 };
 

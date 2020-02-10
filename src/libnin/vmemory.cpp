@@ -39,7 +39,7 @@ static uint8_t badIO(NinState* state, uint16_t addr, int write)
 uint8_t ninVMemoryRead8(NinState* state, uint16_t addr)
 {
     addr = addr & 0x3fff;
-    //state->ppuMonitorHandler(state, addr);
+    state->mapper.videoRead(addr);
     if (addr < 0x2000)
         return state->mapper.chr(addr / 0x400)[addr & 0x3ff];
     else if (addr < 0x2400)

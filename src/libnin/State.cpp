@@ -23,7 +23,6 @@ NinState::NinState()
 , palettes{}
 , oam{}
 , mapperRegs{}
-, ppuMonitorHandler{}
 , readHandler{}
 , nmi{}
 , nmi2{}

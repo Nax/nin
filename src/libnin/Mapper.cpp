@@ -1,12 +1,14 @@
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
 #include <libnin/Cart.h>
+#include <libnin/Util.h>
 
 using namespace libnin;
 
 Mapper::Mapper(Memory& memory, Cart& cart)
 : _memory(memory)
 , _cart(cart)
+, _videoReadHandler(&Mapper::videoRead_NULL)
 {
     mirror(NIN_MIRROR_H);
     configure(0, 0);
@@ -43,6 +45,15 @@ void Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
         bankPrg8k(1, 2);
         mirror(NIN_MIRROR_A);
         _writeHandler = &Mapper::write_AXROM;
+        break;
+    case 9:
+        /* MMC2 */
+        _mmc2 = MMC2{};
+        _writeHandler = &Mapper::write_MMC2;
+        _videoReadHandler = &Mapper::videoRead_MMC2;
+        bankPrg8k(1, -3);
+        bankPrg8k(2, -2);
+        bankPrg8k(3, -1);
         break;
     case 11:
         /* ColorDreams */
@@ -146,6 +157,11 @@ void Mapper::bankChr8k(std::int16_t bank)
     bankChr1k(5, bank * 8 + 5);
     bankChr1k(6, bank * 8 + 6);
     bankChr1k(7, bank * 8 + 7);
+}
+
+void Mapper::videoRead_NULL(std::uint16_t addr)
+{
+    UNUSED(addr);
 }
 
 /* ROM CONFIG */
