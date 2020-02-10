@@ -55,6 +55,13 @@ void Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
         bankPrg8k(2, -2);
         bankPrg8k(3, -1);
         break;
+    case 10:
+        /* MMC4 */
+        /* Implemented as a MMC2 variant */
+        _mmc2 = MMC2{};
+        _writeHandler = &Mapper::write_MMC4;
+        _videoReadHandler = &Mapper::videoRead_MMC2;
+        break;
     case 11:
         /* ColorDreams */
         _writeHandler = &Mapper::write_ColorDreams;

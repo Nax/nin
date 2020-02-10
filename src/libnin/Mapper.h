@@ -100,6 +100,7 @@ private:
     void write_ColorDreams(std::uint16_t addr, std::uint8_t value);
     void write_MMC1(std::uint16_t addr, std::uint8_t value);
     void write_MMC2(std::uint16_t addr, std::uint8_t value);
+    void write_MMC4(std::uint16_t addr, std::uint8_t value);
 
     void videoRead_NULL(std::uint16_t);
     void videoRead_MMC2(std::uint16_t);

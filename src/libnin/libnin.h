@@ -264,6 +264,5 @@ int         ninPpuRunCycles(NinState* state, uint16_t cycles);
 
 /* Mapper handlers */
 void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value);
-void    ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t value);
 
 #endif

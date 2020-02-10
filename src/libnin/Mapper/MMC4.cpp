@@ -26,19 +26,18 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#if 0
+#include <libnin/Mapper.h>
+#include <libnin/Util.h>
 
-#include <libnin/libnin.h>
+using namespace libnin;
 
-void ninPrgWriteHandlerMMC4(NinState* state, uint16_t addr, uint8_t value)
+void Mapper::write_MMC4(std::uint16_t addr, std::uint8_t value)
 {
-    ninPrgWriteHandlerCommonMMC2_MMC4(state, addr, value);
+    mmc2Common(addr, value);
     switch (addr & 0xf000)
     {
     case 0xa000: // PRG ROM bank
-        ninBankSwitchPrgRom16k(state, 0, value & 0xf);
+        bankPrg16k(0, value & 0xf);
         break;
     }
 }
-
-#endif
