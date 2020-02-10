@@ -127,17 +127,6 @@ typedef struct {
 } NinCPU;
 
 typedef struct {
-    uint8_t shift;
-    uint8_t count;
-    uint8_t mirroring:2;
-    uint8_t prgBankMode:2;
-    uint8_t chrBankMode:1;
-    uint8_t chrBank0:5;
-    uint8_t chrBank1:5;
-    uint8_t prgBank:4;
-} NinMapperRegsMMC1;
-
-typedef struct {
     uint8_t bankLatch0Lo;
     uint8_t bankLatch0Hi;
     uint8_t bankLatch1Lo;
@@ -154,7 +143,6 @@ typedef struct {
 } NinMapperRegsMMC3;
 
 typedef union {
-    NinMapperRegsMMC1 mmc1;
     NinMapperRegsMMC2 mmc2;
     NinMapperRegsMMC3 mmc3;
 } NinMapperRegs;
