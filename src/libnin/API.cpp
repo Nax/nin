@@ -108,3 +108,8 @@ NIN_API void ninSyncSave(NinState* state)
     fwrite(prgRam.base, prgRam.bankCount * 0x2000, 1, f);
     fflush(f);
 }
+
+NIN_API const uint32_t* ninGetScreenBuffer(NinState* state)
+{
+    return state->video.front();
+}

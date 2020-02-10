@@ -154,7 +154,7 @@ static constexpr bool matchPattern(const char* pattern, uint16_t value)
 #define CYCLE()         do {                                                        \
     state->cyc++;                                                                   \
     state->apu.tick(1);                                                             \
-    state->frame |= ninPpuRunCycles(state, 3);                                      \
+    state->frame |= state->ppu.tick(3);                                             \
     /*                                                                              \
     state->regionData.cycleExtraCounter += state->regionData.cycleExtraIncrement;   \
     if (state->regionData.cycleExtraCounter == 5)                                   \
@@ -292,7 +292,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
             }
             else
             {
-                state->nmi = 0;
+                state->nmi.ack();
                 op = 0x101;
             }
         }
@@ -301,7 +301,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyclesDst)
             state->cpu.pc++;
         }
 
-        state->nmi2 = state->nmi;
+        state->nmi2 = state->nmi.high();
         //state->cpu.p2 = state->cpu.p;
 
         EXECUTE(op);

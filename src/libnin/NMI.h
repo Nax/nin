@@ -26,26 +26,52 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBNIN_MEMORY_H
-#define LIBNIN_MEMORY_H 1
+#ifndef LIBNIN_NMI_H
+#define LIBNIN_NMI_H 1
 
 #include <cstdint>
 #include <libnin/NonCopyable.h>
 
+#define NMI_OCCURED 0x01
+#define NMI_OUTPUT  0x02
+
 namespace libnin
 {
 
-class Memory : private NonCopyable
+class NMI : private NonCopyable
 {
 public:
-    Memory();
+    NMI() : _status{}, _latch{} {}
 
-    std::uint8_t ram[0x800];
-    std::uint8_t vram[0x800];
-    std::uint8_t palettes[0x20];
-    std::uint8_t oam[0x100];
+    bool high() const { return _latch; }
+    bool check(std::uint8_t flag) const { return !!(_status & flag); }
+
+    void set(std::uint8_t flag)
+    {
+        std::uint8_t prev;
+
+        prev = _status;
+        _status |= flag;
+
+        if ((prev != _status) && (_status == (NMI_OCCURED | NMI_OUTPUT)))
+            _latch = true;
+    }
+
+    void unset(std::uint8_t flag)
+    {
+        _status &= ~flag;
+    }
+
+    void ack()
+    {
+        _latch = false;
+    }
+
+private:
+    std::uint8_t    _status:2;
+    bool            _latch:1;
 };
 
-}
+};
 
 #endif

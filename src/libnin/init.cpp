@@ -42,10 +42,6 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     NinError err;
 
     state = new NinState{};
-    state->backBuffer = new uint32_t[BITMAP_X * BITMAP_Y]();
-    state->frontBuffer = new uint32_t[BITMAP_X * BITMAP_Y]();
-    state->oam = new uint8_t[0x100]();
-
     state->audio.setTargetFrequency(48000);
 
     if ((err = ninLoadRom(state, path)) != NIN_OK)
@@ -68,17 +64,8 @@ NIN_API void ninDestroyState(NinState* state)
         ninSyncSave(state);
         if (state->saveFile)
             fclose(state->saveFile);
-
-        delete [] state->backBuffer;
-        delete [] state->frontBuffer;
-        delete [] state->oam;
         delete state;
     }
-}
-
-const uint32_t* ninGetScreenBuffer(NinState* state)
-{
-    return state->frontBuffer;
 }
 
 void ninSetInput(NinState* state, uint8_t input)

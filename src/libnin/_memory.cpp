@@ -70,17 +70,17 @@ static void ioWrite(NinState* state, uint8_t port, uint8_t value)
         //printf("DMA!! 0x%04x\n", addr);
         //getchar();
         state->cyc += 1;
-        ninPpuRunCycles(state, 3);
+        state->ppu.tick(3);
         state->apu.tick(1);
         for (uint16_t i = 0; i < 256; ++i)
         {
             tmp = ninMemoryRead8(state, addr | i);
             state->cyc++;
-            ninPpuRunCycles(state, 3);
+            state->ppu.tick(3);
             state->apu.tick(1);
-            state->oam[state->ppu.oamAddr++] = tmp;
+            state->ppu.oamWrite(tmp);
             state->cyc++;
-            ninPpuRunCycles(state, 3);
+            state->ppu.tick(3);
             state->apu.tick(1);
         }
         break;
@@ -96,7 +96,7 @@ uint8_t ninMemoryReadNES(NinState* state, uint16_t addr)
     if (addr < 0x2000)
         return state->memory.ram[addr & 0x7ff];
     else if (addr < 0x4000)
-        return ninPpuRegRead(state, addr);
+        return state->ppu.regRead(addr);
     else if (addr < 0x4018)
     {
         switch (addr & 0xff)
@@ -133,7 +133,7 @@ uint8_t ninMemoryReadFDS(NinState* state, uint16_t addr)
     if (addr < 0x2000)
         return state->memory.ram[addr & 0x7ff];
     else if (addr < 0x4000)
-        return ninPpuRegRead(state, addr);
+        return state->ppu.regRead(addr);
     else if (addr < 0x4018)
     {
         switch (addr & 0xff)
@@ -176,7 +176,7 @@ void ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value)
     if (addr < 0x2000)
         state->memory.ram[addr & 0x7ff] = value;
     else if (addr < 0x4000)
-        ninPpuRegWrite(state, addr, value);
+        state->ppu.regWrite(addr, value);
     else if (addr < 0x4018)
     {
         switch (addr & 0xff)
@@ -209,7 +209,7 @@ void ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value)
     if (addr < 0x2000)
         state->memory.ram[addr & 0x7ff] = value;
     else if (addr < 0x4000)
-        ninPpuRegWrite(state, addr, value);
+        state->ppu.regWrite(addr, value);
     else if (addr < 0x4018)
     {
         switch (addr & 0xff)

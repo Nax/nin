@@ -5,26 +5,23 @@ NinState::NinState()
 , info{}
 , cart{}
 , irq{}
+, nmi{}
 , mapper{memory, cart, irq}
 , busVideo{memory, cart, mapper}
 , audio{info}
 , apu{info, irq, mapper, audio}
 , diskSystem{info, irq}
+, video{}
+, ppu{info, memory, nmi, busVideo, mapper, video}
 , cpu{}
-, ppu{}
 , saveFile{}
 , battery{}
 , mirroring{}
 , controller{}
 , controllerLatch{}
-, backBuffer{}
-, frontBuffer{}
-, oam{}
 , readHandler{}
-, nmi{}
 , nmi2{}
 , cyc{}
 , frame{}
-, frameOdd{}
 {
 }

@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBNIN_MEMORY_H
-#define LIBNIN_MEMORY_H 1
+#ifndef LIBNIN_VIDEO_H
+#define LIBNIN_VIDEO_H 1
 
 #include <cstdint>
 #include <libnin/NonCopyable.h>
@@ -35,17 +35,25 @@
 namespace libnin
 {
 
-class Memory : private NonCopyable
+class Video : private NonCopyable
 {
 public:
-    Memory();
+    Video();
 
-    std::uint8_t ram[0x800];
-    std::uint8_t vram[0x800];
-    std::uint8_t palettes[0x20];
-    std::uint8_t oam[0x100];
+    const std::uint32_t* front() const { return _frontBuffer; }
+
+    void write(std::uint32_t pos, std::uint8_t color) { _backBuffer[pos] = kPalette[color]; }
+    void swap();
+
+private:
+    static const std::uint32_t kPalette[];
+
+    std::uint32_t   _buffer0[256 * 240];
+    std::uint32_t   _buffer1[256 * 240];
+    std::uint32_t* _frontBuffer;
+    std::uint32_t* _backBuffer;
 };
 
-}
+};
 
 #endif

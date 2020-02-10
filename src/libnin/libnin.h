@@ -40,7 +40,10 @@
 #include <libnin/IRQ.h>
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
+#include <libnin/NMI.h>
+#include <libnin/PPU.h>
 #include <libnin/Util.h>
+#include <libnin/Video.h>
 
 using namespace libnin;
 
@@ -62,9 +65,6 @@ using namespace libnin;
 #define REG_X   0x01
 #define REG_Y   0x02
 #define REG_S   0x03
-
-#define NMI_OCCURED 0x01
-#define NMI_OUTPUT  0x02
 
 #define BITMAP_X    256
 #define BITMAP_Y    240
@@ -126,65 +126,6 @@ typedef struct {
     uint8_t     p2;
 } NinCPU;
 
-typedef union {
-    uint8_t raw[4];
-    struct {
-        uint8_t y;
-        uint8_t tile;
-        uint8_t palette:2;
-        uint8_t reserved:3;
-        uint8_t back:1;
-        uint8_t xFlip:1;
-        uint8_t yFlip:1;
-        uint8_t x;
-    };
-} NinSprite;
-
-typedef struct {
-    uint16_t    t;
-    uint16_t    v;
-    uint8_t     x;
-    uint16_t    scanline;
-    uint16_t    cycle;
-    uint8_t     latchName;
-    uint8_t     latchAttr;
-    uint8_t     latchTileLo;
-    uint8_t     latchTileHi;
-    uint16_t    shiftPatternLo;
-    uint16_t    shiftPatternHi;
-    uint16_t    shiftPaletteHi;
-    uint16_t    shiftPaletteLo;
-    NinSprite   oam2[8];
-    uint8_t     oam2Index;
-    uint8_t     latchSpriteBitmapLo[8];
-    uint8_t     latchSpriteBitmapHi[8];
-    uint8_t     latchSpriteBitmapAttr[8];
-    uint8_t     latchSpriteBitmapX[8];
-    unsigned    zeroHit:1;
-    unsigned    zeroHitNext:1;
-    unsigned    maskEnableBackground:1;
-    unsigned    maskEnableBackgroundLeft:1;
-    unsigned    maskEnableSprites:1;
-    unsigned    maskEnableSpritesLeft:1;
-    unsigned    largeSprites:1;
-    uint8_t     inhibitNmi:1;
-} NinRuntimePPU;
-
-typedef struct {
-    NinRuntimePPU   rt;
-    uint8_t         oamAddr;
-    uint8_t         readBuf;
-    uint8_t         latch;
-    uint8_t         nmi;
-    uint8_t         controller;
-    uint8_t         scrollX;
-    uint8_t         scrollY;
-    uint8_t         w:1;
-    uint8_t         zeroHitFlag:1;
-    uint8_t         race0:1;
-    uint8_t         race1:1;
-} NinPPU;
-
 struct NinState
 {
     NinState();
@@ -193,33 +134,27 @@ struct NinState
     HardwareInfo        info;
     Cart                cart;
     IRQ                 irq;
+    NMI                 nmi;
     Mapper              mapper;
     BusVideo            busVideo;
     Audio               audio;
     APU                 apu;
     DiskSystem          diskSystem;
+    Video               video;
+    PPU                 ppu;
     NinCPU              cpu;
-    NinPPU              ppu;
     FILE*               saveFile;
     uint8_t             battery;
     uint8_t             mirroring;
     uint8_t             controller;
     uint8_t             controllerLatch;
-    uint32_t*           backBuffer;
-    uint32_t*           frontBuffer;
-    union {
-        uint8_t*        oam;
-        NinSprite*      oamSprites;
-    };
 
     NinMemoryReadHandler    readHandler;
     NinMemoryWriteHandler   writeHandler;
 
-    uint8_t             nmi:1;
     uint8_t             nmi2:1;
     uint64_t            cyc;
     uint8_t             frame:1;
-    uint8_t             frameOdd:1;
 };
 
 uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
@@ -231,16 +166,5 @@ uint8_t     ninMemoryReadNES(NinState* state, uint16_t addr);
 uint8_t     ninMemoryReadFDS(NinState* state, uint16_t addr);
 void        ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value);
 void        ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value);
-
-void        ninSetFlagNMI(NinState* state, uint8_t flag);
-void        ninUnsetFlagNMI(NinState* state, uint8_t flag);
-
-uint8_t     ninPpuRegRead(NinState* state, uint16_t reg);
-void        ninPpuRegWrite(NinState* state, uint16_t reg, uint8_t value);
-
-int         ninPpuRunCycles(NinState* state, uint16_t cycles);
-
-/* Mapper handlers */
-void    ninPrgWriteHandlerMMC3(NinState* state, uint16_t addr, uint8_t value);
 
 #endif
