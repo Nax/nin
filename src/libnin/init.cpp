@@ -67,8 +67,3 @@ NIN_API void ninDestroyState(NinState* state)
         delete state;
     }
 }
-
-void ninSetInput(NinState* state, uint8_t input)
-{
-    state->controller = input;
-}

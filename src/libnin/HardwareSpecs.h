@@ -3,6 +3,9 @@
 
 #include <cstdint>
 
+namespace libnin
+{
+
 class HardwareSpecs
 {
 public:
@@ -19,5 +22,7 @@ public:
     static const HardwareSpecs NTSC;
     static const HardwareSpecs PAL;
 };
+
+}
 
 #endif

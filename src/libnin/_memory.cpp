@@ -44,14 +44,7 @@ static uint8_t ioRead(NinState* state, uint8_t port)
     switch (port)
     {
     case 0x16:
-        if (state->controllerLatch < 8)
-        {
-            tmp = (state->controller >> state->controllerLatch) & 0x01;
-            state->controllerLatch++;
-            return tmp;
-        }
-        else
-            return 0x01;
+        return state->input.read();
     case 0x17:
         return 0x00;
     }
@@ -85,8 +78,7 @@ static void ioWrite(NinState* state, uint8_t port, uint8_t value)
         }
         break;
     case 0x16:
-        if (value & 0x01)
-            state->controllerLatch = 0;
+        state->input.poll(!!(value & 0x01));
         break;
     }
 }

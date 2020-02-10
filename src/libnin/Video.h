@@ -50,8 +50,8 @@ private:
 
     std::uint32_t   _buffer0[256 * 240];
     std::uint32_t   _buffer1[256 * 240];
-    std::uint32_t* _frontBuffer;
-    std::uint32_t* _backBuffer;
+    std::uint32_t*  _frontBuffer;
+    std::uint32_t*  _backBuffer;
 };
 
 };

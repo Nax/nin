@@ -37,6 +37,7 @@
 #include <libnin/Cart.h>
 #include <libnin/DiskSystem.h>
 #include <libnin/HardwareInfo.h>
+#include <libnin/Input.h>
 #include <libnin/IRQ.h>
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
@@ -133,6 +134,7 @@ struct NinState
     Memory              memory;
     HardwareInfo        info;
     Cart                cart;
+    Input               input;
     IRQ                 irq;
     NMI                 nmi;
     Mapper              mapper;
@@ -146,8 +148,6 @@ struct NinState
     FILE*               saveFile;
     uint8_t             battery;
     uint8_t             mirroring;
-    uint8_t             controller;
-    uint8_t             controllerLatch;
 
     NinMemoryReadHandler    readHandler;
     NinMemoryWriteHandler   writeHandler;

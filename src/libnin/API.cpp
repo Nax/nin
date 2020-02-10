@@ -113,3 +113,8 @@ NIN_API const uint32_t* ninGetScreenBuffer(NinState* state)
 {
     return state->video.front();
 }
+
+NIN_API void ninSetInput(NinState* state, uint8_t input)
+{
+    state->input.set(input);
+}

@@ -4,6 +4,7 @@ NinState::NinState()
 : memory{}
 , info{}
 , cart{}
+, input{}
 , irq{}
 , nmi{}
 , mapper{memory, cart, irq}
@@ -17,8 +18,6 @@ NinState::NinState()
 , saveFile{}
 , battery{}
 , mirroring{}
-, controller{}
-, controllerLatch{}
 , readHandler{}
 , nmi2{}
 , cyc{}

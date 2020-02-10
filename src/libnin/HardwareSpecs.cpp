@@ -1,5 +1,7 @@
 #include <libnin/HardwareSpecs.h>
 
+using namespace libnin;
+
 const HardwareSpecs HardwareSpecs::NTSC = {
     1789773,
     29781,
