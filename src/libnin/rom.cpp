@@ -126,10 +126,6 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
     }
     */
 
-    /* Apply a default configuration suitable for most mappers */
-    state->readHandler = &ninMemoryReadNES;
-    state->writeHandler = &ninMemoryWriteNES;
-
     return NIN_OK;
 }
 
@@ -151,10 +147,6 @@ static NinError ninLoadRomFDS(NinState* state, const NinRomHeader* header, FILE*
     /* We won't need the ROM from now on */
     fclose(f);
 
-    /* TODO: Add an FDS mapper */
-    state->readHandler = &ninMemoryReadFDS;
-    state->writeHandler = &ninMemoryWriteFDS;
-
     return NIN_OK;
 }
 
@@ -167,5 +159,5 @@ NIN_API void ninLoadBiosFDS(NinState* state, const char* path)
         return;
     state->cart.load(CART_PRG_ROM, 1, f);
     fclose(f);
-    state->cpu.pc = ninMemoryRead16(state, 0xfffc);
+    state->cpu.pc = state->busMain.read16(0xfffc);
 }

@@ -33,6 +33,7 @@
 #include <nin/nin.h>
 #include <libnin/APU.h>
 #include <libnin/Audio.h>
+#include <libnin/BusMain.h>
 #include <libnin/BusVideo.h>
 #include <libnin/Cart.h>
 #include <libnin/DiskSystem.h>
@@ -73,8 +74,6 @@ using namespace libnin;
 #define DEBUG_LEVEL 0
 
 typedef void    (*NinPrgWriteHandler)(NinState* state, uint16_t addr, uint8_t value);
-typedef uint8_t (*NinMemoryReadHandler)(NinState* state, uint16_t addr);
-typedef void    (*NinMemoryWriteHandler)(NinState* state, uint16_t addr, uint8_t value);
 
 #define MIRRORING_HORIZONTAL    0
 #define MIRRORING_VERTICAL      1
@@ -144,27 +143,15 @@ struct NinState
     DiskSystem          diskSystem;
     Video               video;
     PPU                 ppu;
+    BusMain             busMain;
     NinCPU              cpu;
     FILE*               saveFile;
     uint8_t             battery;
     uint8_t             mirroring;
 
-    NinMemoryReadHandler    readHandler;
-    NinMemoryWriteHandler   writeHandler;
-
     uint8_t             nmi2:1;
     uint64_t            cyc;
     uint8_t             frame:1;
 };
-
-uint8_t     ninMemoryRead8(NinState* state, uint16_t addr);
-uint16_t    ninMemoryRead16(NinState* state, uint16_t addr);
-void        ninMemoryWrite8(NinState* state, uint16_t addr, uint8_t value);
-void        ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value);
-
-uint8_t     ninMemoryReadNES(NinState* state, uint16_t addr);
-uint8_t     ninMemoryReadFDS(NinState* state, uint16_t addr);
-void        ninMemoryWriteNES(NinState* state, uint16_t addr, uint8_t value);
-void        ninMemoryWriteFDS(NinState* state, uint16_t addr, uint8_t value);
 
 #endif

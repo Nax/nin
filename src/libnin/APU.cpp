@@ -72,7 +72,7 @@ std::uint8_t APU::regRead(std::uint16_t reg)
     uint8_t value;
 
     value = 0;
-    switch (reg)
+    switch (reg & 0x1f)
     {
     default:
         break;
@@ -95,7 +95,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
 {
     unsigned i = (reg >> 2) & 1;
 
-    switch (reg)
+    switch (reg & 0x1f)
     {
     case 0x00: // Pulse Envelope
     case 0x04:

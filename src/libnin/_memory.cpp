@@ -29,6 +29,8 @@
 #include <string.h>
 #include <libnin/libnin.h>
 
+#if 0
+
 static uint8_t badIO(NinState* state, uint16_t addr, int write)
 {
     printf("Bad IO at 0x%04x, PC: 0x%04x (%c)\n", addr, state->cpu.pc, write ? 'w' : 'r');
@@ -237,6 +239,8 @@ void ninMemoryWrite16(NinState* state, uint16_t addr, uint16_t value)
     ninMemoryWrite8(state, addr, value & 0xff);
     ninMemoryWrite8(state, addr + 1, value >> 8);
 }
+
+#endif
 
 static int memoryExtractOverlap(uint16_t start, size_t len, uint16_t regionStart, size_t regionLen, uint16_t* overlapOffset, size_t* overlapLen, uint16_t* overlapOffsetInDest)
 {

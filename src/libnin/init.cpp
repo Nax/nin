@@ -31,7 +31,7 @@
 static void initCPU(NinState* state)
 {
     state->cpu.p = PFLAG_I;
-    state->cpu.pc = ninMemoryRead16(state, 0xfffc);
+    state->cpu.pc = state->busMain.read16(0xfffc);
     state->cpu.regs[REG_S] = 0xfd;
     state->cyc = 7;
 }

@@ -14,11 +14,11 @@ NinState::NinState()
 , diskSystem{info, irq}
 , video{}
 , ppu{info, memory, nmi, busVideo, mapper, video}
+, busMain{memory, mapper, ppu, apu, input}
 , cpu{}
 , saveFile{}
 , battery{}
 , mirroring{}
-, readHandler{}
 , nmi2{}
 , cyc{}
 , frame{}
