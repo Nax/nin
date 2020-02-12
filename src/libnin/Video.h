@@ -44,6 +44,7 @@ public:
 
     void write(std::uint32_t pos, std::uint8_t color) { _backBuffer[pos] = kPalette[color]; }
     void swap();
+    bool changed() { bool tmp = _frameChanged; _frameChanged = false; return tmp; }
 
 private:
     static const std::uint32_t kPalette[];
@@ -52,6 +53,7 @@ private:
     std::uint32_t   _buffer1[256 * 240];
     std::uint32_t*  _frontBuffer;
     std::uint32_t*  _backBuffer;
+    bool            _frameChanged;
 };
 
 };

@@ -28,14 +28,6 @@
 
 #include <libnin/libnin.h>
 
-static void initCPU(NinState* state)
-{
-    state->cpu.p = PFLAG_I;
-    state->cpu.pc = state->busMain.read16(0xfffc);
-    state->cpu.regs[REG_S] = 0xfd;
-    state->cyc = 7;
-}
-
 NIN_API NinError ninCreateState(NinState** dst, const char* path)
 {
     NinState* state;
@@ -50,8 +42,6 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
         *dst = NULL;
         return err;
     }
-
-    initCPU(state);
 
     *dst = state;
     return NIN_OK;

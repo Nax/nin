@@ -36,6 +36,7 @@
 #include <libnin/BusMain.h>
 #include <libnin/BusVideo.h>
 #include <libnin/Cart.h>
+#include <libnin/CPU.h>
 #include <libnin/DiskSystem.h>
 #include <libnin/HardwareInfo.h>
 #include <libnin/Input.h>
@@ -51,22 +52,6 @@ using namespace libnin;
 
 #define RAM_SIZE    0x800
 #define VRAM_SIZE   0x800
-
-#define PFLAG_C     0x01
-#define PFLAG_Z     0x02
-#define PFLAG_I     0x04
-#define PFLAG_D     0x08
-#define PFLAG_B     0x10
-#define PFLAG_1     0x20
-#define PFLAG_V     0x40
-#define PFLAG_N     0x80
-
-#define PFLAG_MASK  (~(PFLAG_B | PFLAG_1))
-
-#define REG_A   0x00
-#define REG_X   0x01
-#define REG_Y   0x02
-#define REG_S   0x03
 
 #define BITMAP_X    256
 #define BITMAP_Y    240
@@ -119,13 +104,6 @@ typedef struct {
     };
 } NinRomHeader;
 
-typedef struct {
-    uint16_t    pc;
-    uint8_t     regs[4];
-    uint8_t     p;
-    uint8_t     p2;
-} NinCPU;
-
 struct NinState
 {
     NinState();
@@ -144,14 +122,10 @@ struct NinState
     Video               video;
     PPU                 ppu;
     BusMain             busMain;
-    NinCPU              cpu;
+    CPU                 cpu;
     FILE*               saveFile;
     uint8_t             battery;
     uint8_t             mirroring;
-
-    uint8_t             nmi2:1;
-    uint64_t            cyc;
-    uint8_t             frame:1;
 };
 
 #endif

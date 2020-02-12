@@ -56,6 +56,7 @@ Video::Video()
 , _buffer1{}
 , _backBuffer{_buffer0}
 , _frontBuffer{_buffer1}
+, _frameChanged{}
 {
 
 }
@@ -68,4 +69,5 @@ void Video::swap()
     _backBuffer = _frontBuffer;
     _frontBuffer = tmp;
     std::memset(_backBuffer, 0, sizeof(_buffer0));
+    _frameChanged = true;
 }

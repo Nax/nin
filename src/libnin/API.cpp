@@ -55,6 +55,7 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
     case NIN_INFO_FRAME_DELAY:
         *dst = state->info.specs().frameDelay;
         break;
+    /*
     case NIN_INFO_PC:
         *dst = state->cpu.pc;
         break;
@@ -69,7 +70,7 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
         break;
     case NIN_INFO_REG_S:
         *dst = state->cpu.regs[REG_S];
-        break;
+        break;*/
     default:
         *dst = 0;
         break;
@@ -117,4 +118,14 @@ NIN_API const uint32_t* ninGetScreenBuffer(NinState* state)
 NIN_API void ninSetInput(NinState* state, uint8_t input)
 {
     state->input.set(input);
+}
+
+NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyc)
+{
+    std::size_t tmp = state->cpu.tick(cycles);
+    if (cyc)
+    {
+        *cyc = tmp;
+    }
+    return state->video.changed();
 }

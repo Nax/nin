@@ -136,16 +136,16 @@ void BusMain::write(std::uint16_t addr, std::uint8_t value)
             // FIXME: Hack
             std::getchar();
             addr = value << 8;
-            _ppu.tick(3);
-            _apu.tick(1);
+            //_ppu.tick(3);
+            //_apu.tick(1);
             for (int i = 0; i < 256; ++i)
             {
                 tmp = read(addr | i);
-                _ppu.tick(3);
-                _apu.tick(1);
+                //_ppu.tick(3);
+                //_apu.tick(1);
                 _ppu.oamWrite(tmp);
-                _ppu.tick(3);
-                _apu.tick(1);
+                //_ppu.tick(3);
+                //_apu.tick(1);
             }
             return;
         case 0x4016:

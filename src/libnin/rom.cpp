@@ -159,5 +159,4 @@ NIN_API void ninLoadBiosFDS(NinState* state, const char* path)
         return;
     state->cart.load(CART_PRG_ROM, 1, f);
     fclose(f);
-    state->cpu.pc = state->busMain.read16(0xfffc);
 }
