@@ -1,3 +1,4 @@
+#include <cstring>
 #include <libnin/APU.h>
 #include <libnin/BusMain.h>
 #include <libnin/Input.h>
@@ -180,3 +181,62 @@ void BusMain::write(std::uint16_t addr, std::uint8_t value)
     }
 }
 
+static bool memoryExtractOverlap(std::uint16_t start, std::size_t len, std::uint16_t regionStart, std::size_t regionLen, std::uint16_t* overlapOffset, std::size_t* overlapLen, std::uint16_t* overlapOffsetInDest)
+{
+    std::size_t offset;
+    std::size_t regionEnd;
+    std::size_t transferEnd;
+    std::size_t end;
+
+    /* Check for non overlapping memory regions */
+    if (start >= regionStart + regionLen)
+        return false;
+    if (start + len < regionStart)
+        return false;
+
+    /* Now we know that the regions DO overlap, check the first region byte that overlap */
+    if (regionStart > start)
+        offset = regionStart;
+    else
+        offset = start;
+
+    *overlapOffset = offset - regionStart;
+    regionEnd = regionStart + regionLen;
+    transferEnd = start + len;
+    end = regionEnd > transferEnd ? transferEnd : regionEnd;
+    *overlapLen = end - offset;
+    *overlapOffsetInDest = offset - start;
+
+    return true;
+}
+
+void BusMain::dump(std::uint8_t* dst, std::uint16_t start, std::size_t len)
+{
+    std::size_t oLen;
+    std::uint16_t oOff;
+    std::uint16_t dOff;
+
+    /* RAM */
+    for (int i = 0; i < 4; ++i)
+    {
+        if (memoryExtractOverlap(start, len, i * 0x800, 0x800, &oOff, &oLen, &dOff))
+        {
+            std::memcpy(dst + dOff, _memory.ram + oOff, oLen);
+        }
+    }
+
+    /* 0x2000-0x7fff, not implemented */
+    if (memoryExtractOverlap(start, len, 0x2000, 0x6000, &oOff, &oLen, &dOff))
+    {
+        std::memset(dst + dOff, 0xff, oLen);
+    }
+
+    /* 0x8000-0xffff, cart via mapper */
+    for (int i = 0; i < 4; ++i)
+    {
+        if (memoryExtractOverlap(start, len, 0x8000 + i * 0x2000, 0x2000, &oOff, &oLen, &dOff))
+        {
+            std::memcpy(dst + dOff, _mapper.prg(i) + oOff, oLen);
+        }
+    }
+}

@@ -129,3 +129,8 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyc)
     }
     return state->video.changed();
 }
+
+NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)
+{
+    state->busMain.dump(dst, start, len);
+}

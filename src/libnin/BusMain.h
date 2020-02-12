@@ -23,6 +23,8 @@ public:
     void            write(std::uint16_t addr, std::uint8_t value);
     void            write16(std::uint16_t addr, std::uint16_t value) { write(addr, value & 0xff); write(addr + 1, value >> 8); }
 
+    void dump(std::uint8_t* dst, std::uint16_t start, std::size_t len);
+
 private:
     Memory&     _memory;
     Mapper&     _mapper;
