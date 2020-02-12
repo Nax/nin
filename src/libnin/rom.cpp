@@ -114,8 +114,7 @@ static NinError ninLoadRomNES(NinState* state, const NinRomHeader* header, FILE*
     state->mapper.bankChr8k(0);
     state->mapper.configure((header->mapperHi << 4) | header->mapperLo, 0);
 
-    state->battery = header->battery;
-
+    state->save.setBattery(!!header->battery);
 
     /* Check that the file was actually long enough */
     /*

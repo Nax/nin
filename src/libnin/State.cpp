@@ -16,8 +16,6 @@ NinState::NinState()
 , ppu{info, memory, nmi, busVideo, mapper, video}
 , busMain{memory, mapper, ppu, apu, input}
 , cpu{irq, nmi, ppu, apu, busMain}
-, saveFile{}
-, battery{}
-, mirroring{}
+, save{cart}
 {
 }

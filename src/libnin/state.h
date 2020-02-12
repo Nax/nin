@@ -29,7 +29,7 @@
 #ifndef LIBNIN_STATE_H
 #define LIBNIN_STATE_H 1
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <nin/nin.h>
 #include <libnin/APU.h>
 #include <libnin/Audio.h>
@@ -45,6 +45,7 @@
 #include <libnin/Memory.h>
 #include <libnin/NMI.h>
 #include <libnin/PPU.h>
+#include <libnin/Save.h>
 #include <libnin/Util.h>
 #include <libnin/Video.h>
 
@@ -122,9 +123,7 @@ struct NinState
     PPU                 ppu;
     BusMain             busMain;
     CPU                 cpu;
-    FILE*               saveFile;
-    uint8_t             battery;
-    uint8_t             mirroring;
+    Save                save;
 };
 
 #endif
