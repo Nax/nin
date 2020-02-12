@@ -24,6 +24,8 @@
 # OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-set(SOURCES ninperf.c)
+set(SOURCES ninperf.cpp)
 add_executable(ninperf ${SOURCES})
 target_link_libraries(ninperf libnin)
+
+install(TARGETS ninperf RUNTIME DESTINATION .)

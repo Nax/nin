@@ -26,23 +26,33 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <time.h>
+#include <cstdio>
+#include <cstdlib>
+#include <cstdint>
+#include <ctime>
+#include <chrono>
 #include <nin/nin.h>
 
-#if defined(WIN32) || defined(_WIN32)
-# define LF "\r\n"
-#else
-# define LF "\n"
-#endif
+#define COUNT 10000000
+#define SLICE 4096
+
+using Clock = std::chrono::high_resolution_clock;
+using TimePoint = Clock::time_point;
+using Duration = std::chrono::duration<double>;
+
+static void dummyAudio(void*, const float*) {
+
+}
 
 int main(int argc, char** argv)
 {
     NinState* state;
-    clock_t lastFrame;
-    clock_t now;
+    TimePoint before;
+    TimePoint after;
+    double duration;
+    std::uint64_t cps;
     size_t cyc;
+    size_t tmp;
 
     if (argc != 2)
         return 1;
@@ -52,23 +62,22 @@ int main(int argc, char** argv)
         return 1;
 
     srand((unsigned)time(NULL));
+    ninAudioSetCallback(state, &dummyAudio, nullptr);
 
     cyc = 0;
-    lastFrame = clock();
+    before = Clock::now();
     for (;;)
     {
         ninSetInput(state, (rand() & 0xff));
-        ninRunCycles(state, 5000, NULL);
-        cyc += 5000;
-        now = clock();
-        if (now - lastFrame > CLOCKS_PER_SEC)
-        {
-            printf("%llu cycles/s" LF, (unsigned long long)cyc);
-            fflush(stdout);
-            cyc = 0;
-            lastFrame = now;
-        }
+        ninRunCycles(state, SLICE, &tmp);
+        cyc += SLICE;
+        cyc += tmp;
+        if (cyc >= COUNT)
+            break;
     }
-
+    after = Clock::now();
+    duration = std::chrono::duration_cast<Duration>(after - before).count();
+    cps = (double)cyc / duration;
+    printf("%llu cycles/s\n", cps);
     return 0;
 }

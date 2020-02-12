@@ -134,7 +134,6 @@ void BusMain::write(std::uint16_t addr, std::uint8_t value)
         case 0x4014:
             // DMA
             // FIXME: Hack
-            std::getchar();
             addr = value << 8;
             //_ppu.tick(3);
             //_apu.tick(1);
