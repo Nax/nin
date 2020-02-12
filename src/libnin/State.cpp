@@ -1,4 +1,4 @@
-#include <libnin/libnin.h>
+#include <libnin/State.h>
 
 NinState::NinState()
 : memory{}

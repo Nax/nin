@@ -26,11 +26,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libnin/libnin.h>
 #include <libnin/APU.h>
+#include <libnin/Audio.h>
 #include <libnin/IRQ.h>
 #include <libnin/Mapper.h>
-#include <libnin/HardwareSpecs.h>
+#include <libnin/HardwareInfo.h>
+
+using namespace libnin;
 
 static constexpr const std::uint8_t kTriangleSequence[32] = {
     15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,

@@ -27,7 +27,7 @@
  */
 
 #include <nin/nin.h>
-#include <libnin/libnin.h>
+#include <libnin/State.h>
 
 NIN_API void ninAudioSetFrequency(NinState* state, uint32_t frequency)
 {
@@ -133,4 +133,34 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyc)
 NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)
 {
     state->busMain.dump(dst, start, len);
+}
+
+NIN_API NinError ninCreateState(NinState** dst, const char* path)
+{
+    NinState* state;
+    NinError err;
+
+    state = new NinState{};
+    state->audio.setTargetFrequency(48000);
+
+    if ((err = ninLoadRom(state, path)) != NIN_OK)
+    {
+        ninDestroyState(state);
+        *dst = NULL;
+        return err;
+    }
+
+    *dst = state;
+    return NIN_OK;
+}
+
+NIN_API void ninDestroyState(NinState* state)
+{
+    if (state)
+    {
+        ninSyncSave(state);
+        if (state->saveFile)
+            fclose(state->saveFile);
+        delete state;
+    }
 }

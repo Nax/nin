@@ -26,9 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <stdio.h>
-#include <string.h>
-#include <libnin/libnin.h>
+#include <cstdio>
+#include <cstring>
+#include <libnin/State.h>
 
 static const char kHeaderMagicNES[] = { 'N', 'E', 'S', '\x1a' };
 static const char kHeaderMagicFDS[] = { 'F', 'D', 'S', '\x1a' };
