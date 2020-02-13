@@ -1,6 +1,7 @@
 #include <cstring>
 #include <libnin/APU.h>
 #include <libnin/BusMain.h>
+#include <libnin/Cart.h>
 #include <libnin/Input.h>
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
@@ -8,8 +9,9 @@
 
 using namespace libnin;
 
-BusMain::BusMain(Memory& memory, Mapper& mapper, PPU& ppu, APU& apu, Input& input)
+BusMain::BusMain(Memory& memory, Cart& cart, Mapper& mapper, PPU& ppu, APU& apu, Input& input)
 : _memory{memory}
+, _cart{cart}
 , _mapper{mapper}
 , _ppu{ppu}
 , _apu{apu}
@@ -72,9 +74,15 @@ std::uint8_t BusMain::read(std::uint16_t addr)
             return 0x00;
         }
     case 0x5:
+        return 0x00;
     case 0x6:
     case 0x7:
-        return 0x00;
+    {
+        auto& seg = _cart.segment(CART_PRG_RAM);
+        if (!seg.base)
+            return 0x00;
+        return seg.base[addr & 0x1fff];
+    }
     case 0x8:
     case 0x9:
     case 0xa:
@@ -88,8 +96,6 @@ std::uint8_t BusMain::read(std::uint16_t addr)
         return 0x00;
     }
 }
-
-#include <cstdio>
 
 void BusMain::write(std::uint16_t addr, std::uint8_t value)
 {
@@ -165,9 +171,15 @@ void BusMain::write(std::uint16_t addr, std::uint8_t value)
             return;
         }
     case 0x5:
+        return;
     case 0x6:
     case 0x7:
+    {
+        auto& seg = _cart.segment(CART_PRG_RAM);
+        if (seg.base)
+            seg.base[addr & 0x1fff] = value;
         return;
+    }
     case 0x8:
     case 0x9:
     case 0xa:

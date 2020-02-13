@@ -9,6 +9,7 @@ namespace libnin
 
 
 class Memory;
+class Cart;
 class Mapper;
 class PPU;
 class APU;
@@ -16,7 +17,7 @@ class Input;
 class BusMain : private NonCopyable
 {
 public:
-    BusMain(Memory& memory, Mapper& mapper, PPU& ppu, APU& apu, Input& input);
+    BusMain(Memory& memory, Cart& cart, Mapper& mapper, PPU& ppu, APU& apu, Input& input);
 
     std::uint8_t    read(std::uint16_t addr);
     std::uint16_t   read16(std::uint16_t addr) { return read(addr) | (std::uint16_t(read(addr + 1)) << 8); }
@@ -27,6 +28,7 @@ public:
 
 private:
     Memory&     _memory;
+    Cart&       _cart;
     Mapper&     _mapper;
     PPU&        _ppu;
     APU&        _apu;

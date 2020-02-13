@@ -19,7 +19,7 @@ NinState::NinState()
 , diskSystem{info, irq}
 , video{}
 , ppu{info, memory, nmi, busVideo, mapper, video}
-, busMain{memory, mapper, ppu, apu, input}
+, busMain{memory, cart, mapper, ppu, apu, input}
 , cpu{irq, nmi, ppu, apu, busMain}
 , save{cart}
 {
