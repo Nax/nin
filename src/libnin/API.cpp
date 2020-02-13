@@ -120,7 +120,7 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     state = new NinState{};
     state->audio.setTargetFrequency(48000);
 
-    if ((err = ninLoadRom(state, path)) != NIN_OK)
+    if ((err = state->loadRom(path)) != NIN_OK)
     {
         ninDestroyState(state);
         *dst = NULL;
@@ -137,4 +137,15 @@ NIN_API void ninDestroyState(NinState* state)
     {
         delete state;
     }
+}
+
+NIN_API void ninLoadBiosFDS(NinState* state, const char* path)
+{
+    std::FILE* f;
+
+    f = std::fopen(path, "rb");
+    if (!f)
+        return;
+    state->cart.load(CART_PRG_ROM, 1, f);
+    std::fclose(f);
 }

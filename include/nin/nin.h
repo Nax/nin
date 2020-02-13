@@ -108,7 +108,6 @@ typedef enum {
 typedef int32_t NinInt32;
 
 NIN_API NinError        ninCreateState(NinState** state, const char* path);
-NIN_API NinError        ninLoadRom(NinState* state, const char* path);
 NIN_API void            ninSetSaveFile(NinState* state, const char* path);
 NIN_API void            ninSyncSave(NinState* state);
 NIN_API void            ninDestroyState(NinState* state);

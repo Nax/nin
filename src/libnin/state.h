@@ -67,46 +67,57 @@ typedef void    (*NinPrgWriteHandler)(NinState* state, uint16_t addr, uint8_t va
 
 #define CLOCK_RATE_NTSC     1789773
 
-typedef struct {
-    uint8_t reserved[8];
-} NinRomHeaderLegacy;
-
-typedef struct {
-    uint8_t     mapperEx:4;
-    uint8_t     submapper:4;
-    uint8_t     prgRomSizeHi:4;
-    uint8_t     chrRomSizeHi:4;
-    uint8_t     prgRamSizeShift:4;
-    uint8_t     prgNvramSizeShift:4;
-    uint8_t     chrRamSizeShift:4;
-    uint8_t     chrNvramSizeShift:4;
-    uint8_t     region:2;
-    uint8_t     reserved0:6;
-    uint8_t     reserved[3];
-} NinRomHeaderNes2;
-
-typedef struct {
-    char        magic[4];
-    uint8_t     prgRomSize;
-    uint8_t     chrRomSize;
-    uint8_t     mirroring:1;
-    uint8_t     battery:1;
-    uint8_t     trainer:1;
-    uint8_t     quadScreen:1;
-    uint8_t     mapperLo:4;
-    uint8_t     vs:1;
-    uint8_t     playChoice:1;
-    uint8_t     magicNes2:2;
-    uint8_t     mapperHi:4;
-    union {
-        NinRomHeaderLegacy  ines;
-        NinRomHeaderNes2    nes2;
-    };
-} NinRomHeader;
-
 struct NinState
 {
+private:
+    struct RomHeaderLegacy
+    {
+        std::uint8_t reserved[8];
+    };
+
+    struct RomHeaderNes2
+    {
+        std::uint8_t     mapperEx:4;
+        std::uint8_t     submapper:4;
+        std::uint8_t     prgRomSizeHi:4;
+        std::uint8_t     chrRomSizeHi:4;
+        std::uint8_t     prgRamSizeShift:4;
+        std::uint8_t     prgNvramSizeShift:4;
+        std::uint8_t     chrRamSizeShift:4;
+        std::uint8_t     chrNvramSizeShift:4;
+        std::uint8_t     region:2;
+        std::uint8_t     reserved0:6;
+        std::uint8_t     reserved[3];
+    };
+
+    struct RomHeader
+    {
+        char            magic[4];
+        std::uint8_t    prgRomSize;
+        std::uint8_t    chrRomSize;
+        std::uint8_t    mirroring:1;
+        std::uint8_t    battery:1;
+        std::uint8_t    trainer:1;
+        std::uint8_t    quadScreen:1;
+        std::uint8_t    mapperLo:4;
+        std::uint8_t    vs:1;
+        std::uint8_t    playChoice:1;
+        std::uint8_t    magicNes2:2;
+        std::uint8_t    mapperHi:4;
+
+        union
+        {
+            RomHeaderLegacy     ines;
+            RomHeaderNes2       nes2;
+        };
+    };
+
+public:
     NinState();
+
+    NinError loadRom(const char* path);
+    NinError loadRomNES(const RomHeader& header, std::FILE* f);
+    NinError loadRomFDS(const RomHeader& header, std::FILE* f);
 
     Memory              memory;
     HardwareInfo        info;
