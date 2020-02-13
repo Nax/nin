@@ -98,7 +98,10 @@ NinError NinState::loadRomNES(const RomHeader& header, std::FILE* f)
     mapper.bankPrg16k(0, 0);
     mapper.bankPrg16k(1, -1);
     mapper.bankChr8k(0);
-    mapper.configure((header.mapperHi << 4) | header.mapperLo, 0);
+    if (!mapper.configure((header.mapperHi << 4) | header.mapperLo, 0))
+    {
+        return NIN_ERROR_BAD_MAPPER;
+    }
     save.setBattery(!!header.battery);
 
     /* Check that the file was actually long enough */

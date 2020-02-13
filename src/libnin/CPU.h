@@ -62,6 +62,9 @@ class CPU : private NonCopyable
 public:
     CPU(IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
 
+    std::uint8_t    reg(int r) const { return _regs[r]; }
+    std::uint16_t   pc() const { return _pc; }
+
     std::size_t tick(std::size_t cycles);
 
 private:

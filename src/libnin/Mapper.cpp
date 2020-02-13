@@ -20,7 +20,7 @@ Mapper::~Mapper()
 
 }
 
-void Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
+bool Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
 {
     switch (mapperMajor)
     {
@@ -83,7 +83,10 @@ void Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
         /* UxROM (180) */
         _writeHandler = &Mapper::write_UXROM180;
         break;
+    default:
+        return false;
     }
+    return true;
 }
 
 void Mapper::mirror(int mirrorMode)

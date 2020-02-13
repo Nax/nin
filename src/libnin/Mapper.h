@@ -53,7 +53,7 @@ public:
     std::uint8_t* chr(int i) { return _chr[i]; }
     std::uint8_t* nametable(int i) { return _nametables[i]; }
 
-    void configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor);
+    bool configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor);
     void mirror(int mirrorMode);
     void write(std::uint16_t addr, std::uint8_t value) { (this->*_writeHandler)(addr, value); }
     void videoRead(std::uint16_t addr) { (this->*_videoReadHandler)(addr); }
