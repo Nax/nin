@@ -68,8 +68,12 @@ public:
     std::size_t tick(std::size_t cycles);
 
 private:
-    template <std::uint16_t N>
-    void instruction(std::uint8_t tmp);
+    using AnyFuncPtr = void* (CPU::*)(void);
+    using Handler = AnyFuncPtr (CPU::*)(void);
+
+    template <std::uint16_t op>  Handler instruction();
+    template <std::uint8_t step> Handler decode();
+    template <std::uint8_t step> Handler reset();
 
     void            flagZ(std::uint8_t value);
     void            flagN(std::uint8_t value);
@@ -90,6 +94,7 @@ private:
     APU&        _apu;
     BusMain&    _bus;
 
+    Handler         _handler;
     std::size_t     _cyc;
     std::uint16_t   _pc;
     std::uint8_t    _regs[4];
