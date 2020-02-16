@@ -1,0 +1,5 @@
+PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8); return $1;
+PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff); return $1;
+PushP           _memory.ram[0x100 | _s--] = _p; return $1;
+VectorPCL_BRK   _pc = ((_pc & 0xff00) | read(0xfffe)); return $1;
+VectorPCH_BRK   _pc = ((_pc & 0x00ff) | ((std::uint16_t)read(0xffff)) << 8); return $1;
