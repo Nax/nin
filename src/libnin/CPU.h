@@ -52,6 +52,7 @@
 namespace libnin
 {
 
+class Memory;
 class IRQ;
 class NMI;
 class PPU;
@@ -60,7 +61,7 @@ class BusMain;
 class CPU : private NonCopyable
 {
 public:
-    CPU(IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
+    CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
 
     std::uint8_t    reg(int r) const { return _regs[r]; }
     std::uint16_t   pc() const { return _pc; }
@@ -71,23 +72,14 @@ private:
     using AnyFuncPtr = void* (CPU::*)(void);
     using Handler = AnyFuncPtr (CPU::*)(void);
 
-    template <std::uint16_t op>  Handler instruction();
-    template <std::uint8_t step> Handler decode();
-    template <std::uint8_t step> Handler reset();
+    template <std::uint16_t> Handler instruction(void);
 
-    void            flagZ(std::uint8_t value);
-    void            flagN(std::uint8_t value);
-    std::uint8_t    compare(std::uint8_t a, std::uint8_t b);
-    void            stackPush8(std::uint8_t value);
-    std::uint8_t    stackPop8();
-    std::uint8_t    asl(std::uint8_t v);
-    std::uint8_t    rol(std::uint8_t v);
-    std::uint8_t    lsr(std::uint8_t v);
-    std::uint8_t    ror(std::uint8_t v);
-    std::uint8_t    bit(std::uint8_t v);
-    std::uint8_t    adc(std::uint8_t a, std::uint8_t b);
-    std::uint16_t   indirect(std::uint16_t addr);
+    Handler dispatch();
+    std::uint8_t read(std::uint16_t addr);
 
+    static const Handler kStates[];
+
+    Memory&     _memory;
     IRQ&        _irq;
     NMI&        _nmi;
     PPU&        _ppu;
@@ -97,7 +89,18 @@ private:
     Handler         _handler;
     std::size_t     _cyc;
     std::uint16_t   _pc;
-    std::uint8_t    _regs[4];
+    std::uint16_t   _addr;
+    union
+    {
+        std::uint8_t    _regs[4];
+        struct
+        {
+            std::uint8_t    _a;
+            std::uint8_t    _x;
+            std::uint8_t    _y;
+            std::uint8_t    _s;
+        };
+    };
     std::uint8_t    _p;
     std::uint8_t    _p2;
     bool            _nmi2:1;

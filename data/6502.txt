@@ -1,5 +1,18 @@
-PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8); return $1;
-PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff); return $1;
-PushP           _memory.ram[0x100 | _s--] = _p; return $1;
-VectorPCL_BRK   _pc = ((_pc & 0xff00) | read(0xfffe)); return $1;
-VectorPCH_BRK   _pc = ((_pc & 0x00ff) | ((std::uint16_t)read(0xffff)) << 8); return $1;
+AddrSet_RESET   _addr = 0xfffc;
+AddrSet_BRK     _addr = 0xfffe;
+
+DecS            _s--;
+
+AddImpl         read(_pc);
+AddImplIncPC    read(_pc++);
+PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8);
+PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
+PushP           _memory.ram[0x100 | _s--] = _p;
+VectorPCL       _pc = ((_pc & 0xff00) | read(_addr));
+VectorPCH       _pc = ((_pc & 0x00ff) | ((std::uint16_t)read(_addr + 1)) << 8);
+
+ImmLoadA        _a = read(_pc++);
+ImmLoadX        _x = read(_pc++);
+ImmLoadY        _y = read(_pc++);
+
+OpOraAddr       Foo

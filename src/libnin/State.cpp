@@ -20,7 +20,7 @@ NinState::NinState()
 , video{}
 , ppu{info, memory, nmi, busVideo, mapper, video}
 , busMain{memory, cart, mapper, ppu, apu, input}
-, cpu{irq, nmi, ppu, apu, busMain}
+, cpu{memory, irq, nmi, ppu, apu, busMain}
 , save{cart}
 {
 }
