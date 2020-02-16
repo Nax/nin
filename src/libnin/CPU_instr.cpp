@@ -8,11 +8,9 @@ template<> CPU::Handler CPU::instruction<0x104>(void) { _pc = ((_pc & 0xff00) | 
 template<> CPU::Handler CPU::instruction<0x105>(void) { _memory.ram[0x100 | _s--] = _p; return ((Handler)&CPU::instruction<0x104>); }
 template<> CPU::Handler CPU::instruction<0x106>(void) { _memory.ram[0x100 | _s--] = (_pc & 0xff); return ((Handler)&CPU::instruction<0x105>); }
 template<> CPU::Handler CPU::instruction<0x107>(void) { _memory.ram[0x100 | _s--] = (_pc >> 8); return ((Handler)&CPU::instruction<0x106>); }
-template<> CPU::Handler CPU::instruction<0x108>(void) { _pc = ((_pc & 0x00ff) | ((std::uint16_t)read(_addr + 1)) << 8); return ((Handler)&CPU::dispatch); }
-template<> CPU::Handler CPU::instruction<0x109>(void) { _pc = ((_pc & 0xff00) | read(_addr)); return ((Handler)&CPU::instruction<0x108>); }
+template<> CPU::Handler CPU::instruction<0x108>(void) { _s--; return ((Handler)&CPU::instruction<0x104>); }
+template<> CPU::Handler CPU::instruction<0x109>(void) { _s--; return ((Handler)&CPU::instruction<0x108>); }
 template<> CPU::Handler CPU::instruction<0x10a>(void) { _s--; return ((Handler)&CPU::instruction<0x109>); }
-template<> CPU::Handler CPU::instruction<0x10b>(void) { _s--; return ((Handler)&CPU::instruction<0x10a>); }
-template<> CPU::Handler CPU::instruction<0x10c>(void) { _s--; return ((Handler)&CPU::instruction<0x10b>); }
 template<> CPU::Handler CPU::instruction<0x000>(void) { _addr = 0xfffe; read(_pc++); return ((Handler)&CPU::instruction<0x107>); }
 template<> CPU::Handler CPU::instruction<0x001>(void) { return debug_not_impl(0x001); }
 template<> CPU::Handler CPU::instruction<0x002>(void) { return debug_not_impl(0x002); }
@@ -175,7 +173,7 @@ template<> CPU::Handler CPU::instruction<0x09e>(void) { return debug_not_impl(0x
 template<> CPU::Handler CPU::instruction<0x09f>(void) { return debug_not_impl(0x09f); }
 template<> CPU::Handler CPU::instruction<0x0a0>(void) { _y = read(_pc++); return ((Handler)&CPU::dispatch); }
 template<> CPU::Handler CPU::instruction<0x0a1>(void) { return debug_not_impl(0x0a1); }
-template<> CPU::Handler CPU::instruction<0x0a2>(void) { _a = read(_pc++); return ((Handler)&CPU::dispatch); }
+template<> CPU::Handler CPU::instruction<0x0a2>(void) { _x = read(_pc++); return ((Handler)&CPU::dispatch); }
 template<> CPU::Handler CPU::instruction<0x0a3>(void) { return debug_not_impl(0x0a3); }
 template<> CPU::Handler CPU::instruction<0x0a4>(void) { return debug_not_impl(0x0a4); }
 template<> CPU::Handler CPU::instruction<0x0a5>(void) { return debug_not_impl(0x0a5); }
@@ -269,7 +267,7 @@ template<> CPU::Handler CPU::instruction<0x0fc>(void) { return debug_not_impl(0x
 template<> CPU::Handler CPU::instruction<0x0fd>(void) { return debug_not_impl(0x0fd); }
 template<> CPU::Handler CPU::instruction<0x0fe>(void) { return debug_not_impl(0x0fe); }
 template<> CPU::Handler CPU::instruction<0x0ff>(void) { return debug_not_impl(0x0ff); }
-template<> CPU::Handler CPU::instruction<0x100>(void) { _addr = 0xfffc; read(_pc); return ((Handler)&CPU::instruction<0x10c>); }
+template<> CPU::Handler CPU::instruction<0x100>(void) { _addr = 0xfffc; read(_pc); return ((Handler)&CPU::instruction<0x10a>); }
 template<> CPU::Handler CPU::instruction<0x101>(void) { return debug_not_impl(0x101); }
 template<> CPU::Handler CPU::instruction<0x102>(void) { return debug_not_impl(0x102); }
 
@@ -340,6 +338,5 @@ const CPU::Handler CPU::kStates[] = {
     ((CPU::Handler)&CPU::instruction<0x0fc>), ((CPU::Handler)&CPU::instruction<0x0fd>), ((CPU::Handler)&CPU::instruction<0x0fe>), ((CPU::Handler)&CPU::instruction<0x0ff>),
     ((CPU::Handler)&CPU::instruction<0x100>), ((CPU::Handler)&CPU::instruction<0x101>), ((CPU::Handler)&CPU::instruction<0x102>), ((CPU::Handler)&CPU::instruction<0x103>),
     ((CPU::Handler)&CPU::instruction<0x104>), ((CPU::Handler)&CPU::instruction<0x105>), ((CPU::Handler)&CPU::instruction<0x106>), ((CPU::Handler)&CPU::instruction<0x107>),
-    ((CPU::Handler)&CPU::instruction<0x108>), ((CPU::Handler)&CPU::instruction<0x109>), ((CPU::Handler)&CPU::instruction<0x10a>), ((CPU::Handler)&CPU::instruction<0x10b>),
-    ((CPU::Handler)&CPU::instruction<0x10c>),
+    ((CPU::Handler)&CPU::instruction<0x108>), ((CPU::Handler)&CPU::instruction<0x109>), ((CPU::Handler)&CPU::instruction<0x10a>),
 };

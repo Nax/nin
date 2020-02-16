@@ -39,6 +39,56 @@ class Rulebook
     id
   end
 
+  def optimize
+    8.times { optimize_pass }
+    rename_pass
+  end
+
+  def canonize(canonical, aliases)
+    @steps.each do |index, step|
+      next if step == :kill
+      if aliases.include?(step[1])
+        step[1] = canonical
+      end
+    end
+
+    aliases.each do |k|
+      @steps.delete(k)
+    end
+  end
+
+  def optimize_pass
+    dups = []
+    @steps.each do |i, step|
+      next if i < 0x103 || step == :kill
+      duplicates = @steps.map{|k, v| [k, v]}.select{|x| x[1] == step}.map{|x| x[0]}
+      dups.push(duplicates) if duplicates.size > 1
+    end
+    dups.uniq!
+    dups.each do |d|
+      canonize(d[0], d[1..-1])
+    end
+  end
+
+  def rename_pass
+    new_mapping = {}
+    new_steps = {}
+    new_index = 0
+
+    @steps.each do |index, step|
+      new_steps[new_index] = step
+      new_mapping[index] = new_index
+      new_index += 1
+    end
+
+    new_steps.each do |index, step|
+      next if step == :kill || step[1].nil?
+      step[1] = new_mapping[step[1]]
+    end
+
+    @steps = new_steps
+  end
+
   def ref_step(step)
     handler = nil
     if step.nil?
@@ -75,7 +125,7 @@ class Rulebook
   end
 
   def emit_states
-    states = (0...@next_step_id).to_a.map{|x| "((CPU::Handler)&CPU::instruction<#{"0x%03x" % x}>),"}.each_slice(4).map{|x| x.join(" ")}.map{|x| "    " + x}.join("\n")
+    states = (0..@steps.keys.max).to_a.map{|x| "((CPU::Handler)&CPU::instruction<#{"0x%03x" % x}>),"}.each_slice(4).map{|x| x.join(" ")}.map{|x| "    " + x}.join("\n")
     "const CPU::Handler CPU::kStates[] = {\n#{states}\n};\n"
   end
 
@@ -131,12 +181,14 @@ book.add_rule 0x98, [['AddrImpl', 'TransferYA']]
 
 # Immediate Loads
 book.add_rule 0xa9, ['ImmLoadA']
-book.add_rule 0xa2, ['ImmLoadA']
+book.add_rule 0xa2, ['ImmLoadX']
 book.add_rule 0xa0, ['ImmLoadY']
 
-book.dump
 
-puts
-puts book.emit_instructions
+book.optimize
+#book.dump
+
+#puts
+#puts book.emit_instructions
 
 book.emit_file ARGV[1]
