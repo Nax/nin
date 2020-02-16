@@ -75,7 +75,17 @@ private:
     template <std::uint16_t> Handler instruction(void);
 
     Handler dispatch();
-    std::uint8_t read(std::uint16_t addr);
+    Handler debug_not_impl(std::uint16_t);
+
+    std::uint8_t    read(std::uint16_t addr);
+    void            write(std::uint16_t addr, uint8_t value);
+
+    void flagNZ(std::uint8_t value)
+    {
+        _p &= ~(PFLAG_N | PFLAG_Z);
+        _p |= (value & 0xff ? 0 : PFLAG_Z);
+        _p |= (value & 0x80 ? PFLAG_N : 0);
+    }
 
     static const Handler kStates[];
 
@@ -101,6 +111,8 @@ private:
             std::uint8_t    _s;
         };
     };
+    std::uint8_t    _selSrc;
+    std::uint8_t    _selDst;
     std::uint8_t    _p;
     std::uint8_t    _p2;
     bool            _nmi2:1;

@@ -1,10 +1,18 @@
+SelectSourceA   _selSrc = REG_A;
+SelectSourceX   _selSrc = REG_X;
+SelectSourceY   _selSrc = REG_Y;
+
+SelectDestA     _selDst = REG_A;
+SelectDestX     _selDst = REG_X;
+SelectDestY     _selDst = REG_Y;
+
 AddrSet_RESET   _addr = 0xfffc;
 AddrSet_BRK     _addr = 0xfffe;
 
 DecS            _s--;
 
-AddImpl         read(_pc);
-AddImplIncPC    read(_pc++);
+AddrImpl         read(_pc);
+AddrImplIncPC    read(_pc++);
 PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8);
 PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
 PushP           _memory.ram[0x100 | _s--] = _p;
@@ -16,3 +24,21 @@ ImmLoadX        _x = read(_pc++);
 ImmLoadY        _y = read(_pc++);
 
 OpOraAddr       Foo
+
+FlagClearC      _p &= ~PFLAG_C;
+FlagClearI      _p &= ~PFLAG_I;
+FlagClearV      _p &= ~PFLAG_V;
+FlagClearD      _p &= ~PFLAG_D;
+
+FlagSetC        _p |= PFLAG_C;
+FlagSetI        _p |= PFLAG_I;
+FlagSetD        _p |= PFLAG_D;
+
+WriteReg        write(_addr, _regs[_selSrc]);
+
+TransferAX      _x = _a; flagNZ(_a);
+TransferAY      _y = _a; flagNZ(_a);
+TransferSX      _x = _s; flagNZ(_s);
+TransferXA      _a = _x; flagNZ(_x);
+TransferXS      _s = _x;
+TransferYA      _a = _y; flagNZ(_y);

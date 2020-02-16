@@ -26,6 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <windows.h>
+#include <cstdio>
+
 #include <libnin/APU.h>
 #include <libnin/BusMain.h>
 #include <libnin/CPU.h>
@@ -75,7 +78,22 @@ CPU::Handler CPU::dispatch()
     return kStates[op];
 }
 
+CPU::Handler CPU::debug_not_impl(std::uint16_t index)
+{
+    char tmp[4096];
+
+    std::sprintf(tmp, "Opcode not implemented: 0x%02x\n", index);
+    MessageBoxA(nullptr, tmp, "Error", 0);
+    std::exit(1);
+    return nullptr;
+}
+
 std::uint8_t CPU::read(std::uint16_t addr)
 {
     return _bus.read(addr);
+}
+
+void CPU::write(std::uint16_t addr, std::uint8_t value)
+{
+    _bus.write(addr, value);
 }

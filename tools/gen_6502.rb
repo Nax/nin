@@ -53,7 +53,8 @@ class Rulebook
     step = @steps[index]
     tpl = nil
     if step == :kill
-      tpl = "return #{ref_step(index)};"
+      tpl = "return debug_not_impl(#{"0x%03x" % index});"
+      #tpl = "return #{ref_step(index)};"
     else
       next_step = ref_step(step[1]);
       tpl = (step[0].map{|x| (@templates[x] or raise StandardError, "Missing template: #{x}")} + ["return #{next_step};"]).join(" ")
@@ -96,8 +97,8 @@ class Rulebook
   end
 end
 
-def make_brk; [['AddrSet_BRK', 'AddImplIncPC'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
-def make_reset; [['AddrSet_RESET', 'AddImplIncPC'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
+def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
+def make_reset; [['AddrSet_RESET', 'AddrImpl'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
 
 book = Rulebook.new
 book.read_templates ARGV[0]
@@ -106,8 +107,32 @@ book.read_templates ARGV[0]
   book.add_rule(i, :kill)
 end
 
+# Vectors
 book.add_rule 0x000, make_brk()
 book.add_rule 0x100, make_reset()
+
+# Flag instructions
+book.add_rule 0x18, ['FlagClearC']
+book.add_rule 0x58, ['FlagClearI']
+book.add_rule 0xb8, ['FlagClearV']
+book.add_rule 0xd8, ['FlagClearD']
+
+book.add_rule 0x38, ['FlagSetC']
+book.add_rule 0x78, ['FlagSetI']
+book.add_rule 0xf8, ['FlagSetD']
+
+# Transfer
+book.add_rule 0xaa, [['AddrImpl', 'TransferAX']]
+book.add_rule 0xa8, [['AddrImpl', 'TransferAY']]
+book.add_rule 0xba, [['AddrImpl', 'TransferSX']]
+book.add_rule 0x8a, [['AddrImpl', 'TransferXA']]
+book.add_rule 0x9a, [['AddrImpl', 'TransferXS']]
+book.add_rule 0x98, [['AddrImpl', 'TransferYA']]
+
+# Immediate Loads
+book.add_rule 0xa9, ['ImmLoadA']
+book.add_rule 0xa2, ['ImmLoadA']
+book.add_rule 0xa0, ['ImmLoadY']
 
 book.dump
 
