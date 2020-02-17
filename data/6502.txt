@@ -25,6 +25,19 @@ AddrIndirectLo      _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8);
 AddrIndirectHi      _addr = (_addr >> 8) | ((std::uint16_t)_memory.ram[(_addr + 1) & 0xff] << 8);
 AddrIndirectY       _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (_addr & 0xff00) | ((_addr + _y) & 0xff);
 
+BranchClearC    if (_p & PFLAG_C) { return (Handler)&CPU::dispatch; }
+BranchClearN    if (_p & PFLAG_N) { return (Handler)&CPU::dispatch; }
+BranchClearV    if (_p & PFLAG_V) { return (Handler)&CPU::dispatch; }
+BranchClearZ    if (_p & PFLAG_Z) { return (Handler)&CPU::dispatch; }
+BranchSetC      if (!(_p & PFLAG_C)) { return (Handler)&CPU::dispatch; }
+BranchSetN      if (!(_p & PFLAG_N)) { return (Handler)&CPU::dispatch; }
+BranchSetV      if (!(_p & PFLAG_V)) { return (Handler)&CPU::dispatch; }
+BranchSetZ      if (!(_p & PFLAG_Z)) { return (Handler)&CPU::dispatch; }
+
+BranchTake      _addrCarry = (((_pc + (std::int8_t)_addr) ^ _pc) & 0xff00) ? 1 : 0; _pc = ((_pc & 0xff00) | ((_pc + (std::int8_t)_addr) & 0xff));
+BranchTake2     if (!_addrCarry) return (Handler)&CPU::dispatch; _pc = _pc + (std::int8_t)_addr;
+BranchTake3     /* nop */
+
 PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8);
 PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
 PushP           _memory.ram[0x100 | _s--] = _p;

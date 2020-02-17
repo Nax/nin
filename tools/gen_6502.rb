@@ -150,6 +150,8 @@ end
 def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
 def make_reset; [['AddrSet_RESET', 'AddrImpl'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
 
+def make_branch(cond); [['AddrZero', cond, 'BranchTake'], 'BranchTake2', 'BranchTake3']; end
+
 def make_store_zero(prefix); [[prefix, 'AddrZero'], 'WriteRegZero']; end
 def make_store_zero_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'WriteRegZero']; end
 def make_store_zero_y(prefix); [[prefix, 'AddrZero'], 'AddrZeroY', 'WriteRegZero']; end
@@ -188,6 +190,16 @@ book.add_rule 0xd8, ['FlagClearD']
 book.add_rule 0x38, ['FlagSetC']
 book.add_rule 0x78, ['FlagSetI']
 book.add_rule 0xf8, ['FlagSetD']
+
+# Branches
+book.add_rule 0x10, make_branch('BranchClearN')
+book.add_rule 0x30, make_branch('BranchSetN')
+book.add_rule 0x50, make_branch('BranchClearV')
+book.add_rule 0x70, make_branch('BranchSetV')
+book.add_rule 0x90, make_branch('BranchClearC')
+book.add_rule 0xb0, make_branch('BranchSetC')
+book.add_rule 0xd0, make_branch('BranchClearZ')
+book.add_rule 0xe0, make_branch('BranchSetZ')
 
 # Transfer
 book.add_rule 0xaa, [['AddrImpl', 'TransferAX']]

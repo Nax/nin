@@ -121,4 +121,6 @@ NIN_API void            ninLoadBiosFDS(NinState* state, const char* path);
 
 NIN_API void            ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info);
 
+NIN_API int             ninStepInstruction(NinState* state);
+
 #endif

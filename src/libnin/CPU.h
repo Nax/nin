@@ -63,6 +63,8 @@ class CPU : private NonCopyable
 public:
     CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
 
+    bool            dispatching() const { return _handler == (Handler)&CPU::dispatch; }
+
     std::uint8_t    reg(int r) const { return _regs[r]; }
     std::uint16_t   pc() const { return _pc; }
 

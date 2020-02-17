@@ -98,11 +98,18 @@ NIN_API void ninSetInput(NinState* state, uint8_t input)
 
 NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyc)
 {
-    std::size_t tmp = state->cpu.tick(cycles);
+    for (std::size_t i = 0; i < cycles; ++i)
+    {
+        state->cpu.tick(1);
+        state->ppu.tick(3);
+        state->apu.tick(1);
+    }
+
     if (cyc)
     {
-        *cyc = tmp;
+        *cyc = 0;
     }
+
     return state->video.changed();
 }
 
@@ -147,4 +154,19 @@ NIN_API void ninLoadBiosFDS(NinState* state, const char* path)
         return;
     state->cart.load(CART_PRG_ROM, 1, f);
     std::fclose(f);
+}
+
+NIN_API int ninStepInstruction(NinState* state)
+{
+    for (int i = 0; i < 8; ++i)
+    {
+        state->cpu.tick(1);
+        state->ppu.tick(3);
+        state->apu.tick(1);
+
+        if (state->cpu.dispatching())
+            break;
+    }
+
+    return state->video.changed();
 }
