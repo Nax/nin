@@ -25,16 +25,15 @@ AddrIndirectLo      _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8);
 AddrIndirectHi      _addr = (_addr >> 8) | ((std::uint16_t)_memory.ram[(_addr + 1) & 0xff] << 8);
 AddrIndirectY       _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (_addr & 0xff00) | ((_addr + _y) & 0xff);
 
-
 PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8);
 PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
 PushP           _memory.ram[0x100 | _s--] = _p;
 VectorPCL       _pc = ((_pc & 0xff00) | read(_addr));
 VectorPCH       _pc = ((_pc & 0x00ff) | ((std::uint16_t)read(_addr + 1)) << 8);
 
-ImmLoadA        _a = read(_pc++);
-ImmLoadX        _x = read(_pc++);
-ImmLoadY        _y = read(_pc++);
+ImmLoadA        _a = read(_pc++); flagNZ(_a);
+ImmLoadX        _x = read(_pc++); flagNZ(_x);
+ImmLoadY        _y = read(_pc++); flagNZ(_y);
 
 OpOraAddr       Foo
 
@@ -49,6 +48,10 @@ FlagSetD        _p |= PFLAG_D;
 
 WriteReg        write(_addr, _regs[_selSrc]);
 WriteRegZero    _memory.ram[_addr] = _regs[_selSrc];
+
+ReadReg         _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]);
+ReadRegCarry    _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]); _addr += ((std::uint16_t)_addrCarry << 8); if (_addrCarry) return ((Handler)&CPU::dispatch);
+ReadRegZero     _regs[_selDst] = _memory.ram[_addr]; flagNZ(_regs[_selDst]);
 
 TransferAX      _x = _a; flagNZ(_a);
 TransferAY      _y = _a; flagNZ(_a);

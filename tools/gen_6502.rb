@@ -159,6 +159,15 @@ def make_store_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'AddrCa
 def make_store_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'WriteReg']; end
 def make_store_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'WriteReg']; end
 
+def make_load_zero(prefix); [[prefix, 'AddrZero'], 'ReadRegZero']; end
+def make_load_zero_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'ReadRegZero']; end
+def make_load_zero_y(prefix); [[prefix, 'AddrZero'], 'AddrZeroY', 'ReadRegZero']; end
+def make_load_absolute(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHi', 'ReadReg']; end
+def make_load_absolute_x(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiX', 'ReadRegCarry', 'ReadReg']; end
+def make_load_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'ReadRegCarry', 'ReadReg']; end
+def make_load_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'ReadReg']; end
+def make_load_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'ReadRegCarry', 'ReadReg']; end
+
 book = Rulebook.new
 book.read_templates ARGV[0]
 
@@ -188,11 +197,6 @@ book.add_rule 0x8a, [['AddrImpl', 'TransferXA']]
 book.add_rule 0x9a, [['AddrImpl', 'TransferXS']]
 book.add_rule 0x98, [['AddrImpl', 'TransferYA']]
 
-# Immediate Loads
-book.add_rule 0xa9, ['ImmLoadA']
-book.add_rule 0xa2, ['ImmLoadX']
-book.add_rule 0xa0, ['ImmLoadY']
-
 # Store
 book.add_rule 0x85, make_store_zero('SelectSourceA')
 book.add_rule 0x95, make_store_zero_x('SelectSourceA')
@@ -209,6 +213,28 @@ book.add_rule 0x8e, make_store_absolute('SelectSourceX')
 book.add_rule 0x84, make_store_zero('SelectSourceY')
 book.add_rule 0x94, make_store_zero_x('SelectSourceY')
 book.add_rule 0x8c, make_store_absolute('SelectSourceY')
+
+# Load
+book.add_rule 0xa9, ['ImmLoadA']
+book.add_rule 0xa5, make_load_zero('SelectDestA')
+book.add_rule 0xb5, make_load_zero_x('SelectDestA')
+book.add_rule 0xad, make_load_absolute('SelectDestA')
+book.add_rule 0xbd, make_load_absolute_x('SelectDestA')
+book.add_rule 0xb9, make_load_absolute_y('SelectDestA')
+book.add_rule 0xa1, make_load_indirect_x('SelectDestA')
+book.add_rule 0xb1, make_load_indirect_y('SelectDestA')
+
+book.add_rule 0xa2, ['ImmLoadX']
+book.add_rule 0xa6, make_load_zero('SelectDestX')
+book.add_rule 0xb6, make_load_zero_y('SelectDestX')
+book.add_rule 0xae, make_load_absolute('SelectDestX')
+book.add_rule 0xbe, make_load_absolute_y('SelectDestX')
+
+book.add_rule 0xa0, ['ImmLoadY']
+book.add_rule 0xa4, make_load_zero('SelectDestY')
+book.add_rule 0xb4, make_load_zero_x('SelectDestY')
+book.add_rule 0xac, make_load_absolute('SelectDestY')
+book.add_rule 0xbc, make_load_absolute_x('SelectDestY')
 
 book.optimize
 #book.dump

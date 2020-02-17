@@ -24,6 +24,19 @@ template<> CPU::Handler CPU::instruction<0x114>(void) { _addr = (_addr + _x) & 0
 template<> CPU::Handler CPU::instruction<0x115>(void) { _addr = (_addr >> 8) | ((std::uint16_t)_memory.ram[(_addr + 1) & 0xff] << 8); _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (_addr & 0xff00) | ((_addr + _y) & 0xff); return ((Handler)&CPU::instruction<0x10f>); }
 template<> CPU::Handler CPU::instruction<0x116>(void) { _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8); return ((Handler)&CPU::instruction<0x115>); }
 template<> CPU::Handler CPU::instruction<0x117>(void) { _addr = (_addr + _y) & 0xff; return ((Handler)&CPU::instruction<0x10b>); }
+template<> CPU::Handler CPU::instruction<0x118>(void) { _regs[_selDst] = _memory.ram[_addr]; flagNZ(_regs[_selDst]); return ((Handler)&CPU::dispatch); }
+template<> CPU::Handler CPU::instruction<0x119>(void) { _addr = (_addr + _x) & 0xff; return ((Handler)&CPU::instruction<0x118>); }
+template<> CPU::Handler CPU::instruction<0x11a>(void) { _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]); return ((Handler)&CPU::dispatch); }
+template<> CPU::Handler CPU::instruction<0x11b>(void) { _addr = ((_addr & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8); return ((Handler)&CPU::instruction<0x11a>); }
+template<> CPU::Handler CPU::instruction<0x11c>(void) { _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]); _addr += ((std::uint16_t)_addrCarry << 8); if (_addrCarry) return ((Handler)&CPU::dispatch); return ((Handler)&CPU::instruction<0x11a>); }
+template<> CPU::Handler CPU::instruction<0x11d>(void) { _addrCarry = (((_addr & 0xff) + _x) > 0xff) ? 1 : 0; _addr = (((_addr + _x) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8); return ((Handler)&CPU::instruction<0x11c>); }
+template<> CPU::Handler CPU::instruction<0x11e>(void) { _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (((_addr + _y) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8); return ((Handler)&CPU::instruction<0x11c>); }
+template<> CPU::Handler CPU::instruction<0x11f>(void) { _addr = (_addr >> 8) | ((std::uint16_t)_memory.ram[(_addr + 1) & 0xff] << 8); return ((Handler)&CPU::instruction<0x11a>); }
+template<> CPU::Handler CPU::instruction<0x120>(void) { _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8); return ((Handler)&CPU::instruction<0x11f>); }
+template<> CPU::Handler CPU::instruction<0x121>(void) { _addr = (_addr + _x) & 0xff; return ((Handler)&CPU::instruction<0x120>); }
+template<> CPU::Handler CPU::instruction<0x122>(void) { _addr = (_addr >> 8) | ((std::uint16_t)_memory.ram[(_addr + 1) & 0xff] << 8); _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (_addr & 0xff00) | ((_addr + _y) & 0xff); return ((Handler)&CPU::instruction<0x11c>); }
+template<> CPU::Handler CPU::instruction<0x123>(void) { _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8); return ((Handler)&CPU::instruction<0x122>); }
+template<> CPU::Handler CPU::instruction<0x124>(void) { _addr = (_addr + _y) & 0xff; return ((Handler)&CPU::instruction<0x118>); }
 template<> CPU::Handler CPU::instruction<0x000>(void) { _addr = 0xfffe; read(_pc++); return ((Handler)&CPU::instruction<0x107>); }
 template<> CPU::Handler CPU::instruction<0x001>(void) { return debug_not_impl(0x001); }
 template<> CPU::Handler CPU::instruction<0x002>(void) { return debug_not_impl(0x002); }
@@ -184,37 +197,37 @@ template<> CPU::Handler CPU::instruction<0x09c>(void) { return debug_not_impl(0x
 template<> CPU::Handler CPU::instruction<0x09d>(void) { _selSrc = REG_A; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x110>); }
 template<> CPU::Handler CPU::instruction<0x09e>(void) { return debug_not_impl(0x09e); }
 template<> CPU::Handler CPU::instruction<0x09f>(void) { return debug_not_impl(0x09f); }
-template<> CPU::Handler CPU::instruction<0x0a0>(void) { _y = read(_pc++); return ((Handler)&CPU::dispatch); }
-template<> CPU::Handler CPU::instruction<0x0a1>(void) { return debug_not_impl(0x0a1); }
-template<> CPU::Handler CPU::instruction<0x0a2>(void) { _x = read(_pc++); return ((Handler)&CPU::dispatch); }
+template<> CPU::Handler CPU::instruction<0x0a0>(void) { _y = read(_pc++); flagNZ(_y); return ((Handler)&CPU::dispatch); }
+template<> CPU::Handler CPU::instruction<0x0a1>(void) { _selDst = REG_A; _addr = read(_pc++); return ((Handler)&CPU::instruction<0x121>); }
+template<> CPU::Handler CPU::instruction<0x0a2>(void) { _x = read(_pc++); flagNZ(_x); return ((Handler)&CPU::dispatch); }
 template<> CPU::Handler CPU::instruction<0x0a3>(void) { return debug_not_impl(0x0a3); }
-template<> CPU::Handler CPU::instruction<0x0a4>(void) { return debug_not_impl(0x0a4); }
-template<> CPU::Handler CPU::instruction<0x0a5>(void) { return debug_not_impl(0x0a5); }
-template<> CPU::Handler CPU::instruction<0x0a6>(void) { return debug_not_impl(0x0a6); }
+template<> CPU::Handler CPU::instruction<0x0a4>(void) { _selDst = REG_Y; _addr = read(_pc++); return ((Handler)&CPU::instruction<0x118>); }
+template<> CPU::Handler CPU::instruction<0x0a5>(void) { _selDst = REG_A; _addr = read(_pc++); return ((Handler)&CPU::instruction<0x118>); }
+template<> CPU::Handler CPU::instruction<0x0a6>(void) { _selDst = REG_X; _addr = read(_pc++); return ((Handler)&CPU::instruction<0x118>); }
 template<> CPU::Handler CPU::instruction<0x0a7>(void) { return debug_not_impl(0x0a7); }
 template<> CPU::Handler CPU::instruction<0x0a8>(void) { read(_pc); _y = _a; flagNZ(_a); return ((Handler)&CPU::dispatch); }
-template<> CPU::Handler CPU::instruction<0x0a9>(void) { _a = read(_pc++); return ((Handler)&CPU::dispatch); }
+template<> CPU::Handler CPU::instruction<0x0a9>(void) { _a = read(_pc++); flagNZ(_a); return ((Handler)&CPU::dispatch); }
 template<> CPU::Handler CPU::instruction<0x0aa>(void) { read(_pc); _x = _a; flagNZ(_a); return ((Handler)&CPU::dispatch); }
 template<> CPU::Handler CPU::instruction<0x0ab>(void) { return debug_not_impl(0x0ab); }
-template<> CPU::Handler CPU::instruction<0x0ac>(void) { return debug_not_impl(0x0ac); }
-template<> CPU::Handler CPU::instruction<0x0ad>(void) { return debug_not_impl(0x0ad); }
-template<> CPU::Handler CPU::instruction<0x0ae>(void) { return debug_not_impl(0x0ae); }
+template<> CPU::Handler CPU::instruction<0x0ac>(void) { _selDst = REG_Y; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x11b>); }
+template<> CPU::Handler CPU::instruction<0x0ad>(void) { _selDst = REG_A; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x11b>); }
+template<> CPU::Handler CPU::instruction<0x0ae>(void) { _selDst = REG_X; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x11b>); }
 template<> CPU::Handler CPU::instruction<0x0af>(void) { return debug_not_impl(0x0af); }
 template<> CPU::Handler CPU::instruction<0x0b0>(void) { return debug_not_impl(0x0b0); }
-template<> CPU::Handler CPU::instruction<0x0b1>(void) { return debug_not_impl(0x0b1); }
+template<> CPU::Handler CPU::instruction<0x0b1>(void) { _selDst = REG_A; _addr = read(_pc++); return ((Handler)&CPU::instruction<0x123>); }
 template<> CPU::Handler CPU::instruction<0x0b2>(void) { return debug_not_impl(0x0b2); }
 template<> CPU::Handler CPU::instruction<0x0b3>(void) { return debug_not_impl(0x0b3); }
-template<> CPU::Handler CPU::instruction<0x0b4>(void) { return debug_not_impl(0x0b4); }
-template<> CPU::Handler CPU::instruction<0x0b5>(void) { return debug_not_impl(0x0b5); }
-template<> CPU::Handler CPU::instruction<0x0b6>(void) { return debug_not_impl(0x0b6); }
+template<> CPU::Handler CPU::instruction<0x0b4>(void) { _selDst = REG_Y; _addr = read(_pc++); return ((Handler)&CPU::instruction<0x119>); }
+template<> CPU::Handler CPU::instruction<0x0b5>(void) { _selDst = REG_A; _addr = read(_pc++); return ((Handler)&CPU::instruction<0x119>); }
+template<> CPU::Handler CPU::instruction<0x0b6>(void) { _selDst = REG_X; _addr = read(_pc++); return ((Handler)&CPU::instruction<0x124>); }
 template<> CPU::Handler CPU::instruction<0x0b7>(void) { return debug_not_impl(0x0b7); }
 template<> CPU::Handler CPU::instruction<0x0b8>(void) { _p &= ~PFLAG_V; return ((Handler)&CPU::dispatch); }
-template<> CPU::Handler CPU::instruction<0x0b9>(void) { return debug_not_impl(0x0b9); }
+template<> CPU::Handler CPU::instruction<0x0b9>(void) { _selDst = REG_A; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x11e>); }
 template<> CPU::Handler CPU::instruction<0x0ba>(void) { read(_pc); _x = _s; flagNZ(_s); return ((Handler)&CPU::dispatch); }
 template<> CPU::Handler CPU::instruction<0x0bb>(void) { return debug_not_impl(0x0bb); }
-template<> CPU::Handler CPU::instruction<0x0bc>(void) { return debug_not_impl(0x0bc); }
-template<> CPU::Handler CPU::instruction<0x0bd>(void) { return debug_not_impl(0x0bd); }
-template<> CPU::Handler CPU::instruction<0x0be>(void) { return debug_not_impl(0x0be); }
+template<> CPU::Handler CPU::instruction<0x0bc>(void) { _selDst = REG_Y; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x11d>); }
+template<> CPU::Handler CPU::instruction<0x0bd>(void) { _selDst = REG_A; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x11d>); }
+template<> CPU::Handler CPU::instruction<0x0be>(void) { _selDst = REG_X; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x11e>); }
 template<> CPU::Handler CPU::instruction<0x0bf>(void) { return debug_not_impl(0x0bf); }
 template<> CPU::Handler CPU::instruction<0x0c0>(void) { return debug_not_impl(0x0c0); }
 template<> CPU::Handler CPU::instruction<0x0c1>(void) { return debug_not_impl(0x0c1); }
@@ -355,4 +368,8 @@ const CPU::Handler CPU::kStates[] = {
     ((CPU::Handler)&CPU::instruction<0x10c>), ((CPU::Handler)&CPU::instruction<0x10d>), ((CPU::Handler)&CPU::instruction<0x10e>), ((CPU::Handler)&CPU::instruction<0x10f>),
     ((CPU::Handler)&CPU::instruction<0x110>), ((CPU::Handler)&CPU::instruction<0x111>), ((CPU::Handler)&CPU::instruction<0x112>), ((CPU::Handler)&CPU::instruction<0x113>),
     ((CPU::Handler)&CPU::instruction<0x114>), ((CPU::Handler)&CPU::instruction<0x115>), ((CPU::Handler)&CPU::instruction<0x116>), ((CPU::Handler)&CPU::instruction<0x117>),
+    ((CPU::Handler)&CPU::instruction<0x118>), ((CPU::Handler)&CPU::instruction<0x119>), ((CPU::Handler)&CPU::instruction<0x11a>), ((CPU::Handler)&CPU::instruction<0x11b>),
+    ((CPU::Handler)&CPU::instruction<0x11c>), ((CPU::Handler)&CPU::instruction<0x11d>), ((CPU::Handler)&CPU::instruction<0x11e>), ((CPU::Handler)&CPU::instruction<0x11f>),
+    ((CPU::Handler)&CPU::instruction<0x120>), ((CPU::Handler)&CPU::instruction<0x121>), ((CPU::Handler)&CPU::instruction<0x122>), ((CPU::Handler)&CPU::instruction<0x123>),
+    ((CPU::Handler)&CPU::instruction<0x124>),
 };
