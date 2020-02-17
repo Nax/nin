@@ -11,8 +11,21 @@ AddrSet_BRK     _addr = 0xfffe;
 
 DecS            _s--;
 
-AddrImpl         read(_pc);
-AddrImplIncPC    read(_pc++);
+AddrImpl            read(_pc);
+AddrImplIncPC       read(_pc++);
+AddrZero            _addr = read(_pc++);
+AddrZeroX           _addr = (_addr + _x) & 0xff;
+AddrZeroY           _addr = (_addr + _y) & 0xff;
+AddrAbsLo           _addr = ((_addr & 0xff00) | read(_pc++));
+AddrAbsHi           _addr = ((_addr & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8);
+AddrAbsHiX          _addrCarry = (((_addr & 0xff) + _x) > 0xff) ? 1 : 0; _addr = (((_addr + _x) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8);
+AddrAbsHiY          _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (((_addr + _y) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8);
+AddrCarry           read(_addr); _addr += (((std::uint16_t)_addrCarry) << 8);
+AddrIndirectLo      _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8);
+AddrIndirectHi      _addr = (_addr >> 8) | ((std::uint16_t)_memory.ram[(_addr + 1) & 0xff] << 8);
+AddrIndirectY       _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (_addr & 0xff00) | ((_addr + _y) & 0xff);
+
+
 PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8);
 PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
 PushP           _memory.ram[0x100 | _s--] = _p;
@@ -35,6 +48,7 @@ FlagSetI        _p |= PFLAG_I;
 FlagSetD        _p |= PFLAG_D;
 
 WriteReg        write(_addr, _regs[_selSrc]);
+WriteRegZero    _memory.ram[_addr] = _regs[_selSrc];
 
 TransferAX      _x = _a; flagNZ(_a);
 TransferAY      _y = _a; flagNZ(_a);

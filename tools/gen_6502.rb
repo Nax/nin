@@ -150,6 +150,15 @@ end
 def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
 def make_reset; [['AddrSet_RESET', 'AddrImpl'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
 
+def make_store_zero(prefix); [[prefix, 'AddrZero'], 'WriteRegZero']; end
+def make_store_zero_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'WriteRegZero']; end
+def make_store_zero_y(prefix); [[prefix, 'AddrZero'], 'AddrZeroY', 'WriteRegZero']; end
+def make_store_absolute(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHi', 'WriteReg']; end
+def make_store_absolute_x(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiX', 'AddrCarry', 'WriteReg']; end
+def make_store_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'AddrCarry', 'WriteReg']; end
+def make_store_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'WriteReg']; end
+def make_store_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'WriteReg']; end
+
 book = Rulebook.new
 book.read_templates ARGV[0]
 
@@ -184,6 +193,22 @@ book.add_rule 0xa9, ['ImmLoadA']
 book.add_rule 0xa2, ['ImmLoadX']
 book.add_rule 0xa0, ['ImmLoadY']
 
+# Store
+book.add_rule 0x85, make_store_zero('SelectSourceA')
+book.add_rule 0x95, make_store_zero_x('SelectSourceA')
+book.add_rule 0x8d, make_store_absolute('SelectSourceA')
+book.add_rule 0x9d, make_store_absolute_x('SelectSourceA')
+book.add_rule 0x99, make_store_absolute_y('SelectSourceA')
+book.add_rule 0x81, make_store_indirect_x('SelectSourceA')
+book.add_rule 0x91, make_store_indirect_y('SelectSourceA')
+
+book.add_rule 0x86, make_store_zero('SelectSourceX')
+book.add_rule 0x96, make_store_zero_y('SelectSourceX')
+book.add_rule 0x8e, make_store_absolute('SelectSourceX')
+
+book.add_rule 0x84, make_store_zero('SelectSourceY')
+book.add_rule 0x94, make_store_zero_x('SelectSourceY')
+book.add_rule 0x8c, make_store_absolute('SelectSourceY')
 
 book.optimize
 #book.dump
