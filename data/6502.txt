@@ -21,9 +21,16 @@ AddrAbsHi           _addr = ((_addr & 0x00ff) | ((std::uint16_t)read(_pc++)) << 
 AddrAbsHiX          _addrCarry = (((_addr & 0xff) + _x) > 0xff) ? 1 : 0; _addr = (((_addr + _x) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8);
 AddrAbsHiY          _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (((_addr + _y) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8);
 AddrCarry           read(_addr); _addr += (((std::uint16_t)_addrCarry) << 8);
+AddrCarryIf         if (!_addrCarry) {
+AddrCarryEnd        return (Handler)&CPU::dispatch; }
+AddrCarryFix        _addr += 0x100;
 AddrIndirectLo      _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8);
 AddrIndirectHi      _addr = (_addr >> 8) | ((std::uint16_t)_memory.ram[(_addr + 1) & 0xff] << 8);
 AddrIndirectY       _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (_addr & 0xff00) | ((_addr + _y) & 0xff);
+
+TmpLoad             std::uint8_t tmp = read(_addr);
+TmpLoadImm          std::uint8_t tmp = read(_pc++);
+TmpLoadZero         std::uint8_t tmp = _memory.ram[_addr];
 
 BranchClearC    if (_p & PFLAG_C) { return (Handler)&CPU::dispatch; }
 BranchClearN    if (_p & PFLAG_N) { return (Handler)&CPU::dispatch; }
@@ -48,7 +55,9 @@ ImmLoadA        _a = read(_pc++); flagNZ(_a);
 ImmLoadX        _x = read(_pc++); flagNZ(_x);
 ImmLoadY        _y = read(_pc++); flagNZ(_y);
 
-OpOraAddr       Foo
+ArithORA        _a |= tmp; flagNZ(_a);
+ArithAND        _a &= tmp; flagNZ(_a);
+ArithEOR        _a ^= tmp; flagNZ(_a);
 
 FlagClearC      _p &= ~PFLAG_C;
 FlagClearI      _p &= ~PFLAG_I;

@@ -170,8 +170,28 @@ def make_load_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'ReadReg
 def make_load_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'ReadReg']; end
 def make_load_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'ReadRegCarry', 'ReadReg']; end
 
+def make_arith_imm(op); [['TmpLoadImm', op]]; end
+def make_arith_zero(op); ['AddrZero', ['TmpLoadZero', op]]; end
+def make_arith_zero_x(op); ['AddrZero', 'AddrZeroX', ['TmpLoadZero', op]]; end
+def make_arith_absolute(op); ['AddrAbsLo', 'AddrAbsHi', ['TmpLoad', op]]; end
+def make_arith_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
+def make_arith_absolute_y(op); ['AddrAbsLo', 'AddrAbsHiY', ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
+def make_arith_indirect_x(op); ['AddrZero', 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', ['TmpLoad', op]]; end
+def make_arith_indirect_y(op); ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
+
 book = Rulebook.new
 book.read_templates ARGV[0]
+
+def build_arith_block(book, base, op)
+  book.add_rule base + 0x09, make_arith_imm(op)
+  book.add_rule base + 0x05, make_arith_zero(op)
+  book.add_rule base + 0x15, make_arith_zero_x(op)
+  book.add_rule base + 0x0d, make_arith_absolute(op)
+  book.add_rule base + 0x1d, make_arith_absolute_x(op)
+  book.add_rule base + 0x19, make_arith_absolute_y(op)
+  book.add_rule base + 0x01, make_arith_indirect_x(op)
+  book.add_rule base + 0x11, make_arith_indirect_y(op)
+end
 
 0x103.times do |i|
   book.add_rule(i, :kill)
@@ -247,6 +267,11 @@ book.add_rule 0xa4, make_load_zero('SelectDestY')
 book.add_rule 0xb4, make_load_zero_x('SelectDestY')
 book.add_rule 0xac, make_load_absolute('SelectDestY')
 book.add_rule 0xbc, make_load_absolute_x('SelectDestY')
+
+# Arith
+build_arith_block(book, 0x00, 'ArithORA')
+build_arith_block(book, 0x20, 'ArithAND')
+build_arith_block(book, 0x40, 'ArithEOR')
 
 book.optimize
 #book.dump
