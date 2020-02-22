@@ -78,6 +78,7 @@ private:
 
     Handler dispatch();
     Handler debug_not_impl(std::uint16_t);
+    void    debug(std::uint16_t value);
 
     std::uint8_t    read(std::uint16_t addr);
     void            write(std::uint16_t addr, uint8_t value);

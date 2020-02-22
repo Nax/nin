@@ -82,10 +82,18 @@ CPU::Handler CPU::debug_not_impl(std::uint16_t index)
 {
     char tmp[4096];
 
-    std::sprintf(tmp, "Opcode not implemented: 0x%02x\n", index);
+    std::sprintf(tmp, "Opcode not implemented: 0x%02x (PC: 0x%04x)\n", index, _pc);
     MessageBoxA(nullptr, tmp, "Error", 0);
     std::exit(1);
     return nullptr;
+}
+
+void CPU::debug(std::uint16_t value)
+{
+    char tmp[4096];
+
+    std::sprintf(tmp, "DEBUG: 0x%04x\n", value);
+    MessageBoxA(nullptr, tmp, "Debug", 0);
 }
 
 std::uint8_t CPU::read(std::uint16_t addr)

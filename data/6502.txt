@@ -43,7 +43,6 @@ BranchSetZ      if (!(_p & PFLAG_Z)) { return (Handler)&CPU::dispatch; }
 
 BranchTake      _addrCarry = (((_pc + (std::int8_t)_addr) ^ _pc) & 0xff00) ? 1 : 0; _pc = ((_pc & 0xff00) | ((_pc + (std::int8_t)_addr) & 0xff));
 BranchTake2     if (!_addrCarry) return (Handler)&CPU::dispatch; _pc = _pc + (std::int8_t)_addr;
-BranchTake3     /* nop */
 
 PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8);
 PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
@@ -55,9 +54,15 @@ ImmLoadA        _a = read(_pc++); flagNZ(_a);
 ImmLoadX        _x = read(_pc++); flagNZ(_x);
 ImmLoadY        _y = read(_pc++); flagNZ(_y);
 
-ArithORA        _a |= tmp; flagNZ(_a);
-ArithAND        _a &= tmp; flagNZ(_a);
-ArithEOR        _a ^= tmp; flagNZ(_a);
+OpORA        _regs[_selDst] |= tmp; flagNZ(_regs[_selDst]);
+OpAND        _regs[_selDst] &= tmp; flagNZ(_regs[_selDst]);
+OpEOR        _regs[_selDst] ^= tmp; flagNZ(_regs[_selDst]);
+OpCMP        _p &= ~PFLAG_C; _p |= (_regs[_selDst] >= tmp) ? PFLAG_C : 0; flagNZ(_regs[_selDst] - tmp);
+
+INX      flagNZ(++_x);
+INY      flagNZ(++_y);
+DEX      flagNZ(--_x);
+DEY      flagNZ(--_y);
 
 FlagClearC      _p &= ~PFLAG_C;
 FlagClearI      _p &= ~PFLAG_I;
@@ -81,3 +86,7 @@ TransferSX      _x = _s; flagNZ(_s);
 TransferXA      _a = _x; flagNZ(_x);
 TransferXS      _s = _x;
 TransferYA      _a = _y; flagNZ(_y);
+
+Nop             /* nop */
+
+JSR             _pc = (_addr | ((std::uint16_t)read(_pc) << 8));

@@ -150,7 +150,7 @@ end
 def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
 def make_reset; [['AddrSet_RESET', 'AddrImpl'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
 
-def make_branch(cond); [['AddrZero', cond, 'BranchTake'], 'BranchTake2', 'BranchTake3']; end
+def make_branch(cond); [['AddrZero', cond, 'BranchTake'], 'BranchTake2', 'Nop']; end
 
 def make_store_zero(prefix); [[prefix, 'AddrZero'], 'WriteRegZero']; end
 def make_store_zero_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'WriteRegZero']; end
@@ -170,27 +170,27 @@ def make_load_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'ReadReg
 def make_load_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'ReadReg']; end
 def make_load_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'ReadRegCarry', 'ReadReg']; end
 
-def make_arith_imm(op); [['TmpLoadImm', op]]; end
-def make_arith_zero(op); ['AddrZero', ['TmpLoadZero', op]]; end
-def make_arith_zero_x(op); ['AddrZero', 'AddrZeroX', ['TmpLoadZero', op]]; end
-def make_arith_absolute(op); ['AddrAbsLo', 'AddrAbsHi', ['TmpLoad', op]]; end
-def make_arith_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
-def make_arith_absolute_y(op); ['AddrAbsLo', 'AddrAbsHiY', ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
-def make_arith_indirect_x(op); ['AddrZero', 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', ['TmpLoad', op]]; end
-def make_arith_indirect_y(op); ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
+def make_arith_imm(prefix, op); [[prefix, 'TmpLoadImm', op]]; end
+def make_arith_zero(prefix, op); [[prefix, 'AddrZero'], ['TmpLoadZero', op]]; end
+def make_arith_zero_x(prefix, op); [[prefix, 'AddrZero'], 'AddrZeroX', ['TmpLoadZero', op]]; end
+def make_arith_absolute(prefix, op); [[prefix, 'AddrAbsLo'], 'AddrAbsHi', ['TmpLoad', op]]; end
+def make_arith_absolute_x(prefix, op); [[prefix, 'AddrAbsLo'], 'AddrAbsHiX', ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
+def make_arith_absolute_y(prefix, op); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
+def make_arith_indirect_x(prefix, op); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', ['TmpLoad', op]]; end
+def make_arith_indirect_y(prefix, op); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
 
 book = Rulebook.new
 book.read_templates ARGV[0]
 
-def build_arith_block(book, base, op)
-  book.add_rule base + 0x09, make_arith_imm(op)
-  book.add_rule base + 0x05, make_arith_zero(op)
-  book.add_rule base + 0x15, make_arith_zero_x(op)
-  book.add_rule base + 0x0d, make_arith_absolute(op)
-  book.add_rule base + 0x1d, make_arith_absolute_x(op)
-  book.add_rule base + 0x19, make_arith_absolute_y(op)
-  book.add_rule base + 0x01, make_arith_indirect_x(op)
-  book.add_rule base + 0x11, make_arith_indirect_y(op)
+def build_arith_block(book, base, prefix, op)
+  book.add_rule base + 0x09, make_arith_imm(prefix, op)
+  book.add_rule base + 0x05, make_arith_zero(prefix, op)
+  book.add_rule base + 0x15, make_arith_zero_x(prefix, op)
+  book.add_rule base + 0x0d, make_arith_absolute(prefix, op)
+  book.add_rule base + 0x1d, make_arith_absolute_x(prefix, op)
+  book.add_rule base + 0x19, make_arith_absolute_y(prefix, op)
+  book.add_rule base + 0x01, make_arith_indirect_x(prefix, op)
+  book.add_rule base + 0x11, make_arith_indirect_y(prefix, op)
 end
 
 0x103.times do |i|
@@ -200,6 +200,9 @@ end
 # Vectors
 book.add_rule 0x000, make_brk()
 book.add_rule 0x100, make_reset()
+
+# Jumps
+book.add_rule 0x20, ['AddrZero', 'Nop', 'PushPCH', 'PushPCL', 'JSR']
 
 # Flag instructions
 book.add_rule 0x18, ['FlagClearC']
@@ -219,7 +222,7 @@ book.add_rule 0x70, make_branch('BranchSetV')
 book.add_rule 0x90, make_branch('BranchClearC')
 book.add_rule 0xb0, make_branch('BranchSetC')
 book.add_rule 0xd0, make_branch('BranchClearZ')
-book.add_rule 0xe0, make_branch('BranchSetZ')
+book.add_rule 0xf0, make_branch('BranchSetZ')
 
 # Transfer
 book.add_rule 0xaa, [['AddrImpl', 'TransferAX']]
@@ -269,9 +272,25 @@ book.add_rule 0xac, make_load_absolute('SelectDestY')
 book.add_rule 0xbc, make_load_absolute_x('SelectDestY')
 
 # Arith
-build_arith_block(book, 0x00, 'ArithORA')
-build_arith_block(book, 0x20, 'ArithAND')
-build_arith_block(book, 0x40, 'ArithEOR')
+build_arith_block(book, 0x00, 'SelectDestA', 'OpORA')
+build_arith_block(book, 0x20, 'SelectDestA', 'OpAND')
+build_arith_block(book, 0x40, 'SelectDestA', 'OpEOR')
+build_arith_block(book, 0xc0, 'SelectDestA', 'OpCMP')
+
+# Compare-Index
+[['SelectDestX', 0xe0], ['SelectDestY', 0xc0]].each do |b|
+  prefix = b[0]
+  base = b[1]
+  book.add_rule base + 0x00, make_arith_imm(prefix, 'OpCMP')
+  book.add_rule base + 0x04, make_arith_zero(prefix, 'OpCMP')
+  book.add_rule base + 0x0c, make_arith_absolute(prefix, 'OpCMP')
+end
+
+# Misc
+book.add_rule 0xe8, ['INX']
+book.add_rule 0xc8, ['INY']
+book.add_rule 0xca, ['DEX']
+book.add_rule 0x88, ['DEY']
 
 book.optimize
 #book.dump
