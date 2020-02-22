@@ -63,6 +63,7 @@ OpORA        _regs[_selDst] |= tmp; flagNZ(_regs[_selDst]);
 OpAND        _regs[_selDst] &= tmp; flagNZ(_regs[_selDst]);
 OpEOR        _regs[_selDst] ^= tmp; flagNZ(_regs[_selDst]);
 OpCMP        _p &= ~PFLAG_C; _p |= (_regs[_selDst] >= tmp) ? PFLAG_C : 0; flagNZ(_regs[_selDst] - tmp);
+OpBIT        _p &= ~(PFLAG_Z | PFLAG_N | PFLAG_V); _p |= (tmp & 0xc0); _p |= ((_a & tmp) ? PFLAG_Z : 0);
 
 INX      flagNZ(++_x);
 INY      flagNZ(++_y);

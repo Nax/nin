@@ -23,7 +23,8 @@ class Rulebook
       return
     end
 
-    rule = rule.map {|r| r.is_a?(Array) ? r.flatten : [r]}
+    rule = rule.reject(&:nil?)
+    rule = rule.map {|r| r.is_a?(Array) ? r.flatten.reject(&:nil?) : [r]}
     next_step = nil
     rule[1..-1].reverse.each do |r|
       next_step = add_step(r, next_step)
@@ -286,6 +287,10 @@ build_arith_block(book, 0xc0, 'SelectDestA', 'OpCMP')
   book.add_rule base + 0x04, make_arith_zero(prefix, 'OpCMP')
   book.add_rule base + 0x0c, make_arith_absolute(prefix, 'OpCMP')
 end
+
+# Bit
+book.add_rule 0x24, make_arith_zero(nil, 'OpBIT')
+book.add_rule 0x2c, make_arith_absolute(nil, 'OpBIT')
 
 # Misc
 book.add_rule 0xe8, ['INX']
