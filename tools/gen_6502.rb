@@ -203,6 +203,7 @@ book.add_rule 0x100, make_reset()
 
 # Jumps
 book.add_rule 0x20, ['AddrZero', 'Nop', 'PushPCH', 'PushPCL', 'JSR']
+book.add_rule 0x60, ['AddrImpl', 'IncS', ['PullPCL', 'IncS'], 'PullPCH', ['AddrImpl', 'IncPC']]
 
 # Flag instructions
 book.add_rule 0x18, ['FlagClearC']

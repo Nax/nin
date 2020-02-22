@@ -10,6 +10,8 @@ AddrSet_RESET   _addr = 0xfffc;
 AddrSet_BRK     _addr = 0xfffe;
 
 DecS            _s--;
+IncS            _s++;
+IncPC           _pc++;
 
 AddrImpl            read(_pc);
 AddrImplIncPC       read(_pc++);
@@ -49,6 +51,9 @@ PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
 PushP           _memory.ram[0x100 | _s--] = _p;
 VectorPCL       _pc = ((_pc & 0xff00) | read(_addr));
 VectorPCH       _pc = ((_pc & 0x00ff) | ((std::uint16_t)read(_addr + 1)) << 8);
+
+PullPCL         _pc = (_pc & 0xff00) | _memory.ram[0x100 | _s];
+PullPCH         _pc = (_pc & 0x00ff) | ((std::uint16_t)_memory.ram[0x100 | _s] << 8);
 
 ImmLoadA        _a = read(_pc++); flagNZ(_a);
 ImmLoadX        _x = read(_pc++); flagNZ(_x);
