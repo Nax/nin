@@ -150,6 +150,7 @@ end
 
 def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
 def make_reset; [['AddrSet_RESET', 'AddrImpl'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
+def make_nmi; [['AddrSet_NMI', 'AddrImpl'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
 
 def make_branch(cond); [['AddrZero', cond, 'BranchTake'], 'BranchTake2', 'Nop']; end
 
@@ -180,6 +181,12 @@ def make_arith_absolute_y(prefix, op); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', ['T
 def make_arith_indirect_x(prefix, op); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', ['TmpLoad', op]]; end
 def make_arith_indirect_y(prefix, op); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
 
+def make_rmw_acc(op); [['AddrImpl', 'TmpLoadAcc', op, 'TmpStoreAcc']]; end
+def make_rmw_zero(op); ['AddrZero', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStoreZero']; end
+def make_rmw_zero_x(op); ['AddrZero', 'AddrZeroX', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStoreZero']; end
+def make_rmw_absolute(op); ['AddrAbsLo', 'AddrAbsHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+def make_rmw_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'AddrCarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+
 book = Rulebook.new
 book.read_templates ARGV[0]
 
@@ -194,6 +201,18 @@ def build_arith_block(book, base, prefix, op)
   book.add_rule base + 0x11, make_arith_indirect_y(prefix, op)
 end
 
+def build_rmw_noacc_block(book, base, op)
+  book.add_rule base + 0x06, make_rmw_zero(op)
+  book.add_rule base + 0x16, make_rmw_zero_x(op)
+  book.add_rule base + 0x0e, make_rmw_absolute(op)
+  book.add_rule base + 0x1e, make_rmw_absolute_x(op)
+end
+
+def build_rmw_block(book, base, op)
+  book.add_rule base + 0x0a, make_rmw_acc(op)
+  build_rmw_noacc_block(book, base, op)
+end
+
 0x103.times do |i|
   book.add_rule(i, :kill)
 end
@@ -201,9 +220,15 @@ end
 # Vectors
 book.add_rule 0x000, make_brk()
 book.add_rule 0x100, make_reset()
+book.add_rule 0x102, make_nmi()
+
+# Stack
+book.add_rule 0x48, ['AddrImpl', 'PushA']
+book.add_rule 0x68, ['AddrImpl', 'IncS', 'PullA']
 
 # Jumps
-book.add_rule 0x20, ['AddrZero', 'Nop', 'PushPCH', 'PushPCL', 'JSR']
+book.add_rule 0x20, ['AddrZero', 'Nop', 'PushPCH', 'PushPCL', 'SwitchPC']
+book.add_rule 0x4c, ['AddrZero', 'SwitchPC']
 book.add_rule 0x60, ['AddrImpl', 'IncS', ['PullPCL', 'IncS'], 'PullPCH', ['AddrImpl', 'IncPC']]
 
 # Flag instructions
@@ -287,6 +312,11 @@ build_arith_block(book, 0xc0, 'SelectDestA', 'OpCMP')
   book.add_rule base + 0x04, make_arith_zero(prefix, 'OpCMP')
   book.add_rule base + 0x0c, make_arith_absolute(prefix, 'OpCMP')
 end
+
+# RMW
+build_rmw_block book, 0x40, 'OpLSR'
+build_rmw_noacc_block book, 0xe0, 'OpINC'
+build_rmw_noacc_block book, 0xc0, 'OpDEC'
 
 # Bit
 book.add_rule 0x24, make_arith_zero(nil, 'OpBIT')

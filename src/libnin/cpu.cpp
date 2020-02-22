@@ -72,9 +72,18 @@ std::size_t CPU::tick(std::size_t cycles)
 
 CPU::Handler CPU::dispatch()
 {
-    std::uint8_t op;
+    std::uint16_t op;
 
-    op = read(_pc++);
+    if (!_nmi.high())
+    {
+        op = read(_pc++);
+    }
+    else
+    {
+        op = 0x102;
+        _nmi.ack();
+    }
+
     return kStates[op];
 }
 

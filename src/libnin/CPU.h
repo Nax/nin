@@ -114,6 +114,7 @@ private:
             std::uint8_t    _s;
         };
     };
+    std::uint8_t    _rmw;
     std::uint8_t    _addrCarry;
     std::uint8_t    _selSrc;
     std::uint8_t    _selDst;

@@ -6,6 +6,7 @@ SelectDestA     _selDst = REG_A;
 SelectDestX     _selDst = REG_X;
 SelectDestY     _selDst = REG_Y;
 
+AddrSet_NMI     _addr = 0xfffa;
 AddrSet_RESET   _addr = 0xfffc;
 AddrSet_BRK     _addr = 0xfffe;
 
@@ -30,9 +31,20 @@ AddrIndirectLo      _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8);
 AddrIndirectHi      _addr = (_addr >> 8) | ((std::uint16_t)_memory.ram[(_addr + 1) & 0xff] << 8);
 AddrIndirectY       _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (_addr & 0xff00) | ((_addr + _y) & 0xff);
 
+DummyLoad           read(_addr);
+
 TmpLoad             std::uint8_t tmp = read(_addr);
 TmpLoadImm          std::uint8_t tmp = read(_pc++);
 TmpLoadZero         std::uint8_t tmp = _memory.ram[_addr];
+TmpLoadAcc          std::uint8_t tmp = _a;
+TmpLoadRmw          std::uint8_t tmp = _rmw;
+TmpStoreAcc         _a = tmp;
+TmpStoreRmw         _rmw = tmp;
+
+RmwLoad             _rmw = read(_addr);
+RmwLoadZero         _rmw = _memory.ram[_addr];
+RmwStore            write(_addr, _rmw);
+RmwStoreZero        _memory.ram[_addr] = _rmw;
 
 BranchClearC    if (_p & PFLAG_C) { return (Handler)&CPU::dispatch; }
 BranchClearN    if (_p & PFLAG_N) { return (Handler)&CPU::dispatch; }
@@ -49,6 +61,8 @@ BranchTake2     if (!_addrCarry) return (Handler)&CPU::dispatch; _pc = _pc + (st
 PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8);
 PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
 PushP           _memory.ram[0x100 | _s--] = _p;
+PushA           _memory.ram[0x100 | _s--] = _a;
+PullA           _a = _memory.ram[0x100 | _s];
 VectorPCL       _pc = ((_pc & 0xff00) | read(_addr));
 VectorPCH       _pc = ((_pc & 0x00ff) | ((std::uint16_t)read(_addr + 1)) << 8);
 
@@ -64,6 +78,10 @@ OpAND        _regs[_selDst] &= tmp; flagNZ(_regs[_selDst]);
 OpEOR        _regs[_selDst] ^= tmp; flagNZ(_regs[_selDst]);
 OpCMP        _p &= ~PFLAG_C; _p |= (_regs[_selDst] >= tmp) ? PFLAG_C : 0; flagNZ(_regs[_selDst] - tmp);
 OpBIT        _p &= ~(PFLAG_Z | PFLAG_N | PFLAG_V); _p |= (tmp & 0xc0); _p |= ((_a & tmp) ? PFLAG_Z : 0);
+
+OpINC       flagNZ(++tmp);
+OpDEC       flagNZ(--tmp);
+OpLSR       _p &= ~(PFLAG_N | PFLAG_Z | PFLAG_C); _p |= ((tmp & 0x01) ? PFLAG_C : 0); tmp >>= 1; _p |= (tmp ? 0 : PFLAG_Z);
 
 INX      flagNZ(++_x);
 INY      flagNZ(++_y);
@@ -95,4 +113,4 @@ TransferYA      _a = _y; flagNZ(_y);
 
 Nop             /* nop */
 
-JSR             _pc = (_addr | ((std::uint16_t)read(_pc) << 8));
+SwitchPC       _pc = (_addr | ((std::uint16_t)read(_pc) << 8));
