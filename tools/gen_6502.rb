@@ -148,8 +148,9 @@ class Rulebook
   end
 end
 
-def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP', 'DecS'], 'VectorPCL', 'VectorPCH']; end
-def make_reset; [['AddrSet_RESET', 'AddrImpl'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
+def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP', 'DecS', 'FlagSetI'], 'VectorPCL', 'VectorPCH']; end
+def make_reset; [['AddrSet_RESET', 'AddrImpl', 'FlagSetI'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
+def make_irq; [['AddrSet_BRK', 'AddrImpl'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP_NoB', 'DecS', 'FlagSetI'], 'VectorPCL', 'VectorPCH']; end
 def make_nmi; [['AddrSet_NMI', 'AddrImpl'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP_NoB', 'DecS'], 'VectorPCL', 'VectorPCH']; end
 
 def make_branch(cond); [['AddrZero', cond, 'BranchTake'], 'BranchTake2', 'Nop']; end

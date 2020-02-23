@@ -5,7 +5,7 @@ using namespace libnin;
 
 template<> CPU::Handler CPU::instruction<0x103>(void) { _pc = ((_pc & 0x00ff) | (((std::uint16_t)read(_addr + 1)) << 8)); return ((Handler)&CPU::dispatch); }
 template<> CPU::Handler CPU::instruction<0x104>(void) { _pc = ((_pc & 0xff00) | read(_addr)); return ((Handler)&CPU::instruction<0x103>); }
-template<> CPU::Handler CPU::instruction<0x105>(void) { _memory.ram[0x100 | _s] = _p | PFLAG_1 | PFLAG_B; _s--; return ((Handler)&CPU::instruction<0x104>); }
+template<> CPU::Handler CPU::instruction<0x105>(void) { _memory.ram[0x100 | _s] = _p | PFLAG_1 | PFLAG_B; _s--; _p |= PFLAG_I; return ((Handler)&CPU::instruction<0x104>); }
 template<> CPU::Handler CPU::instruction<0x106>(void) { _memory.ram[0x100 | _s] = (_pc & 0xff); _s--; return ((Handler)&CPU::instruction<0x105>); }
 template<> CPU::Handler CPU::instruction<0x107>(void) { _memory.ram[0x100 | _s] = (_pc >> 8); _s--; return ((Handler)&CPU::instruction<0x106>); }
 template<> CPU::Handler CPU::instruction<0x108>(void) { _s--; return ((Handler)&CPU::instruction<0x104>); }
@@ -444,7 +444,7 @@ template<> CPU::Handler CPU::instruction<0x0fc>(void) { return debug_not_impl(0x
 template<> CPU::Handler CPU::instruction<0x0fd>(void) { _selDst = REG_A; _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x180>); }
 template<> CPU::Handler CPU::instruction<0x0fe>(void) { _addr = ((_addr & 0xff00) | read(_pc++)); return ((Handler)&CPU::instruction<0x1b0>); }
 template<> CPU::Handler CPU::instruction<0x0ff>(void) { return debug_not_impl(0x0ff); }
-template<> CPU::Handler CPU::instruction<0x100>(void) { _addr = 0xfffc; read(_pc); return ((Handler)&CPU::instruction<0x10a>); }
+template<> CPU::Handler CPU::instruction<0x100>(void) { _addr = 0xfffc; read(_pc); _p |= PFLAG_I; return ((Handler)&CPU::instruction<0x10a>); }
 template<> CPU::Handler CPU::instruction<0x101>(void) { return debug_not_impl(0x101); }
 template<> CPU::Handler CPU::instruction<0x102>(void) { _addr = 0xfffa; read(_pc); return ((Handler)&CPU::instruction<0x10d>); }
 
