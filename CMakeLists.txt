@@ -86,6 +86,7 @@ else()
     project(Nin VERSION "${VERSION}" LANGUAGES C CXX)
 
     set (CMAKE_CXX_STANDARD 17)
+    set (CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
     if (NOT MSVC)
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fomit-frame-pointer -fstrict-aliasing")
