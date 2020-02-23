@@ -221,6 +221,7 @@ end
 # Vectors
 book.add_rule 0x000, make_brk()
 book.add_rule 0x100, make_reset()
+book.add_rule 0x101, make_irq()
 book.add_rule 0x102, make_nmi()
 
 # Stack

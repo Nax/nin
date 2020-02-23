@@ -77,20 +77,22 @@ CPU::Handler CPU::dispatch()
 {
     std::uint16_t op;
 
-    if (!_nmi.high())
+    if (!_nmi.high() && !(_irq.high() && !(_p & PFLAG_I)))
     {
         op = read(_pc++);
     }
     else
     {
-        //std::printf("--- NMI ---\n");
-        //std::fflush(stdout);
-        op = 0x102;
-        _nmi.ack();
+        if (_nmi.high())
+        {
+            op = 0x102;
+            _nmi.ack();
+        }
+        else
+        {
+            op = 0x101;
+        }
     }
-
-    //std::printf("%04X OP:%02X A:%02X X:%02X Y:%02X P:%02X S:%02X\n", _pc, op, _a, _x, _y, _p | PFLAG_1, _s);
-    //std::fflush(stdout);
 
     return kStates[op];
 }
