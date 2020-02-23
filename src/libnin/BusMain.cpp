@@ -97,7 +97,7 @@ std::uint8_t BusMain::read(std::uint16_t addr)
     }
 }
 
-void BusMain::write(std::uint16_t addr, std::uint8_t value)
+WriteAction BusMain::write(std::uint16_t addr, std::uint8_t value)
 {
     std::uint8_t tmp;
 
@@ -106,11 +106,11 @@ void BusMain::write(std::uint16_t addr, std::uint8_t value)
     case 0x0:
     case 0x1:
         _memory.ram[addr & 0x7ff] = value;
-        return;
+        return WriteAction::None;
     case 0x2:
     case 0x3:
         _ppu.regWrite(addr, value);
-        return;
+        return WriteAction::None;
     case 0x4:
         switch (addr)
         {
@@ -137,27 +137,13 @@ void BusMain::write(std::uint16_t addr, std::uint8_t value)
         case 0x4015:
         case 0x4017:
             _apu.regWrite(addr, value);
-            return;
+            return WriteAction::None;
         case 0x4014:
-            // DMA
-            // FIXME: Hack
-            addr = value << 8;
-            //_ppu.tick(3);
-            //_apu.tick(1);
-            for (int i = 0; i < 256; ++i)
-            {
-                tmp = read(addr | i);
-                //_ppu.tick(3);
-                //_apu.tick(1);
-                _ppu.oamWrite(tmp);
-                //_ppu.tick(3);
-                //_apu.tick(1);
-            }
-            return;
+            return WriteAction::DMA;
         case 0x4016:
             // JOY STROBE
             _input.poll(!!(value & 0x01));
-            return;
+            return WriteAction::None;
         case 0x4018:
         case 0x4019:
         case 0x401a:
@@ -166,19 +152,19 @@ void BusMain::write(std::uint16_t addr, std::uint8_t value)
         case 0x401d:
         case 0x401e:
         case 0x401f:
-            return;
+            return WriteAction::None;
         default:
-            return;
+            return WriteAction::None;
         }
     case 0x5:
-        return;
+        return WriteAction::None;
     case 0x6:
     case 0x7:
     {
         auto& seg = _cart.segment(CART_PRG_RAM);
         if (seg.base)
             seg.base[addr & 0x1fff] = value;
-        return;
+        return WriteAction::None;
     }
     case 0x8:
     case 0x9:
@@ -189,8 +175,10 @@ void BusMain::write(std::uint16_t addr, std::uint8_t value)
     case 0xe:
     case 0xf:
         _mapper.write(addr, value);
-        return;
+        return WriteAction::None;
     }
+
+    return WriteAction::None;
 }
 
 static bool memoryExtractOverlap(std::uint16_t start, std::size_t len, std::uint16_t regionStart, std::size_t regionLen, std::uint16_t* overlapOffset, std::size_t* overlapLen, std::uint16_t* overlapOffsetInDest)

@@ -108,7 +108,7 @@ class Rulebook
       #tpl = "return #{ref_step(index)};"
     else
       next_step = ref_step(step[1]);
-      tpl = (step[0].map{|x| (@templates[x] or raise StandardError, "Missing template: #{x}")} + ["return #{next_step};"]).join(" ")
+      tpl = (["Handler next = #{next_step};"] + step[0].map{|x| (@templates[x] or raise StandardError, "Missing template: #{x}")} + ["return next;"]).join(" ")
     end
     str = "template<> CPU::Handler CPU::instruction<#{"0x%03x" % index}>(void) { #{tpl} }\n"
     str

@@ -97,6 +97,24 @@ CPU::Handler CPU::dispatch()
     return kStates[op];
 }
 
+CPU::Handler CPU::dma()
+{
+    return (Handler)&CPU::dmaRead;
+}
+
+CPU::Handler CPU::dmaRead()
+{
+    _dmaValue = read(_dmaAddr++);
+    return (Handler)&CPU::dmaWrite;
+}
+
+CPU::Handler CPU::dmaWrite()
+{
+    _ppu.oamWrite(_dmaValue);
+    _dmaCount++;
+    return _dmaCount ? (Handler)&CPU::dmaRead : _handler2;
+}
+
 CPU::Handler CPU::debug_not_impl(std::uint16_t index)
 {
     char tmp[4096];
@@ -120,9 +138,17 @@ std::uint8_t CPU::read(std::uint16_t addr)
     return _bus.read(addr);
 }
 
-void CPU::write(std::uint16_t addr, std::uint8_t value)
+CPU::Handler CPU::write(std::uint16_t addr, std::uint8_t value, Handler next)
 {
-    _bus.write(addr, value);
+    switch (_bus.write(addr, value))
+    {
+    case WriteAction::DMA:
+        _handler2 = next;
+        _dmaAddr = ((std::uint16_t)value << 8);
+        _dmaCount = 0;
+        return (Handler)&CPU::dma;
+    }
+    return next;
 }
 
 std::uint8_t CPU::adc(std::uint8_t a, std::uint8_t b)

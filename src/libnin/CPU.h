@@ -77,11 +77,15 @@ private:
     template <std::uint16_t> Handler instruction(void);
 
     Handler dispatch();
+    Handler dma();
+    Handler dmaRead();
+    Handler dmaWrite();
+
     Handler debug_not_impl(std::uint16_t);
     void    debug(std::uint16_t value);
 
     std::uint8_t    read(std::uint16_t addr);
-    void            write(std::uint16_t addr, std::uint8_t value);
+    Handler         write(std::uint16_t addr, std::uint8_t value, Handler next);
     std::uint8_t    adc(std::uint8_t a, std::uint8_t b);
 
     void flagNZ(std::uint8_t value)
@@ -101,6 +105,7 @@ private:
     BusMain&    _bus;
 
     Handler         _handler;
+    Handler         _handler2;
     std::size_t     _cyc;
     std::uint16_t   _pc;
     std::uint16_t   _addr;
@@ -121,6 +126,9 @@ private:
     std::uint8_t    _selDst;
     std::uint8_t    _p;
     std::uint8_t    _p2;
+    std::uint16_t   _dmaAddr;
+    std::uint8_t    _dmaCount;
+    std::uint8_t    _dmaValue;
     bool            _nmi2:1;
     bool            _reset:1;
 };

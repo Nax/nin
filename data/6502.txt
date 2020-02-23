@@ -43,7 +43,7 @@ TmpStoreRmw         _rmw = tmp;
 
 RmwLoad             _rmw = read(_addr);
 RmwLoadZero         _rmw = _memory.ram[_addr];
-RmwStore            write(_addr, _rmw);
+RmwStore            next = write(_addr, _rmw, next);
 RmwStoreZero        _memory.ram[_addr] = _rmw;
 
 BranchClearC    if (_p & PFLAG_C) { return (Handler)&CPU::dispatch; }
@@ -105,7 +105,7 @@ FlagSetC        _p |= PFLAG_C;
 FlagSetI        _p |= PFLAG_I;
 FlagSetD        _p |= PFLAG_D;
 
-WriteReg        write(_addr, _regs[_selSrc]);
+WriteReg        next = write(_addr, _regs[_selSrc], next);
 WriteRegZero    _memory.ram[_addr] = _regs[_selSrc];
 
 ReadReg         _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]);
