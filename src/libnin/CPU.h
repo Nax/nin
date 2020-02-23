@@ -81,7 +81,8 @@ private:
     void    debug(std::uint16_t value);
 
     std::uint8_t    read(std::uint16_t addr);
-    void            write(std::uint16_t addr, uint8_t value);
+    void            write(std::uint16_t addr, std::uint8_t value);
+    std::uint8_t    adc(std::uint8_t a, std::uint8_t b);
 
     void flagNZ(std::uint8_t value)
     {

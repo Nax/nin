@@ -47,12 +47,15 @@ CPU::CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
 , _bus{bus}
 , _handler{(Handler)&CPU::instruction<0x100>}
 , _pc{}
+//, _handler((Handler)&CPU::dispatch)
+//, _pc{0xc000}
 , _addr{}
 , _regs{}
-, _p{}
+, _s{0xfd}
+, _p{PFLAG_I}
 , _p2{}
 , _nmi2{}
-, _reset{ true }
+, _reset{true}
 {
 
 }
@@ -80,9 +83,14 @@ CPU::Handler CPU::dispatch()
     }
     else
     {
+        //std::printf("--- NMI ---\n");
+        //std::fflush(stdout);
         op = 0x102;
         _nmi.ack();
     }
+
+    //std::printf("%04X OP:%02X A:%02X X:%02X Y:%02X P:%02X S:%02X\n", _pc, op, _a, _x, _y, _p | PFLAG_1, _s);
+    //std::fflush(stdout);
 
     return kStates[op];
 }
@@ -113,4 +121,21 @@ std::uint8_t CPU::read(std::uint16_t addr)
 void CPU::write(std::uint16_t addr, std::uint8_t value)
 {
     _bus.write(addr, value);
+}
+
+std::uint8_t CPU::adc(std::uint8_t a, std::uint8_t b)
+{
+    std::uint16_t sum;
+    std::uint8_t carryIn;
+
+    carryIn = (_p & PFLAG_C) ? 1 : 0;
+    sum = (std::uint16_t)a + (std::uint16_t)b + (std::uint16_t)carryIn;
+
+    _p &= ~(PFLAG_C | PFLAG_V | PFLAG_N | PFLAG_Z);
+    if (sum & 0x100) _p |= PFLAG_C;
+    if ((sum & 0xff) == 0) _p |= PFLAG_Z;
+    if ((a ^ sum) & (b ^ sum) & 0x80) _p |= PFLAG_V;
+    if (sum & 0x80) _p |= PFLAG_N;
+
+    return (sum & 0xff);
 }

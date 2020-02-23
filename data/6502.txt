@@ -55,19 +55,22 @@ BranchSetN      if (!(_p & PFLAG_N)) { return (Handler)&CPU::dispatch; }
 BranchSetV      if (!(_p & PFLAG_V)) { return (Handler)&CPU::dispatch; }
 BranchSetZ      if (!(_p & PFLAG_Z)) { return (Handler)&CPU::dispatch; }
 
-BranchTake      _addrCarry = (((_pc + (std::int8_t)_addr) ^ _pc) & 0xff00) ? 1 : 0; _pc = ((_pc & 0xff00) | ((_pc + (std::int8_t)_addr) & 0xff));
-BranchTake2     if (!_addrCarry) return (Handler)&CPU::dispatch; _pc = _pc + (std::int8_t)_addr;
+BranchTake      _addrCarry = (((_pc + (std::int8_t)_addr) ^ _pc) & 0xff00) ? 1 : 0; _addr = _pc + (std::int8_t)_addr; _pc = ((_pc & 0xff00) | (_addr & 0xff));
+BranchTake2     if (!_addrCarry) return (Handler)&CPU::dispatch; _pc = _addr;
 
-PushPCH         _memory.ram[0x100 | _s--] = (_pc >> 8);
-PushPCL         _memory.ram[0x100 | _s--] = (_pc & 0xff);
-PushP           _memory.ram[0x100 | _s--] = _p;
-PushA           _memory.ram[0x100 | _s--] = _a;
-PullA           _a = _memory.ram[0x100 | _s];
-VectorPCL       _pc = ((_pc & 0xff00) | read(_addr));
-VectorPCH       _pc = ((_pc & 0x00ff) | ((std::uint16_t)read(_addr + 1)) << 8);
-
+PushPCL         _memory.ram[0x100 | _s] = (_pc & 0xff);
+PushPCH         _memory.ram[0x100 | _s] = (_pc >> 8);
+PushP           _memory.ram[0x100 | _s] = _p | PFLAG_1 | PFLAG_B;
+PushP_NoB       _memory.ram[0x100 | _s] = _p | PFLAG_1;
+PushA           _memory.ram[0x100 | _s] = _a;
 PullPCL         _pc = (_pc & 0xff00) | _memory.ram[0x100 | _s];
 PullPCH         _pc = (_pc & 0x00ff) | ((std::uint16_t)_memory.ram[0x100 | _s] << 8);
+PullP           _p = _memory.ram[0x100 | _s] & ~(PFLAG_1 | PFLAG_B);
+PullA           _a = _memory.ram[0x100 | _s]; flagNZ(_a);
+
+VectorPCL           _pc = ((_pc & 0xff00) | read(_addr));
+VectorPCH           _pc = ((_pc & 0x00ff) | (((std::uint16_t)read(_addr + 1)) << 8));
+VectorPCH_NoCarry   _pc = ((_pc & 0x00ff) | ((std::uint16_t)read((_addr & 0xff00) | ((_addr + 1) & 0xff))) << 8);
 
 ImmLoadA        _a = read(_pc++); flagNZ(_a);
 ImmLoadX        _x = read(_pc++); flagNZ(_x);
@@ -77,11 +80,16 @@ OpORA        _regs[_selDst] |= tmp; flagNZ(_regs[_selDst]);
 OpAND        _regs[_selDst] &= tmp; flagNZ(_regs[_selDst]);
 OpEOR        _regs[_selDst] ^= tmp; flagNZ(_regs[_selDst]);
 OpCMP        _p &= ~PFLAG_C; _p |= (_regs[_selDst] >= tmp) ? PFLAG_C : 0; flagNZ(_regs[_selDst] - tmp);
-OpBIT        _p &= ~(PFLAG_Z | PFLAG_N | PFLAG_V); _p |= (tmp & 0xc0); _p |= ((_a & tmp) ? PFLAG_Z : 0);
+OpBIT        _p &= ~(PFLAG_Z | PFLAG_N | PFLAG_V); _p |= (tmp & 0xc0); _p |= ((_a & tmp) ? 0 : PFLAG_Z);
+OpADC       _a = adc(_a, tmp);
+OpSBC       _a = adc(_a, ~tmp);
 
 OpINC       flagNZ(++tmp);
 OpDEC       flagNZ(--tmp);
+OpASL       _p &= ~PFLAG_C; _p |= ((tmp & 0x80) ? PFLAG_C : 0); tmp <<= 1; flagNZ(tmp);
 OpLSR       _p &= ~(PFLAG_N | PFLAG_Z | PFLAG_C); _p |= ((tmp & 0x01) ? PFLAG_C : 0); tmp >>= 1; _p |= (tmp ? 0 : PFLAG_Z);
+OpROL       std::uint8_t c = (_p & PFLAG_C ? 0x01 : 0x00); _p &= ~PFLAG_C; _p |= ((tmp & 0x80) ? PFLAG_C : 0); tmp = ((tmp << 1) | c); flagNZ(tmp);
+OpROR       std::uint8_t c = (_p & PFLAG_C ? 0x80 : 0x00); _p &= ~PFLAG_C; _p |= ((tmp & 0x01) ? PFLAG_C : 0); tmp = ((tmp >> 1) | c); flagNZ(tmp);
 
 INX      flagNZ(++_x);
 INY      flagNZ(++_y);
@@ -101,8 +109,10 @@ WriteReg        write(_addr, _regs[_selSrc]);
 WriteRegZero    _memory.ram[_addr] = _regs[_selSrc];
 
 ReadReg         _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]);
-ReadRegCarry    _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]); _addr += ((std::uint16_t)_addrCarry << 8); if (_addrCarry) return ((Handler)&CPU::dispatch);
+ReadRegCarry    _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]); _addr += ((std::uint16_t)_addrCarry << 8); if (!_addrCarry) return ((Handler)&CPU::dispatch);
 ReadRegZero     _regs[_selDst] = _memory.ram[_addr]; flagNZ(_regs[_selDst]);
+
+CarryFix        _addr += ((std::uint16_t)_addrCarry << 8);
 
 TransferAX      _x = _a; flagNZ(_a);
 TransferAY      _y = _a; flagNZ(_a);
@@ -113,4 +123,4 @@ TransferYA      _a = _y; flagNZ(_y);
 
 Nop             /* nop */
 
-SwitchPC       _pc = (_addr | ((std::uint16_t)read(_pc) << 8));
+SwitchPC            _pc = (_addr | ((std::uint16_t)read(_pc) << 8));

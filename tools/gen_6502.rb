@@ -148,9 +148,9 @@ class Rulebook
   end
 end
 
-def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
+def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP', 'DecS'], 'VectorPCL', 'VectorPCH']; end
 def make_reset; [['AddrSet_RESET', 'AddrImpl'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
-def make_nmi; [['AddrSet_NMI', 'AddrImpl'], 'PushPCH', 'PushPCL', 'PushP', 'VectorPCL', 'VectorPCH']; end
+def make_nmi; [['AddrSet_NMI', 'AddrImpl'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP_NoB', 'DecS'], 'VectorPCL', 'VectorPCH']; end
 
 def make_branch(cond); [['AddrZero', cond, 'BranchTake'], 'BranchTake2', 'Nop']; end
 
@@ -185,7 +185,7 @@ def make_rmw_acc(op); [['AddrImpl', 'TmpLoadAcc', op, 'TmpStoreAcc']]; end
 def make_rmw_zero(op); ['AddrZero', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStoreZero']; end
 def make_rmw_zero_x(op); ['AddrZero', 'AddrZeroX', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStoreZero']; end
 def make_rmw_absolute(op); ['AddrAbsLo', 'AddrAbsHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
-def make_rmw_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'AddrCarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+def make_rmw_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 
 book = Rulebook.new
 book.read_templates ARGV[0]
@@ -223,13 +223,18 @@ book.add_rule 0x100, make_reset()
 book.add_rule 0x102, make_nmi()
 
 # Stack
-book.add_rule 0x48, ['AddrImpl', 'PushA']
+book.add_rule 0x08, ['AddrImpl', ['PushP', 'DecS']]
+book.add_rule 0x28, ['AddrImpl', 'IncS', 'PullP']
+book.add_rule 0x48, ['AddrImpl', ['PushA', 'DecS']]
 book.add_rule 0x68, ['AddrImpl', 'IncS', 'PullA']
 
 # Jumps
-book.add_rule 0x20, ['AddrZero', 'Nop', 'PushPCH', 'PushPCL', 'SwitchPC']
-book.add_rule 0x4c, ['AddrZero', 'SwitchPC']
+book.add_rule 0x20, ['AddrZero', 'Nop', ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], 'SwitchPC']
+book.add_rule 0x40, ['AddrImpl', 'IncS', ['PullP', 'IncS'], ['PullPCL', 'IncS'], 'PullPCH']
 book.add_rule 0x60, ['AddrImpl', 'IncS', ['PullPCL', 'IncS'], 'PullPCH', ['AddrImpl', 'IncPC']]
+
+book.add_rule 0x4c, ['AddrZero', 'SwitchPC']
+book.add_rule 0x6c, ['AddrAbsLo', 'AddrAbsHi', 'VectorPCL', 'VectorPCH_NoCarry']
 
 # Flag instructions
 book.add_rule 0x18, ['FlagClearC']
@@ -303,6 +308,8 @@ build_arith_block(book, 0x00, 'SelectDestA', 'OpORA')
 build_arith_block(book, 0x20, 'SelectDestA', 'OpAND')
 build_arith_block(book, 0x40, 'SelectDestA', 'OpEOR')
 build_arith_block(book, 0xc0, 'SelectDestA', 'OpCMP')
+build_arith_block(book, 0x60, 'SelectDestA', 'OpADC')
+build_arith_block(book, 0xe0, 'SelectDestA', 'OpSBC')
 
 # Compare-Index
 [['SelectDestX', 0xe0], ['SelectDestY', 0xc0]].each do |b|
@@ -314,7 +321,11 @@ build_arith_block(book, 0xc0, 'SelectDestA', 'OpCMP')
 end
 
 # RMW
+build_rmw_block book, 0x00, 'OpASL'
+build_rmw_block book, 0x20, 'OpROL'
 build_rmw_block book, 0x40, 'OpLSR'
+build_rmw_block book, 0x60, 'OpROR'
+
 build_rmw_noacc_block book, 0xe0, 'OpINC'
 build_rmw_noacc_block book, 0xc0, 'OpDEC'
 
@@ -327,6 +338,7 @@ book.add_rule 0xe8, ['INX']
 book.add_rule 0xc8, ['INY']
 book.add_rule 0xca, ['DEX']
 book.add_rule 0x88, ['DEY']
+book.add_rule 0xea, [['Nop', 'Nop']]
 
 book.optimize
 #book.dump
