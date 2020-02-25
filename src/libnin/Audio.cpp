@@ -27,6 +27,7 @@
  */
 
 #include <cmath>
+#include <cstring>
 #include <libnin/Audio.h>
 #include <libnin/HardwareInfo.h>
 
@@ -38,11 +39,8 @@ Audio::Audio(const HardwareInfo& info)
 , _callbackArg(nullptr)
 , _targetFrequency(0)
 , _accumulator(0)
-, _samplesCursor(0)
-, _loPassX{}
-, _loPassY{}
-, _hiPassX{}
-, _hiPassY{}
+, _samplesCursor{kLowPassFilterWidth / 2}
+, _samplesRaw{}
 {
 
 }
@@ -66,75 +64,60 @@ void Audio::setTargetFrequency(std::uint32_t freq)
 void Audio::push(float sample)
 {
     /* We push samples into a ring buffer */
-    sample = loPass(sample);
-    _accumulator += _targetFrequency;
+    //sample = loPass(sample);
+    _accumulator += kTargetFrequencyRaw;
     if (_accumulator >= _info.specs().clockRate)
     {
-        sample = hiPass(sample);
+        //sample = hiPass(sample);
         _accumulator -= _info.specs().clockRate;
-        _samples[_samplesCursor++] = sample;
-        if (_samplesCursor >= NIN_AUDIO_SAMPLE_SIZE)
+        _samplesRaw[_samplesCursor++] = sample;
+        if (_samplesCursor >= kMaxRawSamples)
         {
-            _samplesCursor = 0;
+            resample();
+            std::memmove(_samplesRaw, _samplesRaw + NIN_AUDIO_SAMPLE_SIZE * kOversampling, kLowPassFilterWidth * sizeof(float));
+            _samplesCursor = kLowPassFilterWidth;
             if (_callback)
                 _callback(_callbackArg, _samples);
         }
     }
 }
 
-double Audio::loPass(double sample)
+void Audio::resample()
 {
-    static constexpr const double kGain = 6.259598570e+07;
+    static const float kImpulse[kLowPassFilterWidth] = {
+         0,                      0,                     -0.000527072017573503,  -0.00110984739000885,
+        -0.00170674802675828,   -0.00227100929579603,   -0.00275226865376297,   -0.00309836514905645,
+        -0.00325728724657753,   -0.00317919910449467,   -0.00281847067702838,   -0.00213563505184364,
+        -0.00109919737827612,    0.000312776387504284,   0.00211135600758337,    0.00429578455840068,
+         0.00685290133382793,    0.00975698086212377,    0.0129700040415945,     0.0164423617746781,
+         0.0201139756195018,     0.0239158044840333,     0.0277716918543809,     0.0316004950372129,
+         0.0353184269141432,     0.0388415321863768,     0.0420882143723709,     0.0449817271456541,
+         0.0474525440849641,     0.0494405245547295,     0.0508968001199147,     0.0517853153879127,
+         0.0520839691162109,     0.0517853153879127,     0.0508968001199147,     0.0494405245547295,
+         0.0474525440849641,     0.0449817271456541,     0.0420882143723709,     0.0388415321863768,
+         0.0353184269141432,     0.0316004950372129,     0.0277716918543809,     0.0239158044840333,
+         0.0201139756195018,     0.0164423617746781,     0.0129700040415945,     0.00975698086212377,
+         0.00685290133382793,    0.00429578455840068,    0.00211135600758337,    0.000312776387504284,
+        -0.00109919737827612,   -0.00213563505184364,   -0.00281847067702838,   -0.00317919910449468,
+        -0.00325728724657753,   -0.00309836514905645,   -0.00275226865376297,   -0.00227100929579603,
+        -0.00170674802675828,   -0.00110984739000886,   -0.000527072017573502,  -1.17681181491811e-018
+    };
 
-    _loPassX[0] = _loPassX[1];
-    _loPassX[1] = _loPassX[2];
-    _loPassX[2] = _loPassX[3];
-    _loPassX[3] = _loPassX[4];
-    _loPassX[4] = _loPassX[5];
+    float avg = 0;
+    for (unsigned i = 0; i < NIN_AUDIO_SAMPLE_SIZE; ++i)
+    {
+        float acc = 0;
 
-    _loPassX[5] = sample / kGain;
-
-    _loPassY[0] = _loPassY[1];
-    _loPassY[1] = _loPassY[2];
-    _loPassY[2] = _loPassY[3];
-    _loPassY[3] = _loPassY[4];
-    _loPassY[4] = _loPassY[5];
-
-    _loPassY[5] = (
-        (_loPassX[0] + _loPassX[5])
-        + 5 * (_loPassX[1] + _loPassX[4])
-        + 10 * (_loPassX[2] + _loPassX[3])
-        + 0.8337693903 * _loPassY[0]
-        - 4.3203944730 * _loPassY[1]
-        + 8.9577480484 * _loPassY[2]
-        - 9.2893615611 * _loPassY[3]
-        + 4.8182380843 * _loPassY[4]
-        );
-
-    return _loPassY[5];
-}
-
-double Audio::hiPass(double sample)
-{
-    static constexpr const double kGain = 1.000654713;
-
-    _hiPassX[0] = _hiPassX[1];
-    _hiPassX[1] = _hiPassX[2];
-    _hiPassX[2] = _hiPassX[3];
-
-    _hiPassX[3] = sample / kGain;
-
-    _hiPassY[0] = _hiPassY[1];
-    _hiPassY[1] = _hiPassY[2];
-    _hiPassY[2] = _hiPassY[3];
-
-    _hiPassY[3] = (
-        (_hiPassX[3] - _hiPassX[0])
-        + 3 * (_hiPassX[1] - _hiPassX[2])
-        + 0.9986918594 * _hiPassY[0]
-        - 2.9973828628 * _hiPassY[1]
-        + 2.9986910031 * _hiPassY[2]
-        );
-
-    return _hiPassY[3];
+        for (unsigned j = 0; j < kLowPassFilterWidth; ++j)
+        {
+            acc += _samplesRaw[i * kOversampling + j] * kImpulse[j];
+        }
+        avg += acc;
+        _samples[i] = acc;
+    }
+    avg /= NIN_AUDIO_SAMPLE_SIZE;
+    for (unsigned i = 0; i < NIN_AUDIO_SAMPLE_SIZE; ++i)
+    {
+        _samples[i] -= avg;
+    }
 }

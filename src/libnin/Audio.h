@@ -49,8 +49,13 @@ public:
     void push(float sample);
 
 private:
-    double loPass(double sample);
-    double hiPass(double sample);
+    static constexpr const unsigned kOversampling = 8;
+    static constexpr const unsigned kTargetFrequency = 48000;
+    static constexpr const unsigned kTargetFrequencyRaw = kTargetFrequency * kOversampling;
+    static constexpr const unsigned kLowPassFilterWidth = 64;
+    static constexpr const unsigned kMaxRawSamples = NIN_AUDIO_SAMPLE_SIZE * kOversampling + kLowPassFilterWidth;
+
+    void resample();
 
     const HardwareInfo& _info;
 
@@ -58,12 +63,9 @@ private:
     void*               _callbackArg;
     std::uint32_t       _targetFrequency;
     std::uint32_t       _accumulator;
+    float               _samplesRaw[kMaxRawSamples];
     float               _samples[NIN_AUDIO_SAMPLE_SIZE];
     std::uint16_t       _samplesCursor;
-    double              _loPassX[6];
-    double              _loPassY[6];
-    double              _hiPassX[4];
-    double              _hiPassY[4];
 };
 
 };
