@@ -35,10 +35,28 @@
 #include <stdint.h>
 
 #if defined(__cplusplus)
-# define NIN_API extern "C"
+# define NIN_EXTERN extern "C"
 #else
-# define NIN_API
+# define NIN_EXTERN
 #endif
+
+#if defined(WIN32) || defined(_WIN32)
+# if defined(NIN_STATIC)
+#  define NIN_DECLSPEC
+# elif defined(NIN_DLL)
+#  define NIN_DECLSPEC __declspec(dllexport)
+# else
+#  define NIN_DECLSPEC __declspec(dllimport)
+# endif
+#else
+# if defined(NIN_STATIC)
+#  define NIN_DECLSPEC
+# else
+#  define NIN_DECLSPEC __attribute__ ((visibility("default")))
+# endif
+#endif
+
+#define NIN_API NIN_EXTERN NIN_DECLSPEC
 
 typedef enum {
     NIN_OK = 0,
@@ -48,7 +66,7 @@ typedef enum {
     NIN_ERROR_UNKNOWN_MAPPER
 } NinError;
 
-typedef struct NinState_ NinState;
+typedef struct NinState NinState;
 typedef void (*NINAUDIOCALLBACK)(void*, const float*);
 
 #define NIN_AUDIO_SAMPLE_SIZE   1024
@@ -90,7 +108,6 @@ typedef enum {
 typedef int32_t NinInt32;
 
 NIN_API NinError        ninCreateState(NinState** state, const char* path);
-NIN_API NinError        ninLoadRom(NinState* state, const char* path);
 NIN_API void            ninSetSaveFile(NinState* state, const char* path);
 NIN_API void            ninSyncSave(NinState* state);
 NIN_API void            ninDestroyState(NinState* state);
@@ -103,5 +120,7 @@ NIN_API void            ninDumpMemory(NinState* state, uint8_t* dst, uint16_t st
 NIN_API void            ninLoadBiosFDS(NinState* state, const char* path);
 
 NIN_API void            ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info);
+
+NIN_API int             ninStepInstruction(NinState* state);
 
 #endif

@@ -277,7 +277,7 @@ void EmulatorWorker::workerStepSingle()
     size_t cyc;
 
     ninSetInput(_state, _input);
-    if (ninRunCycles(_state, 1, &cyc))
+    if (ninStepInstruction(_state))
     {
         emit frame((const char*)ninGetScreenBuffer(_state));
     }

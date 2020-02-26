@@ -74,6 +74,7 @@ if (APPLE)
     install(CODE "
     execute_process(COMMAND \"${CMAKE_COMMAND}\" -E make_directory \"${APP}/Contents/lib\")
     execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"${OPENAL_LIBRARY}\" \"${APP}/Contents/lib/libopenal.1.dylib\")
+    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"$<TARGET_FILE:libnin>\" \"${APP}/Contents/lib/libnin.dylib\")
     execute_process(COMMAND \"${QT_DEPLOY}\" \"${APP}\" \"-verbose=1\")
     ")
 endif()
