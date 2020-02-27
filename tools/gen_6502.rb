@@ -401,6 +401,10 @@ book.add_rule 0x7c, make_nop_absolute_x()
 book.add_rule 0xdc, make_nop_absolute_x()
 book.add_rule 0xfc, make_nop_absolute_x()
 
+# ANC
+book.add_rule 0x0b, make_arith_imm('SelectDestA', 'OpANC')
+book.add_rule 0x2b, make_arith_imm('SelectDestA', 'OpANC')
+
 book.optimize
 #book.dump
 

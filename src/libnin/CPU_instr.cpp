@@ -354,11 +354,12 @@ template<> CPU::Handler CPU::instruction<0x15b>(void) { Handler next = ((CPU::Ha
 template<> CPU::Handler CPU::instruction<0x15c>(void) { Handler next = ((CPU::Handler)&CPU::instruction<0x159>); read(_addr); _addr += ((std::uint16_t)_addrCarry << 8); return next; }
 template<> CPU::Handler CPU::instruction<0x15d>(void) { Handler next = ((CPU::Handler)&CPU::instruction<0x15c>); _addrCarry = (((_addr & 0xff) + _x) > 0xff) ? 1 : 0; _addr = (((_addr + _x) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8); return next; }
 template<> CPU::Handler CPU::instruction<0x15e>(void) { Handler next = ((CPU::Handler)&CPU::instruction<0x15d>); _addr = ((_addr & 0xff00) | read(_pc++)); return next; }
+template<> CPU::Handler CPU::instruction<0x15f>(void) { Handler next = ((CPU::Handler)&CPU::dispatch); _selDst = REG_A; std::uint8_t tmp = read(_pc++); _p &= ~PFLAG_C; _regs[_selDst] &= tmp; flagNZ(_regs[_selDst]); _p |= (_p & PFLAG_N) ? PFLAG_C : 0; return next; }
 
 const CPU::Handler CPU::kOps[] = {
     ((CPU::Handler)&CPU::instruction<0x005>), ((CPU::Handler)&CPU::instruction<0x090>), ((CPU::Handler)&CPU::kil), ((CPU::Handler)&CPU::kil),
     ((CPU::Handler)&CPU::instruction<0x156>), ((CPU::Handler)&CPU::instruction<0x082>), ((CPU::Handler)&CPU::instruction<0x102>), ((CPU::Handler)&CPU::kil),
-    ((CPU::Handler)&CPU::instruction<0x013>), ((CPU::Handler)&CPU::instruction<0x080>), ((CPU::Handler)&CPU::instruction<0x0fe>), ((CPU::Handler)&CPU::kil),
+    ((CPU::Handler)&CPU::instruction<0x013>), ((CPU::Handler)&CPU::instruction<0x080>), ((CPU::Handler)&CPU::instruction<0x0fe>), ((CPU::Handler)&CPU::instruction<0x15f>),
     ((CPU::Handler)&CPU::instruction<0x15b>), ((CPU::Handler)&CPU::instruction<0x087>), ((CPU::Handler)&CPU::instruction<0x109>), ((CPU::Handler)&CPU::kil),
     ((CPU::Handler)&CPU::instruction<0x039>), ((CPU::Handler)&CPU::instruction<0x093>), ((CPU::Handler)&CPU::kil), ((CPU::Handler)&CPU::kil),
     ((CPU::Handler)&CPU::instruction<0x158>), ((CPU::Handler)&CPU::instruction<0x084>), ((CPU::Handler)&CPU::instruction<0x104>), ((CPU::Handler)&CPU::kil),
@@ -366,7 +367,7 @@ const CPU::Handler CPU::kOps[] = {
     ((CPU::Handler)&CPU::instruction<0x15e>), ((CPU::Handler)&CPU::instruction<0x08a>), ((CPU::Handler)&CPU::instruction<0x10c>), ((CPU::Handler)&CPU::kil),
     ((CPU::Handler)&CPU::instruction<0x020>), ((CPU::Handler)&CPU::instruction<0x0a4>), ((CPU::Handler)&CPU::kil), ((CPU::Handler)&CPU::kil),
     ((CPU::Handler)&CPU::instruction<0x14d>), ((CPU::Handler)&CPU::instruction<0x096>), ((CPU::Handler)&CPU::instruction<0x110>), ((CPU::Handler)&CPU::kil),
-    ((CPU::Handler)&CPU::instruction<0x016>), ((CPU::Handler)&CPU::instruction<0x094>), ((CPU::Handler)&CPU::instruction<0x10d>), ((CPU::Handler)&CPU::kil),
+    ((CPU::Handler)&CPU::instruction<0x016>), ((CPU::Handler)&CPU::instruction<0x094>), ((CPU::Handler)&CPU::instruction<0x10d>), ((CPU::Handler)&CPU::instruction<0x15f>),
     ((CPU::Handler)&CPU::instruction<0x150>), ((CPU::Handler)&CPU::instruction<0x09b>), ((CPU::Handler)&CPU::instruction<0x116>), ((CPU::Handler)&CPU::kil),
     ((CPU::Handler)&CPU::instruction<0x03a>), ((CPU::Handler)&CPU::instruction<0x0a7>), ((CPU::Handler)&CPU::kil), ((CPU::Handler)&CPU::kil),
     ((CPU::Handler)&CPU::instruction<0x158>), ((CPU::Handler)&CPU::instruction<0x098>), ((CPU::Handler)&CPU::instruction<0x112>), ((CPU::Handler)&CPU::kil),
@@ -511,5 +512,5 @@ const CPU::Handler CPU::kStates[] = {
     ((CPU::Handler)&CPU::instruction<0x150>), ((CPU::Handler)&CPU::instruction<0x151>), ((CPU::Handler)&CPU::instruction<0x152>), ((CPU::Handler)&CPU::instruction<0x153>),
     ((CPU::Handler)&CPU::instruction<0x154>), ((CPU::Handler)&CPU::instruction<0x155>), ((CPU::Handler)&CPU::instruction<0x156>), ((CPU::Handler)&CPU::instruction<0x157>),
     ((CPU::Handler)&CPU::instruction<0x158>), ((CPU::Handler)&CPU::instruction<0x159>), ((CPU::Handler)&CPU::instruction<0x15a>), ((CPU::Handler)&CPU::instruction<0x15b>),
-    ((CPU::Handler)&CPU::instruction<0x15c>), ((CPU::Handler)&CPU::instruction<0x15d>), ((CPU::Handler)&CPU::instruction<0x15e>),
+    ((CPU::Handler)&CPU::instruction<0x15c>), ((CPU::Handler)&CPU::instruction<0x15d>), ((CPU::Handler)&CPU::instruction<0x15e>), ((CPU::Handler)&CPU::instruction<0x15f>),
 };
