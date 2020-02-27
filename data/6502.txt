@@ -121,6 +121,7 @@ TransferXA      _a = _x; flagNZ(_x);
 TransferXS      _s = _x;
 TransferYA      _a = _y; flagNZ(_y);
 
-Nop             /* nop */
+Nop             /* nop */;
+ReadAddr        read(_addr);
 
 SwitchPC            _pc = (_addr | ((std::uint16_t)read(_pc) << 8));

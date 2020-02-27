@@ -2,7 +2,8 @@ class Rulebook
   def initialize
     @templates = {}
     @steps = {}
-    @next_step_id = 0x103
+    @next_step_id = 0
+    @ops = {}
   end
 
   def read_templates(path)
@@ -17,19 +18,19 @@ class Rulebook
     end
   end
 
-  def add_rule(index, rule)
+  def add_rule(op, rule)
     if rule == :kill
-      @steps[index] = :kill
+      @ops[op] = :kill
       return
     end
 
     rule = rule.reject(&:nil?)
     rule = rule.map {|r| r.is_a?(Array) ? r.flatten.reject(&:nil?) : [r]}
     next_step = nil
-    rule[1..-1].reverse.each do |r|
+    rule.reverse.each do |r|
       next_step = add_step(r, next_step)
     end
-    @steps[index] = [rule[0], next_step]
+    @ops[op] = next_step
   end
 
   def add_step(step, next_step_id)
@@ -53,6 +54,12 @@ class Rulebook
       end
     end
 
+    @ops.each do |op, index|
+      if aliases.include?(index)
+        @ops[op] = canonical
+      end
+    end
+
     aliases.each do |k|
       @steps.delete(k)
     end
@@ -61,7 +68,6 @@ class Rulebook
   def optimize_pass
     dups = []
     @steps.each do |i, step|
-      next if i < 0x103 || step == :kill
       duplicates = @steps.map{|k, v| [k, v]}.select{|x| x[1] == step}.map{|x| x[0]}
       dups.push(duplicates) if duplicates.size > 1
     end
@@ -83,8 +89,13 @@ class Rulebook
     end
 
     new_steps.each do |index, step|
-      next if step == :kill || step[1].nil?
+      next if step[1].nil?
       step[1] = new_mapping[step[1]]
+    end
+
+    @ops.each do |k, v|
+      next if v == :kill
+      @ops[k] = new_mapping[v]
     end
 
     @steps = new_steps
@@ -92,24 +103,21 @@ class Rulebook
 
   def ref_step(step)
     handler = nil
-    if step.nil?
+    if step == :kill
+      handler = 'kil'
+    elsif step.nil?
       handler = 'dispatch';
     else
       handler = "instruction<#{"0x%03x" % step}>"
     end
-    "((Handler)&CPU::#{handler})"
+    "((CPU::Handler)&CPU::#{handler})"
   end
 
   def emit_step(index)
     step = @steps[index]
     tpl = nil
-    if step == :kill
-      tpl = "return debug_not_impl(#{"0x%03x" % index});"
-      #tpl = "return #{ref_step(index)};"
-    else
-      next_step = ref_step(step[1]);
-      tpl = (["Handler next = #{next_step};"] + step[0].map{|x| (@templates[x] or raise StandardError, "Missing template: #{x}")} + ["return next;"]).join(" ")
-    end
+    next_step = ref_step(step[1]);
+    tpl = (["Handler next = #{next_step};"] + step[0].map{|x| (@templates[x] or raise StandardError, "Missing template: #{x}")} + ["return next;"]).join(" ")
     str = "template<> CPU::Handler CPU::instruction<#{"0x%03x" % index}>(void) { #{tpl} }\n"
     str
   end
@@ -117,12 +125,15 @@ class Rulebook
   def emit_instructions
     a = []
     keys = @steps.keys.sort
-    keys_lo = keys.select{|x| x <= 0x102}
-    keys_hi = keys - keys_lo
-    (keys_hi + keys_lo).each do |k|
+    keys.each do |k|
       a << emit_step(k)
     end
     a.join("")
+  end
+
+  def emit_ops
+    ops = @ops.keys.sort.map{|op| ref_step(@ops[op]) + ","}.each_slice(4).map{|x| x.join(" ")}.map{|x| "    " + x}.join("\n")
+    "const CPU::Handler CPU::kOps[] = {\n#{ops}\n};\n"
   end
 
   def emit_states
@@ -138,6 +149,8 @@ class Rulebook
       f.write "using namespace libnin;\n"
       f.write "\n"
       f.write emit_instructions
+      f.write "\n"
+      f.write emit_ops
       f.write "\n"
       f.write emit_states
     end
@@ -187,6 +200,13 @@ def make_rmw_zero(op); ['AddrZero', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreR
 def make_rmw_zero_x(op); ['AddrZero', 'AddrZeroX', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStoreZero']; end
 def make_rmw_absolute(op); ['AddrAbsLo', 'AddrAbsHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 def make_rmw_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+
+def make_nop_impl(); ['Nop']; end
+def make_nop_imm(); [['AddrImplIncPC', 'Nop']]; end
+def make_nop_zero(); ['AddrImplIncPC', 'Nop']; end
+def make_nop_zero_x(); ['AddrImplIncPC', 'Nop', 'Nop']; end
+def make_nop_absolute(); ['AddrAbsLo', 'AddrAbsHi', 'ReadAddr']; end
+def make_nop_absolute_x(); ['AddrAbsLo', 'AddrAbsHiX', ['ReadAddr', 'CarryFix'], 'ReadAddr']; end
 
 book = Rulebook.new
 book.read_templates ARGV[0]
@@ -340,7 +360,46 @@ book.add_rule 0xe8, ['INX']
 book.add_rule 0xc8, ['INY']
 book.add_rule 0xca, ['DEX']
 book.add_rule 0x88, ['DEY']
-book.add_rule 0xea, [['Nop', 'Nop']]
+
+# Official NOP
+book.add_rule 0xea, make_nop_impl()
+
+# Unofficial SBC
+book.add_rule 0xeb, make_arith_imm('SelectDestA', 'OpSBC')
+
+# Unofficial NOPs
+book.add_rule 0x1a, make_nop_impl()
+book.add_rule 0x3a, make_nop_impl()
+book.add_rule 0x5a, make_nop_impl()
+book.add_rule 0x7a, make_nop_impl()
+book.add_rule 0xda, make_nop_impl()
+book.add_rule 0xfa, make_nop_impl()
+
+book.add_rule 0x80, make_nop_imm()
+book.add_rule 0x82, make_nop_imm()
+book.add_rule 0x89, make_nop_imm()
+book.add_rule 0xc2, make_nop_imm()
+book.add_rule 0xe2, make_nop_imm()
+
+book.add_rule 0x04, make_nop_zero()
+book.add_rule 0x44, make_nop_zero()
+book.add_rule 0x64, make_nop_zero()
+
+book.add_rule 0x14, make_nop_zero_x()
+book.add_rule 0x34, make_nop_zero_x()
+book.add_rule 0x54, make_nop_zero_x()
+book.add_rule 0x74, make_nop_zero_x()
+book.add_rule 0xd4, make_nop_zero_x()
+book.add_rule 0xf4, make_nop_zero_x()
+
+book.add_rule 0x0c, make_nop_absolute()
+
+book.add_rule 0x1c, make_nop_absolute_x()
+book.add_rule 0x3c, make_nop_absolute_x()
+book.add_rule 0x5c, make_nop_absolute_x()
+book.add_rule 0x7c, make_nop_absolute_x()
+book.add_rule 0xdc, make_nop_absolute_x()
+book.add_rule 0xfc, make_nop_absolute_x()
 
 book.optimize
 #book.dump

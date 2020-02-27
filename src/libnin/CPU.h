@@ -77,12 +77,10 @@ private:
     template <std::uint16_t> Handler instruction(void);
 
     Handler dispatch();
+    Handler kil();
     Handler dma();
     Handler dmaRead();
     Handler dmaWrite();
-
-    Handler debug_not_impl(std::uint16_t);
-    void    debug(std::uint16_t value);
 
     std::uint8_t    read(std::uint16_t addr);
     Handler         write(std::uint16_t addr, std::uint8_t value, Handler next);
@@ -95,6 +93,7 @@ private:
         _p |= (value & 0x80 ? PFLAG_N : 0);
     }
 
+    static const Handler kOps[];
     static const Handler kStates[];
 
     Memory&     _memory;

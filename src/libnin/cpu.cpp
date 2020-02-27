@@ -45,10 +45,8 @@ CPU::CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
 , _ppu{ppu}
 , _apu{apu}
 , _bus{bus}
-, _handler{(Handler)&CPU::instruction<0x100>}
+, _handler{kOps[0x100]}
 , _pc{}
-//, _handler((Handler)&CPU::dispatch)
-//, _pc{0xc000}
 , _addr{}
 , _regs{}
 , _s{0xfd}
@@ -94,7 +92,20 @@ CPU::Handler CPU::dispatch()
         }
     }
 
-    return kStates[op];
+    return kOps[op];
+}
+
+CPU::Handler CPU::kil()
+{
+    std::uint8_t op;
+    char tmp[4096];
+
+    op = read(_pc - 1);
+    std::sprintf(tmp, "Opcode not implemented: 0x%02x (PC: 0x%04x)\n", op, _pc);
+    MessageBoxA(nullptr, tmp, "Error", 0);
+    std::exit(1);
+
+    return (Handler)&CPU::kil;
 }
 
 CPU::Handler CPU::dma()
@@ -113,24 +124,6 @@ CPU::Handler CPU::dmaWrite()
     _ppu.oamWrite(_dmaValue);
     _dmaCount++;
     return _dmaCount ? (Handler)&CPU::dmaRead : _handler2;
-}
-
-CPU::Handler CPU::debug_not_impl(std::uint16_t index)
-{
-    char tmp[4096];
-
-    std::sprintf(tmp, "Opcode not implemented: 0x%02x (PC: 0x%04x)\n", index, _pc);
-    MessageBoxA(nullptr, tmp, "Error", 0);
-    std::exit(1);
-    return nullptr;
-}
-
-void CPU::debug(std::uint16_t value)
-{
-    char tmp[4096];
-
-    std::sprintf(tmp, "DEBUG: 0x%04x\n", value);
-    MessageBoxA(nullptr, tmp, "Debug", 0);
 }
 
 std::uint8_t CPU::read(std::uint16_t addr)
