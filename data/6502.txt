@@ -91,6 +91,11 @@ OpLSR       _p &= ~(PFLAG_N | PFLAG_Z | PFLAG_C); _p |= ((tmp & 0x01) ? PFLAG_C 
 OpROL       std::uint8_t c = (_p & PFLAG_C ? 0x01 : 0x00); _p &= ~PFLAG_C; _p |= ((tmp & 0x80) ? PFLAG_C : 0); tmp = ((tmp << 1) | c); flagNZ(tmp);
 OpROR       std::uint8_t c = (_p & PFLAG_C ? 0x80 : 0x00); _p &= ~PFLAG_C; _p |= ((tmp & 0x01) ? PFLAG_C : 0); tmp = ((tmp >> 1) | c); flagNZ(tmp);
 
+OpSLO       _p &= ~PFLAG_C; _p |= ((tmp & 0x80) ? PFLAG_C : 0); tmp <<= 1; _a |= tmp; flagNZ(_a);
+OpRLA       std::uint8_t c = (_p & PFLAG_C ? 0x01 : 0x00); _p &= ~PFLAG_C; _p |= ((tmp & 0x80) ? PFLAG_C : 0); tmp = ((tmp << 1) | c); _a &= tmp; flagNZ(_a);
+OpSRE       _p &= ~PFLAG_C; _p |= ((tmp & 0x01) ? PFLAG_C : 0); tmp >>= 1; _a ^= tmp; flagNZ(_a);
+OpRRA       std::uint8_t c = (_p & PFLAG_C ? 0x80 : 0x00); _p &= ~PFLAG_C; _p |= ((tmp & 0x01) ? PFLAG_C : 0); tmp = ((tmp >> 1) | c); _a = adc(_a, tmp);
+
 OpANC       _p &= ~PFLAG_C; _regs[_selDst] &= tmp; flagNZ(_regs[_selDst]); _p |= (_p & PFLAG_N) ? PFLAG_C : 0;
 
 INX      flagNZ(++_x);
