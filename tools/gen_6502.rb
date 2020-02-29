@@ -177,6 +177,15 @@ def make_store_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'AddrCa
 def make_store_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'WriteReg']; end
 def make_store_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'WriteReg']; end
 
+def make_store_ax_zero(); [['AddrZero'], 'WriteRegZero_SAX']; end
+def make_store_ax_zero_x(); [['AddrZero'], 'AddrZeroX', 'WriteRegZero_SAX']; end
+def make_store_ax_zero_y(); [['AddrZero'], 'AddrZeroY', 'WriteRegZero_SAX']; end
+def make_store_ax_absolute(); [['AddrAbsLo'], 'AddrAbsHi', 'WriteReg_SAX']; end
+def make_store_ax_absolute_x(); [['AddrAbsLo'], 'AddrAbsHiX', 'AddrCarry', 'WriteReg_SAX']; end
+def make_store_ax_absolute_y(); [['AddrAbsLo'], 'AddrAbsHiY', 'AddrCarry', 'WriteReg_SAX']; end
+def make_store_ax_indirect_x(); [['AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'WriteReg_SAX']; end
+def make_store_ax_indirect_y(); [['AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'WriteReg_SAX']; end
+
 def make_load_zero(prefix); [[prefix, 'AddrZero'], 'ReadRegZero']; end
 def make_load_zero_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'ReadRegZero']; end
 def make_load_zero_y(prefix); [[prefix, 'AddrZero'], 'AddrZeroY', 'ReadRegZero']; end
@@ -185,6 +194,15 @@ def make_load_absolute_x(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiX', 'ReadReg
 def make_load_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'ReadRegCarry', 'ReadReg']; end
 def make_load_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'ReadReg']; end
 def make_load_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'ReadRegCarry', 'ReadReg']; end
+
+def make_load_ax_zero(); [['AddrZero'], 'ReadRegZero_AX']; end
+def make_load_ax_zero_x(); [['AddrZero'], 'AddrZeroX', 'ReadRegZero_AX']; end
+def make_load_ax_zero_y(); [['AddrZero'], 'AddrZeroY', 'ReadRegZero_AX']; end
+def make_load_ax_absolute(); [['AddrAbsLo'], 'AddrAbsHi', 'ReadReg_AX']; end
+def make_load_ax_absolute_x(); [['AddrAbsLo'], 'AddrAbsHiX', 'ReadRegCarry_AX', 'ReadReg_AX']; end
+def make_load_ax_absolute_y(); [['AddrAbsLo'], 'AddrAbsHiY', 'ReadRegCarry_AX', 'ReadReg_AX']; end
+def make_load_ax_indirect_x(); [['AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'ReadReg_AX']; end
+def make_load_ax_indirect_y(); [['AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'ReadRegCarry_AX', 'ReadReg_AX']; end
 
 def make_arith_imm(prefix, op); [[prefix, 'TmpLoadImm', op]]; end
 def make_arith_zero(prefix, op); [[prefix, 'AddrZero'], ['TmpLoadZero', op]]; end
@@ -200,6 +218,9 @@ def make_rmw_zero(op); ['AddrZero', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreR
 def make_rmw_zero_x(op); ['AddrZero', 'AddrZeroX', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStoreZero']; end
 def make_rmw_absolute(op); ['AddrAbsLo', 'AddrAbsHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 def make_rmw_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+def make_rmw_absolute_y(op); ['AddrAbsLo', 'AddrAbsHiY', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+def make_rmw_indirect_x(op); ['AddrZero', 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+def make_rmw_indirect_y(op); ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 
 def make_nop_impl(); ['Nop']; end
 def make_nop_imm(); [['AddrImplIncPC', 'Nop']]; end
@@ -232,6 +253,16 @@ end
 def build_rmw_block(book, base, op)
   book.add_rule base + 0x0a, make_rmw_acc(op)
   build_rmw_noacc_block(book, base, op)
+end
+
+def build_extended_rmw_block(book, base, op)
+  book.add_rule base + 0x07, make_rmw_zero(op)
+  book.add_rule base + 0x17, make_rmw_zero_x(op)
+  book.add_rule base + 0x0f, make_rmw_absolute(op)
+  book.add_rule base + 0x1f, make_rmw_absolute_x(op)
+  book.add_rule base + 0x1b, make_rmw_absolute_y(op)
+  book.add_rule base + 0x03, make_rmw_indirect_x(op)
+  book.add_rule base + 0x13, make_rmw_indirect_y(op)
 end
 
 0x103.times do |i|
@@ -401,9 +432,36 @@ book.add_rule 0x7c, make_nop_absolute_x()
 book.add_rule 0xdc, make_nop_absolute_x()
 book.add_rule 0xfc, make_nop_absolute_x()
 
-# ANC
-book.add_rule 0x0b, make_arith_imm('SelectDestA', 'OpANC')
-book.add_rule 0x2b, make_arith_imm('SelectDestA', 'OpANC')
+# Unofficial immediates
+book.add_rule 0x0b, make_arith_imm(nil, 'OpANC')
+book.add_rule 0x2b, make_arith_imm(nil, 'OpANC')
+book.add_rule 0x4b, make_arith_imm(nil, 'OpALR')
+book.add_rule 0x6b, make_arith_imm(nil, 'OpARR')
+book.add_rule 0x8b, make_arith_imm(nil, 'OpXAA')
+book.add_rule 0xab, make_arith_imm(nil, 'OpLAX')
+book.add_rule 0xcb, make_arith_imm(nil, 'OpAXS')
+
+# Unofficial RMW
+build_extended_rmw_block book, 0x00, 'OpSLO'
+build_extended_rmw_block book, 0x20, 'OpRLA'
+build_extended_rmw_block book, 0x40, 'OpSRE'
+build_extended_rmw_block book, 0x60, 'OpRRA'
+build_extended_rmw_block book, 0xc0, 'OpDCP'
+build_extended_rmw_block book, 0xe0, 'OpISC'
+
+# SAX
+book.add_rule 0x87, make_store_ax_zero()
+book.add_rule 0x97, make_store_ax_zero_y()
+book.add_rule 0x8f, make_store_ax_absolute()
+book.add_rule 0x83, make_store_ax_indirect_x()
+
+# LAX
+book.add_rule 0xa7, make_load_ax_zero()
+book.add_rule 0xb7, make_load_ax_zero_y()
+book.add_rule 0xaf, make_load_ax_absolute()
+book.add_rule 0xbf, make_load_ax_absolute_y()
+book.add_rule 0xa3, make_load_ax_indirect_x()
+book.add_rule 0xb3, make_load_ax_indirect_y()
 
 book.optimize
 #book.dump

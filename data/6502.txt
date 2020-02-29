@@ -95,8 +95,16 @@ OpSLO       _p &= ~PFLAG_C; _p |= ((tmp & 0x80) ? PFLAG_C : 0); tmp <<= 1; _a |=
 OpRLA       std::uint8_t c = (_p & PFLAG_C ? 0x01 : 0x00); _p &= ~PFLAG_C; _p |= ((tmp & 0x80) ? PFLAG_C : 0); tmp = ((tmp << 1) | c); _a &= tmp; flagNZ(_a);
 OpSRE       _p &= ~PFLAG_C; _p |= ((tmp & 0x01) ? PFLAG_C : 0); tmp >>= 1; _a ^= tmp; flagNZ(_a);
 OpRRA       std::uint8_t c = (_p & PFLAG_C ? 0x80 : 0x00); _p &= ~PFLAG_C; _p |= ((tmp & 0x01) ? PFLAG_C : 0); tmp = ((tmp >> 1) | c); _a = adc(_a, tmp);
+OpLAX       _a = _x = tmp; flagNZ(tmp);
 
-OpANC       _p &= ~PFLAG_C; _regs[_selDst] &= tmp; flagNZ(_regs[_selDst]); _p |= (_p & PFLAG_N) ? PFLAG_C : 0;
+OpANC       _p &= ~PFLAG_C; _a &= tmp; flagNZ(_a); _p |= (_p & PFLAG_N) ? PFLAG_C : 0;
+OpALR       _a &= tmp; _p &= ~(PFLAG_N | PFLAG_Z | PFLAG_C); _p |= ((_a & 0x01) ? PFLAG_C : 0); _a >>= 1; _p |= (_a ? 0 : PFLAG_Z);
+OpARR       _a &= tmp; std::uint8_t c = (_p & PFLAG_C ? 0x80 : 0x00); _p &= ~(PFLAG_C | PFLAG_V); _a = ((_a >> 1) | c); flagNZ(_a); _p |= ((_a & 0x40) ? PFLAG_C : 0); _p |= (((((_a >> 1) & 0x20) ^ (_a & 0x20))) ? PFLAG_V : 0); 
+OpXAA       _a = _x & tmp; flagNZ(_a);
+OpAXS       _x &= _a; _p &= ~PFLAG_C; _p |= ((_x >= tmp) ? PFLAG_C : 0); _x -= tmp; flagNZ(_x);
+
+OpDCP       tmp--; _p &= ~PFLAG_C; _p |= (_a >= tmp) ? PFLAG_C : 0; flagNZ(_a - tmp);
+OpISC       tmp++; _a = adc(_a, ~tmp);
 
 INX      flagNZ(++_x);
 INY      flagNZ(++_y);
@@ -115,9 +123,16 @@ FlagSetD        _p |= PFLAG_D;
 WriteReg        next = write(_addr, _regs[_selSrc], next);
 WriteRegZero    _memory.ram[_addr] = _regs[_selSrc];
 
+WriteReg_SAX        next = write(_addr, _a & _x, next);
+WriteRegZero_SAX    _memory.ram[_addr] = _a & _x;
+
 ReadReg         _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]);
 ReadRegCarry    _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]); _addr += ((std::uint16_t)_addrCarry << 8); if (!_addrCarry) return ((Handler)&CPU::dispatch);
 ReadRegZero     _regs[_selDst] = _memory.ram[_addr]; flagNZ(_regs[_selDst]);
+
+ReadReg_AX          _a = _x = read(_addr); flagNZ(_a);
+ReadRegCarry_AX     _a = _x = read(_addr); flagNZ(_a); _addr += ((std::uint16_t)_addrCarry << 8); if (!_addrCarry) return ((Handler)&CPU::dispatch);
+ReadRegZero_AX      _a = _x = _memory.ram[_addr]; flagNZ(_a);
 
 CarryFix        _addr += ((std::uint16_t)_addrCarry << 8);
 

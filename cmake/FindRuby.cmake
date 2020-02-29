@@ -24,29 +24,11 @@
 # OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-find_package(RUBY REQUIRED)
-
-set(CONFIG_IN "${CMAKE_CURRENT_SOURCE_DIR}/config.h.in")
-set(CONFIG_OUT "${CMAKE_BINARY_DIR}/include/nin/config.h")
-configure_file("${CONFIG_IN}" "${CONFIG_OUT}")
-
-set(SOURCES_CODEGEN_CPU "${CMAKE_BINARY_DIR}/codegen/libnin/CPU_instr.cpp")
-add_custom_command(
-    OUTPUT "${SOURCES_CODEGEN_CPU}"
-    COMMAND "${RUBY}" "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb" "${CMAKE_SOURCE_DIR}/data/6502.txt" "${SOURCES_CODEGEN_CPU}"
-    DEPENDS "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb" "${CMAKE_SOURCE_DIR}/data/6502.txt"
-    COMMENT "Generating CPU_instr.cpp"
-    VERBATIM
+find_program(
+    RUBY ruby
 )
 
-file(GLOB_RECURSE SOURCES "*.c" "*.cpp")
-list(APPEND SOURCES "${CONFIG_OUT}" "${SOURCES_CODEGEN_CPU}")
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(Ruby DEFAULT_MSG RUBY)
 
-add_library(libnin SHARED ${SOURCES})
-target_include_directories(libnin PRIVATE "${CMAKE_SOURCE_DIR}/src" PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_BINARY_DIR}/include")
-set_target_properties(libnin PROPERTIES OUTPUT_NAME nin)
-
-if (WIN32)
-    target_compile_definitions(libnin PRIVATE _CRT_SECURE_NO_WARNINGS=1 NIN_DLL=1)
-    install(TARGETS libnin RUNTIME DESTINATION .)
-endif()
+mark_as_advanced(RUBY)
