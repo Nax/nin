@@ -227,7 +227,7 @@ def make_nop_imm(); [['AddrImplIncPC', 'Nop']]; end
 def make_nop_zero(); ['AddrImplIncPC', 'Nop']; end
 def make_nop_zero_x(); ['AddrImplIncPC', 'Nop', 'Nop']; end
 def make_nop_absolute(); ['AddrAbsLo', 'AddrAbsHi', 'ReadAddr']; end
-def make_nop_absolute_x(); ['AddrAbsLo', 'AddrAbsHiX', ['ReadAddr', 'CarryFix'], 'ReadAddr']; end
+def make_nop_absolute_x(); ['AddrAbsLo', 'AddrAbsHiX', ['ReadAddrCarry', 'CarryFix'], 'ReadAddr']; end
 
 book = Rulebook.new
 book.read_templates ARGV[0]
