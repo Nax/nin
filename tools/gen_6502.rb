@@ -356,6 +356,8 @@ book.add_rule 0xb4, make_load_zero_x('SelectDestY')
 book.add_rule 0xac, make_load_absolute('SelectDestY')
 book.add_rule 0xbc, make_load_absolute_x('SelectDestY')
 
+book.add_rule 0xbb, ['AddrAbsLo', 'AddrAbsHiY', 'ReadRegCarry_LAS', 'ReadReg_LAS'];
+
 # Arith
 build_arith_block(book, 0x00, 'SelectDestA', 'OpORA')
 build_arith_block(book, 0x20, 'SelectDestA', 'OpAND')
@@ -452,6 +454,9 @@ build_extended_rmw_block book, 0xe0, 'OpISC'
 # Store HiAddr
 book.add_rule 0x9e, ['AddrAbsLo', 'AddrAbsHiY', 'AddrCarry_SHX', 'WriteReg_SHX'];
 book.add_rule 0x9c, ['AddrAbsLo', 'AddrAbsHiX', 'AddrCarry_SHY', 'WriteReg_SHY'];
+book.add_rule 0x9f, ['AddrAbsLo', 'AddrAbsHiX', 'AddrCarry_AHX', 'WriteReg_AHX'];
+book.add_rule 0x93, ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry_AHX', 'WriteReg_AHX'];
+book.add_rule 0x9b, ['AddrAbsLo', 'AddrAbsHiX', 'AddrCarry_AHX', 'WriteReg_TAS'];
 
 # SAX
 book.add_rule 0x87, make_store_ax_zero()

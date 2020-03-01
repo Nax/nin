@@ -26,6 +26,7 @@ AddrAbsHiY          _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr =
 AddrCarry           read(_addr); _addr += (((std::uint16_t)_addrCarry) << 8);
 AddrCarry_SHX       read(_addr); if (_addrCarry) _addr = ((_addr & 0x00ff) | ((_addr >> 8) + 1) & _x);
 AddrCarry_SHY       read(_addr); if (_addrCarry) _addr = ((_addr & 0x00ff) | ((_addr >> 8) + 1) & _y);
+AddrCarry_AHX       read(_addr); if (_addrCarry) _addr = ((_addr & 0x00ff) | ((_addr >> 8) + 1) & _a & _x);
 AddrCarryIf         if (!_addrCarry) {
 AddrCarryEnd        return (Handler)&CPU::dispatch; }
 AddrCarryFix        _addr += 0x100;
@@ -128,6 +129,8 @@ WriteRegZero    _memory.ram[_addr] = _regs[_selSrc];
 WriteReg_SAX        next = write(_addr, _a & _x, next);
 WriteReg_SHX        next = write(_addr, _x & ((_addr >> 8) + 1), next);
 WriteReg_SHY        next = write(_addr, _y & ((_addr >> 8) + 1), next);
+WriteReg_AHX        next = write(_addr, _a & _x & ((_addr >> 8) + 1), next);
+WriteReg_TAS        _s = _a & _x; next = write(_addr, _s & ((_addr >> 8) + 1), next);
 WriteRegZero_SAX    _memory.ram[_addr] = _a & _x;
 
 ReadReg         _regs[_selDst] = read(_addr); flagNZ(_regs[_selDst]);
@@ -137,6 +140,9 @@ ReadRegZero     _regs[_selDst] = _memory.ram[_addr]; flagNZ(_regs[_selDst]);
 ReadReg_AX          _a = _x = read(_addr); flagNZ(_a);
 ReadRegCarry_AX     _a = _x = read(_addr); flagNZ(_a); _addr += ((std::uint16_t)_addrCarry << 8); if (!_addrCarry) return ((Handler)&CPU::dispatch);
 ReadRegZero_AX      _a = _x = _memory.ram[_addr]; flagNZ(_a);
+
+ReadReg_LAS         _a = _x = _s = read(_addr) & _s; flagNZ(_s);
+ReadRegCarry_LAS    _a = _x = _s = read(_addr) & _s; flagNZ(_s); _addr += ((std::uint16_t)_addrCarry << 8); if (!_addrCarry) return ((Handler)&CPU::dispatch);
 
 CarryFix        _addr += ((std::uint16_t)_addrCarry << 8);
 
