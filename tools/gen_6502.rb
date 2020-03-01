@@ -220,7 +220,7 @@ def make_rmw_absolute(op); ['AddrAbsLo', 'AddrAbsHi', 'RmwLoad', ['RmwStore', 'T
 def make_rmw_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 def make_rmw_absolute_y(op); ['AddrAbsLo', 'AddrAbsHiY', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 def make_rmw_indirect_x(op); ['AddrZero', 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
-def make_rmw_indirect_y(op); ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+def make_rmw_indirect_y(op); ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarry'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 
 def make_nop_impl(); ['Nop']; end
 def make_nop_imm(); [['AddrImplIncPC', 'Nop']]; end
@@ -448,6 +448,10 @@ build_extended_rmw_block book, 0x40, 'OpSRE'
 build_extended_rmw_block book, 0x60, 'OpRRA'
 build_extended_rmw_block book, 0xc0, 'OpDCP'
 build_extended_rmw_block book, 0xe0, 'OpISC'
+
+# Store HiAddr
+book.add_rule 0x9e, ['AddrAbsLo', 'AddrAbsHiY', 'AddrCarry_SHX', 'WriteReg_SHX'];
+book.add_rule 0x9c, ['AddrAbsLo', 'AddrAbsHiX', 'AddrCarry_SHY', 'WriteReg_SHY'];
 
 # SAX
 book.add_rule 0x87, make_store_ax_zero()
