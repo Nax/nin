@@ -57,14 +57,14 @@ if (APPLE)
     )
 endif ()
 
-install(TARGETS nin RUNTIME DESTINATION . BUNDLE DESTINATION .)
+install(TARGETS nin RUNTIME DESTINATION bin BUNDLE DESTINATION bin)
 
 if (WIN32)
-    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".")
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "bin")
     include(InstallRequiredSystemLibraries)
-    install(FILES "${OPENAL_DLL}" DESTINATION .)
+    install(FILES "${OPENAL_DLL}" DESTINATION bin)
     install(CODE "
-    execute_process(COMMAND \"${QT_DEPLOY}\" \"--release\" \"${CMAKE_INSTALL_PREFIX}/nin.exe\" \"--no-compiler-runtime\" \"--no-opengl-sw\" \"--no-system-d3d-compiler\")
+    execute_process(COMMAND \"${QT_DEPLOY}\" \"--release\" \"${CMAKE_INSTALL_PREFIX}/bin/nin.exe\" \"--no-compiler-runtime\" \"--no-opengl-sw\" \"--no-system-d3d-compiler\")
     ")
 endif()
 

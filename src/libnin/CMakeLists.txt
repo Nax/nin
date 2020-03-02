@@ -48,5 +48,6 @@ set_target_properties(libnin PROPERTIES OUTPUT_NAME nin)
 
 if (WIN32)
     target_compile_definitions(libnin PRIVATE _CRT_SECURE_NO_WARNINGS=1 NIN_DLL=1)
-    install(TARGETS libnin RUNTIME DESTINATION .)
+    install(TARGETS libnin RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+    install(TARGETS libnin RUNTIME DESTINATION tests)
 endif()

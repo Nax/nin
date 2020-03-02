@@ -49,7 +49,7 @@ if (SUPERBUILD)
             "-DSUPERBUILD=OFF"
             "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
             "-DCMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}"
-            "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}/bin"
+            "-DCMAKE_INSTALL_PREFIX=${CMAKE_BINARY_DIR}"
             "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
             "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
             "-DOPENAL_DIR=${CMAKE_BINARY_DIR}/third_party"
@@ -99,4 +99,5 @@ else()
     endif()
 
     add_subdirectory(src)
+    add_subdirectory(tests)
 endif()

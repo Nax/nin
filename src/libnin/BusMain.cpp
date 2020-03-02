@@ -225,10 +225,23 @@ void BusMain::dump(std::uint8_t* dst, std::uint16_t start, std::size_t len)
         }
     }
 
-    /* 0x2000-0x7fff, not implemented */
-    if (memoryExtractOverlap(start, len, 0x2000, 0x6000, &oOff, &oLen, &dOff))
+    /* 0x2000-0x5fff, not implemented */
+    if (memoryExtractOverlap(start, len, 0x2000, 0x4000, &oOff, &oLen, &dOff))
     {
         std::memset(dst + dOff, 0xff, oLen);
+    }
+
+    /* 0x6000-0x7fff, PRG ram or nothing */
+    if (memoryExtractOverlap(start, len, 0x6000, 0x2000, &oOff, &oLen, &dOff))
+    {
+        if (_cart.segment(CART_PRG_RAM).base)
+        {
+            std::memcpy(dst + dOff, _cart.segment(CART_PRG_RAM).base + oOff, oLen);
+        }
+        else
+        {
+            std::memset(dst + dOff, 0xff, oLen);
+        }
     }
 
     /* 0x8000-0xffff, cart via mapper */

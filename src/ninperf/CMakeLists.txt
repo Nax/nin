@@ -28,4 +28,4 @@ set(SOURCES ninperf.cpp)
 add_executable(ninperf ${SOURCES})
 target_link_libraries(ninperf libnin)
 
-install(TARGETS ninperf RUNTIME DESTINATION .)
+install(TARGETS ninperf RUNTIME DESTINATION bin)
