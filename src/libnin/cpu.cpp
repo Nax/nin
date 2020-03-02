@@ -97,14 +97,6 @@ CPU::Handler CPU::dispatch()
 
 CPU::Handler CPU::kil()
 {
-    std::uint8_t op;
-    char tmp[4096];
-
-    op = read(_pc - 1);
-    std::sprintf(tmp, "Opcode not implemented: 0x%02x (PC: 0x%04x)\n", op, _pc);
-    MessageBoxA(nullptr, tmp, "Error", 0);
-    std::exit(1);
-
     return (Handler)&CPU::kil;
 }
 

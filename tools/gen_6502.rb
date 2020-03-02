@@ -12,6 +12,7 @@ class Rulebook
         line.chomp!
         unless line.empty?
           name, tpl = *line.split(" ", 2)
+          raise StandardError, "Rule conflict: #{name}" if @templates.include?(name)
           @templates[name] = tpl
         end
       end
@@ -19,6 +20,10 @@ class Rulebook
   end
 
   def add_rule(op, rule)
+    if @ops.include?(op)
+      raise StandardError, "Opcode conflict: #{"0x%02x" % op}"
+    end
+
     if rule == :kill
       @ops[op] = :kill
       return
@@ -142,6 +147,10 @@ class Rulebook
   end
 
   def emit_file(path)
+    if @ops.size != 0x103
+      raise StandardError, "Missing or extra ops"
+    end
+
     File.open(path, "w") do |f|
       f.write "#include <libnin/CPU.h>\n"
       f.write "#include <libnin/Memory.h>\n"
@@ -263,10 +272,6 @@ def build_extended_rmw_block(book, base, op)
   book.add_rule base + 0x1b, make_rmw_absolute_y(op)
   book.add_rule base + 0x03, make_rmw_indirect_x(op)
   book.add_rule base + 0x13, make_rmw_indirect_y(op)
-end
-
-0x103.times do |i|
-  book.add_rule(i, :kill)
 end
 
 # Vectors
@@ -472,10 +477,11 @@ book.add_rule 0xbf, make_load_ax_absolute_y()
 book.add_rule 0xa3, make_load_ax_indirect_x()
 book.add_rule 0xb3, make_load_ax_indirect_y()
 
-book.optimize
-#book.dump
+# KIL
+[0x02, 0x12, 0x22, 0x32, 0x42, 0x52, 0x62, 0x72, 0x92, 0xb2, 0xd2, 0xf2].each do |op|
+  book.add_rule op, :kill
+end
 
-#puts
-#puts book.emit_instructions
+book.optimize
 
 book.emit_file ARGV[1]
