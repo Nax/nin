@@ -3,6 +3,8 @@
 
 #include <functional>
 #include <vector>
+#include <mutex>
+#include <condition_variable>
 
 struct NinState;
 class TestSuite
@@ -19,6 +21,7 @@ private:
     enum class TestState
     {
         Pending,
+        Running,
         Ok,
         Fail,
         Error
@@ -33,7 +36,12 @@ private:
         TestState   state;
     };
 
-    std::vector<Test>   _tests;
+    void run_thread();
+    void run_test(Test& t);
+
+    std::vector<Test>           _tests;
+    std::mutex                  _mutex;
+    std::condition_variable     _cv;
 };
 
 #endif
