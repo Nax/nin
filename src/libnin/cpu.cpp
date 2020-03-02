@@ -26,9 +26,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <windows.h>
-#include <cstdio>
-
 #include <libnin/APU.h>
 #include <libnin/BusMain.h>
 #include <libnin/CPU.h>
