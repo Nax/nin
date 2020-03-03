@@ -5,6 +5,7 @@ on: [push, pull_request]
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         name:
           - win64
@@ -34,11 +35,14 @@ jobs:
         ruby-version: 2.6.x
     - name: Checkout
       uses: actions/checkout@v2
-    - name: cmake
-      run: mkdir build && cd build && cmake .. ${{ matrix.cmake_opts }}
-    - name: build
-      run: cd build && cmake --build . --config Release
-    - name: test
-      run: cd build && cmake --build . --config Release --target test
-    - name: package
-      run: cd build && cmake --build . --config Release --target package
+    - name: Build
+      run: |
+        cmake .. ${{ matrix.cmake_opts }}
+        cmake --build . --config Release
+      working-directory: ./build
+    - name: Test
+      run: cmake --build . --config Release --target test
+      working-directory: ./build
+    - name: Package
+      run: cmake --build . --config Release --target package
+      working-directory: ./build
