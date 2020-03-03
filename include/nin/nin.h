@@ -116,11 +116,14 @@ NIN_API const uint32_t* ninGetScreenBuffer(NinState* state);
 NIN_API void            ninSetInput(NinState* state, uint8_t input);
 NIN_API void            ninAudioSetFrequency(NinState* state, uint32_t frequency);
 NIN_API void            ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg);
-NIN_API void            ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len);
 NIN_API void            ninLoadBiosFDS(NinState* state, const char* path);
 
 NIN_API void            ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info);
 
 NIN_API int             ninStepInstruction(NinState* state);
+
+/* Dump */
+NIN_API void            ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len);
+NIN_API void            ninDumpNametable(NinState* state, uint8_t* dst, int nametable);
 
 #endif

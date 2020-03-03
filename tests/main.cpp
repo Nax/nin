@@ -3,12 +3,42 @@
 
 #define SEC_NTSC(x) ((std::size_t)((x) * 1789773))
 
+static std::uint32_t qhash(const std::uint8_t* data, std::size_t len)
+{
+    uint32_t hash = 0;
+
+    for (size_t i = 0; i < len; ++i)
+    {
+        hash += data[i];
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+
+    return hash;
+}
+
 static bool matchBlargg(NinState* state)
 {
     std::uint8_t tmp[4];
 
     ninDumpMemory(state, tmp, 0x6000, 0x04);
     return (tmp[0] == 0 && tmp[1] == 0xDE && tmp[2] == 0xB0 && tmp[3] == 0x61);
+}
+
+static bool matchHash(NinState* state, std::uint32_t expected)
+{
+    std::uint8_t tmp[0x800];
+    std::uint32_t hash;
+
+    ninDumpNametable(state, tmp, 0);
+    ninDumpNametable(state, tmp + 0x400, 1);
+
+    hash = qhash(tmp, 0x800);
+    return (hash == expected);
 }
 
 int main(void)
@@ -32,6 +62,11 @@ int main(void)
     suite.add("Blargg CPU Test v5 - 14 RTI",            "roms/blargg_cpu_test5/14-rti.nes",         SEC_NTSC(1.00f), [](NinState* state) { return matchBlargg(state); });
     suite.add("Blargg CPU Test v5 - 15 BRK",            "roms/blargg_cpu_test5/15-brk.nes",         SEC_NTSC(1.00f), [](NinState* state) { return matchBlargg(state); });
     suite.add("Blargg CPU Test v5 - 16 Special",        "roms/blargg_cpu_test5/16-special.nes",     SEC_NTSC(1.00f), [](NinState* state) { return matchBlargg(state); });
+
+    /* Blargg branch timing */
+    suite.add("Blargg Branch Timing - 1 Basics",   "roms/blargg_branch_timing/1-basics.nes",    SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x7f7239ea); });
+    suite.add("Blargg Branch Timing - 2 Backward", "roms/blargg_branch_timing/2-backward.nes",  SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x66f61ebc); });
+    suite.add("Blargg Branch Timing - 3 Forward",  "roms/blargg_branch_timing/3-forward.nes",   SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x0598cd78); });
 
     return suite.run();
 }

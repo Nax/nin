@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstring>
 #include <nin/nin.h>
 #include <libnin/State.h>
 
@@ -169,4 +170,12 @@ NIN_API int ninStepInstruction(NinState* state)
     }
 
     return state->video.changed();
+}
+
+NIN_API void ninDumpNametable(NinState* state, uint8_t* dst, int nametable)
+{
+    std::uint16_t base;
+
+    base = (nametable & 0x01) ? 0x400 : 0x000;
+    std::memcpy(dst, state->memory.vram + base, 0x400);
 }
