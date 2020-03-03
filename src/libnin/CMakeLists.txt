@@ -2,17 +2,17 @@
 #
 # Copyright(c) 2019, Maxime Bacoux
 # All rights reserved.
-# 
+#
 # Redistributionand use in sourceand binary forms, with or without
 # modification, are permitted provided that the following conditions are met :
-# 
+#
 # 1. Redistributions of source code must retain the above copyright notice, this
 # list of conditionsand the following disclaimer.
-# 
+#
 # 2. Redistributions in binary form must reproduce the above copyright notice,
 # this list of conditionsand the following disclaimer in the documentation
 # and/or other materials provided with the distribution.
-# 
+#
 # THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
 # AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 # IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,7 +30,7 @@ set(CONFIG_IN "${CMAKE_CURRENT_SOURCE_DIR}/config.h.in")
 set(CONFIG_OUT "${CMAKE_BINARY_DIR}/include/nin/config.h")
 configure_file("${CONFIG_IN}" "${CONFIG_OUT}")
 
-set(SOURCES_CODEGEN_CPU "${CMAKE_BINARY_DIR}/codegen/libnin/CPU_instr.cpp")
+set(SOURCES_CODEGEN_CPU "${CMAKE_BINARY_DIR}/CPU_instr.cpp")
 add_custom_command(
     OUTPUT "${SOURCES_CODEGEN_CPU}"
     COMMAND "${RUBY}" "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb" "${CMAKE_SOURCE_DIR}/data/6502.txt" "${SOURCES_CODEGEN_CPU}"
@@ -48,6 +48,7 @@ set_target_properties(libnin PROPERTIES OUTPUT_NAME nin)
 
 if (WIN32)
     target_compile_definitions(libnin PRIVATE _CRT_SECURE_NO_WARNINGS=1 NIN_DLL=1)
-    install(TARGETS libnin RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-    install(TARGETS libnin RUNTIME DESTINATION tests)
 endif()
+
+install(TARGETS libnin RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
+install(TARGETS libnin RUNTIME DESTINATION tests)

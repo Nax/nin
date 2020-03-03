@@ -45,7 +45,6 @@ DiskSystem::DiskSystem(const HardwareInfo& info, IRQ& irq)
 , _data{}
 , _dataCurrentDisk{}
 , _headPos{}
-, _headClock{}
 , _delay{}
 , _irqReloadValue{}
 , _irqTimer{}
@@ -54,7 +53,6 @@ DiskSystem::DiskSystem(const HardwareInfo& info, IRQ& irq)
 , _sideCount{}
 , _motor{}
 , _noScan{}
-, _noWrite{}
 , _inData{}
 , _irqEnabledTransfer{}
 , _irqEnabledTimer{}

@@ -43,17 +43,20 @@ int TestSuite::run()
                 else if (_tests[currentTestIdx].state == TestState::Ok)
                 {
                     std::putchar('.');
+                    std::fflush(stdout);
                     passed++;
                     currentTestIdx++;
                 }
                 else if (_tests[currentTestIdx].state == TestState::Fail)
                 {
                     std::putchar('F');
+                    std::fflush(stdout);
                     currentTestIdx++;
                 }
                 else if (_tests[currentTestIdx].state == TestState::Error)
                 {
                     std::putchar('E');
+                    std::fflush(stdout);
                     currentTestIdx++;
                 }
                 else

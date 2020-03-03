@@ -54,8 +54,8 @@ const uint32_t Video::kPalette[] = {
 Video::Video()
 : _buffer0{}
 , _buffer1{}
-, _backBuffer{_buffer0}
-, _frontBuffer{_buffer1}
+, _frontBuffer{_buffer0}
+, _backBuffer{_buffer1}
 , _frameChanged{}
 {
 

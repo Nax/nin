@@ -62,7 +62,6 @@ private:
     std::uint8_t*   _dataCurrentDisk;
 
     std::uint32_t   _headPos;
-    std::uint16_t   _headClock;
     std::uint16_t   _delay;
     std::uint16_t   _irqReloadValue;
     std::uint16_t   _irqTimer;
@@ -72,7 +71,6 @@ private:
 
     std::uint8_t    _motor:1;
     std::uint8_t    _noScan:1;
-    std::uint8_t    _noWrite:1;
     std::uint8_t    _inData:1;
     std::uint8_t    _irqEnabledTransfer:1;
     std::uint8_t    _irqEnabledTimer:1;

@@ -5,8 +5,8 @@ using namespace libnin;
 Memory::Memory()
 : ram{}
 , vram{}
-, oam{}
 , palettes{}
+, oam{}
 {
 
 }

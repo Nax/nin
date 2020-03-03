@@ -22,6 +22,8 @@ Mapper::~Mapper()
 
 bool Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
 {
+    UNUSED(mapperMinor);
+
     switch (mapperMajor)
     {
     case 0:

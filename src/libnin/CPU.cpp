@@ -46,7 +46,6 @@ CPU::CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
 , _pc{}
 , _addr{}
 , _regs{}
-, _s{0xfd}
 , _p{PFLAG_I}
 , _p2{}
 , _nmi2{}
