@@ -4,11 +4,23 @@ on: [push, pull_request]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    
+    strategy:
+      matrix:
+        include:
+          - os: windows-2019
+            qt_arch: win64_msvc2017_64
+            cmake_opts: -A x64
+          - os: windows-2019
+            qt_arch: win32_msvc2017
+            cmake_opts: -A x86
+          - os: macos-latest
+            cmake_opts: -DCMAKE_BUILD_TYPE=Release
+    runs-on: ${{ matrix.os }}
     steps:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
+      with:
+        arch: ${{ matrix.qt_arch }}
     - name: Install Ruby
       uses: actions/setup-ruby@v1
       with:
@@ -16,7 +28,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
     - name: cmake
-      run: mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release
+      run: mkdir build && cd build && cmake .. ${{ matrix.cmake_opts }}
     - name: build
       run: cd build && cmake --build . --config Release
     - name: test
