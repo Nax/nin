@@ -70,7 +70,7 @@ endif()
 
 if (APPLE)
     # TODO: un-hardcode this
-    set(APP "${CMAKE_INSTALL_PREFIX}/Nin.app")
+    set(APP "${CMAKE_INSTALL_PREFIX}/bin/Nin.app")
     install(CODE "
     execute_process(COMMAND \"${CMAKE_COMMAND}\" -E make_directory \"${APP}/Contents/lib\")
     execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"${OPENAL_LIBRARY}\" \"${APP}/Contents/lib/libopenal.1.dylib\")
