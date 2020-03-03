@@ -7,12 +7,15 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v2
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v2
+    - name: Checkout
+      uses: actions/checkout@v2
     - name: cmake
       run: mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release
     - name: build
-      run: cmake --build . --config Release
+      run: cd build && cmake --build . --config Release
     - name: test
-      run: cmake --build . --config Release --target test
+      run: cd build && cmake --build . --config Release --target test
     - name: package
-      run: cmake --build . --config Release --target package
+      run: cd build && cmake --build . --config Release --target package
