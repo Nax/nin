@@ -35,6 +35,7 @@ set(VERSION_PATCH 2)
 set(VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}")
 
 if (SUPERBUILD)
+    # Superbuild
     project(SUPERBUILD)
 
     include(ExternalProject)
@@ -67,6 +68,17 @@ if (SUPERBUILD)
 
     install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION . USE_SOURCE_PERMISSIONS)
 
+    # Tests
+    add_custom_target(
+        test
+        COMMAND
+        "${CMAKE_BINARY_DIR}/tests/nintests${CMAKE_EXECUTABLE_SUFFIX}"
+        WORKING_DIRECTORY
+        "${CMAKE_BINARY_DIR}/tests"
+        VERBATIM
+    )
+
+    # Pack
     set(CPACK_PACKAGE_NAME "Nin")
     set(CPACK_PACKAGE_VENDOR "Maxime Bacoux")
     set(CPACK_PACKAGE_VERSION_MAJOR ${VERSION_MAJOR})
@@ -83,6 +95,7 @@ if (SUPERBUILD)
 
     include(CPack)
 else()
+    # Build
     project(Nin VERSION "${VERSION}" LANGUAGES C CXX)
 
     set (CMAKE_CXX_STANDARD 17)
