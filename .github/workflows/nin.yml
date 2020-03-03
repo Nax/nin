@@ -19,7 +19,7 @@ jobs:
           - name: win32
             os: windows-2019
             qt_arch: win32_msvc2017
-            cmake_opts: -A x86
+            cmake_opts: -A Win32
           - name: macos
             os: macos-latest
             cmake_opts: -DCMAKE_BUILD_TYPE=Release
