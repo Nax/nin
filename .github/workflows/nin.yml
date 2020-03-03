@@ -9,6 +9,10 @@ jobs:
     steps:
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
+    - name: Install Ruby
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: 2.6.x
     - name: Checkout
       uses: actions/checkout@v2
     - name: cmake
