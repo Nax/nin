@@ -43,6 +43,8 @@ script:
   - cd build
   - if [ "$TRAVIS_OS_NAME" = "windows" ]; then cmake .. -A ${CMAKE_ARCH} -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"; fi
   - if [ "$TRAVIS_OS_NAME" = "osx" ]; then cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="${CMAKE_PREFIX_PATH}"; fi
+  - cmake --build . --config Release
+  - cmake --build . --config Release --target test
   - cmake --build . --config Release --target package
 
 deploy:
