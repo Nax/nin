@@ -6,14 +6,21 @@ jobs:
   build:
     strategy:
       matrix:
+        name:
+          - win64
+          - win32
+          - macos
         include:
-          - os: windows-2019
+          - name: win64
+            os: windows-2019
             qt_arch: win64_msvc2017_64
             cmake_opts: -A x64
-          - os: windows-2019
+          - name: win32
+            os: windows-2019
             qt_arch: win32_msvc2017
             cmake_opts: -A x86
-          - os: macos-latest
+          - name: macos
+            os: macos-latest
             cmake_opts: -DCMAKE_BUILD_TYPE=Release
     runs-on: ${{ matrix.os }}
     steps:
