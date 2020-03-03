@@ -25,10 +25,17 @@ jobs:
             cmake_opts: -DCMAKE_BUILD_TYPE=Release
     runs-on: ${{ matrix.os }}
     steps:
+    - name: Cache Qt
+      id: cache-qt
+      uses: actions/cache@v1
+      with:
+        path: ../Qt
+        key: Qt-${{ matrix.name }}
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
         arch: ${{ matrix.qt_arch }}
+        cached: ${{ steps.cache-qt.outputs.cache-hit }}
     - name: Install Ruby
       uses: actions/setup-ruby@v1
       with:
