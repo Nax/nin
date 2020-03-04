@@ -56,3 +56,28 @@ jobs:
     - name: Package
       run: cmake --build . --config Release --target package
       working-directory: ./build
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v1
+      with:
+        name: ${{ matrix.name }}
+        path: build/pkg
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download win64
+        uses: actions/download-artifact@v1
+        with:
+          name: win64
+          path: pkg
+      - name: Download win32
+        uses: actions/download-artifact@v1
+        with:
+          name: win32
+          path: pkg
+      - name: Download macOS
+        uses: actions/download-artifact@v1
+        with:
+          name: macOS
+          path: pkg
+      - name: Release
+        run: ls -la pkg
