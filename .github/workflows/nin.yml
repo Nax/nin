@@ -62,6 +62,7 @@ jobs:
         name: ${{ matrix.name }}
         path: build/pkg
   release:
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - name: Download win64
