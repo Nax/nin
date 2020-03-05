@@ -54,7 +54,9 @@ jobs:
       run: cmake --build . --config Release --target test
       working-directory: ./build
     - name: Package
-      run: cmake --build . --config Release --target package
+      run: |
+        cmake --build . --config Release --target package
+        cmake -E remove_directory ./pkg/_CPack_Packages
       working-directory: ./build
     - name: Upload Artifact
       uses: actions/upload-artifact@v1
