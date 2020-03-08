@@ -18,6 +18,8 @@ Nin is an advanced Nintendo Entertainement System and Famicom emulator that is a
   <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/kirby.png" alt="Kirby's Adventure"/>
   <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/zelda.png" alt="The Legend of Zelda"/>
   <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/megaman2.png" alt="Mega Man 2"/>
+  <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/mario3.png" alt="Super Mario Bros. 3"/>
+  <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/punchout.png" alt="Punch-Out!!"/>
 </p>
 
 ## Features
