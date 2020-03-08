@@ -68,7 +68,7 @@ jobs:
         name: ${{ matrix.name }}
         path: build/pkg
   release:
-    if: github.event_name == "release"
+    if: github.event_name == 'release' && github.event.action == 'created'
     needs: [build]
     runs-on: ubuntu-latest
     steps:
