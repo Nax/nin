@@ -1,5 +1,5 @@
 <p align="center">
-  <img with="256" height="256" src="https://raw.githubusercontent.com/Nax/nin/master/data/nin.png"/>
+  <img alt="nin logo" with="256" height="256" src="https://raw.githubusercontent.com/Nax/nin/master/data/nin.png"/>
   <p align="center">The advanced NES emulator</p>
 </p>
 
@@ -12,6 +12,13 @@
 ## Overview
 
 Nin is an advanced Nintendo Entertainement System and Famicom emulator that is actively being developped.
+
+<p align="center">
+  <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/mario.png" alt="Super Mario Bros."/>
+  <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/kirby.png" alt="Kirby's Adventure"/>
+  <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/zelda.png" alt="The Legend of Zelda"/>
+  <img with="256" height="240" src="https://raw.githubusercontent.com/Nax/nin/better_readme/screenshots/megaman2.png" alt="Mega Man 2"/>
+</p>
 
 ## Features
 
