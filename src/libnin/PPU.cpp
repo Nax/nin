@@ -114,7 +114,9 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _v{}
 , _t{}
 , _x{}
+, _x2{}
 , _w{}
+, _prescan{}
 , _flags{}
 , _readBuf{}
 , _latchNT{}
@@ -136,6 +138,7 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 
 std::uint8_t PPU::regRead(std::uint16_t reg)
 {
+    static int Z;
     std::uint8_t value;
 
     value = 0;
@@ -149,6 +152,8 @@ std::uint8_t PPU::regRead(std::uint16_t reg)
     case 0x02: // PPUSTATUS
         if (_nmi.check(NMI_OCCURED))
             value |= 0x80;
+        value |= Z;
+        Z ^= 0x40;
         _nmi.unset(NMI_OCCURED);
         _w = false;
         break;
@@ -199,6 +204,15 @@ void PPU::regWrite(std::uint16_t reg, std::uint8_t value)
             _nmi.unset(NMI_OUTPUT);
         break;
     case 0x01:
+        _flags.grayscale = !!(value & 0x01);
+        _flags.backgroundEnableLeft = !!(value & 0x02);
+        _flags.spriteEnableLeft = !!(value & 0x04);
+        _flags.backgroundEnable = !!(value & 0x08);
+        _flags.spriteEnable = !!(value & 0x10);
+        _flags.emphasisRed = !!(value & 0x20);
+        _flags.emphasisGreen = !!(value & 0x40);
+        _flags.emphasisBlue = !!(value & 0x80);
+        _flags.rendering = (_flags.backgroundEnable || _flags.spriteEnable);
         break;
     case 0x02:
         break;
@@ -277,18 +291,24 @@ PPU::Handler PPU::handleVBlank()
     _video.swap();
     _clockVideo = 0;
     _nmi.set(NMI_OCCURED);
-    return wait(341 * 100, (Handler)&PPU::handlePreScan);
+    return wait(341 * 20, (Handler)&PPU::handlePreScan);
 }
 
 PPU::Handler PPU::handlePreScan()
 {
     _nmi.unset(NMI_OCCURED);
-    _v = _t;
-    return wait(341, (Handler)&PPU::handleScan);
+    _prescan = true;
+    if (_flags.rendering)
+    {
+        _v = _t;
+    }
+    _step = 0;
+    return wait(321, (Handler)&PPU::handleNextNT0);
 }
 
 PPU::Handler PPU::handleScan()
 {
+    _prescan = false;
     _step = 0;
     return (Handler)&PPU::handleScanNT0;
 }
@@ -302,7 +322,7 @@ PPU::Handler PPU::handleScanNT0()
 PPU::Handler PPU::handleScanNT1()
 {
     emitPixel();
-    _latchNT = _busVideo.read(0x2000 | (_v & 0xfff));
+    fetchNT();
     return (Handler)&PPU::handleScanAT0;
 }
 
@@ -315,7 +335,7 @@ PPU::Handler PPU::handleScanAT0()
 PPU::Handler PPU::handleScanAT1()
 {
     emitPixel();
-    _latchAT = _busVideo.read(0x23c0 | (_v & 0x0c00) | ((_v >> 4) & 0x38) | ((_v >> 2) & 0x07));
+    fetchAT();
     return (Handler)&PPU::handleScanLoBG0;
 }
 
@@ -328,7 +348,7 @@ PPU::Handler PPU::handleScanLoBG0()
 PPU::Handler PPU::handleScanLoBG1()
 {
     emitPixel();
-    _latchLoBG = _busVideo.read((_flags.altBackgroundPattern ? 0x1000 : 0x0000) | _latchNT << 4 | ((_v >> 12) & 0x07));
+    fetchLoBG();
     return (Handler)&PPU::handleScanHiBG0;
 }
 
@@ -341,28 +361,90 @@ PPU::Handler PPU::handleScanHiBG0()
 PPU::Handler PPU::handleScanHiBG1()
 {
     emitPixel();
-    _latchHiBG = _busVideo.read((_flags.altBackgroundPattern ? 0x1000 : 0x0000) | _latchNT << 4 | 0x08 | ((_v >> 12) & 0x07));
+    fetchHiBG();
     shiftReload();
 
     /* Increment X */
-    _v = incX(_v);
+    if (_flags.rendering)
+    {
+        _v = incX(_v);
+    }
 
     _step++;
     if (_step < 32)
     {
         return (Handler)&PPU::handleScanNT0;
     }
-    _scanline++;
-    if (_scanline < 240)
+    if (_flags.rendering)
     {
         _v = (_v & ~kHMask) | (_t & kHMask);
         _v = incY(_v);
-
-        return wait(84, (Handler)&PPU::handleScan);
     }
-    _scanline = 0;
-    return wait(84, (Handler)&PPU::handleVBlank);
+    _step = 0;
+    return wait(84, (Handler)&PPU::handleNextNT0);
 }
+
+PPU::Handler PPU::handleNextNT0()
+{
+    return (Handler)&PPU::handleNextNT1;
+}
+
+PPU::Handler PPU::handleNextNT1()
+{
+    fetchNT();
+    return (Handler)&PPU::handleNextAT0;
+}
+
+PPU::Handler PPU::handleNextAT0()
+{
+    return (Handler)&PPU::handleNextAT1;
+}
+
+PPU::Handler PPU::handleNextAT1()
+{
+    fetchAT();
+    return (Handler)&PPU::handleNextLoBG0;
+}
+
+PPU::Handler PPU::handleNextLoBG0()
+{
+    return (Handler)&PPU::handleNextLoBG1;
+}
+
+PPU::Handler PPU::handleNextLoBG1()
+{
+    fetchLoBG();
+    return (Handler)&PPU::handleNextHiBG0;
+}
+
+PPU::Handler PPU::handleNextHiBG0()
+{
+    return (Handler)&PPU::handleNextHiBG1;
+}
+
+PPU::Handler PPU::handleNextHiBG1()
+{
+    if (_flags.rendering)
+    {
+        fetchHiBG();
+        _v = incX(_v);
+        shiftReload();
+    }
+
+    if (_step)
+    {
+        if (_prescan)
+            return wait(4, (Handler)&PPU::handleScan);
+        _scanline++;
+        if (_scanline < 240)
+            return wait(4, (Handler)&PPU::handleScan);
+        _scanline = 0;
+        return wait(4, (Handler)&PPU::handleVBlank);
+    }
+    _step = 1;
+    return (Handler)&PPU::handleNextNT0;
+}
+
 
 PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
 {
@@ -370,6 +452,30 @@ PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
     _handler2 = next;
 
     return (Handler)&PPU::handleWait;
+}
+
+void PPU::fetchNT()
+{
+    _latchNT = _busVideo.read(0x2000 | (_v & 0xfff));
+}
+
+void PPU::fetchAT()
+{
+    _latchAT = _busVideo.read(0x23c0 | (_v & 0x0c00) | ((_v >> 4) & 0x38) | ((_v >> 2) & 0x07));
+    if (_v & 0x02)
+        _latchAT >>= 2;
+    if ((_v >> 5) & 0x02)
+        _latchAT >>= 4;
+}
+
+void PPU::fetchLoBG()
+{
+    _latchLoBG = _busVideo.read((_flags.altBackgroundPattern ? 0x1000 : 0x0000) | _latchNT << 4 | ((_v >> 12) & 0x07));
+}
+
+void PPU::fetchHiBG()
+{
+    _latchHiBG = _busVideo.read((_flags.altBackgroundPattern ? 0x1000 : 0x0000) | _latchNT << 4 | 0x08 | ((_v >> 12) & 0x07));
 }
 
 void PPU::emitPixel()
@@ -380,19 +486,19 @@ void PPU::emitPixel()
 
 std::uint8_t PPU::pixelBackground()
 {
+    std::uint8_t shift;
     std::uint8_t pattern{};
     std::uint8_t palette{};
     std::uint8_t paletteIdx{};
 
-    pattern |= (_shiftPatternLo & 0x01);
-    pattern |= ((_shiftPatternHi & 0x01) << 1);
-    palette |= (_shiftPaletteLo & 0x01);
-    palette |= ((_shiftPaletteHi & 0x01) << 1);
+    shift = _x + _x2;
 
-    _shiftPatternLo >>= 1;
-    _shiftPatternHi >>= 1;
-    _shiftPaletteLo >>= 1;
-    _shiftPaletteHi >>= 1;
+    pattern |= ((_shiftPatternLo >> shift) & 0x01);
+    pattern |= (((_shiftPatternHi >> shift) & 0x01) << 1);
+    palette |= ((_shiftPaletteLo >> shift) & 0x01);
+    palette |= (((_shiftPaletteHi >> shift) & 0x01) << 1);
+
+    _x2 = (_x2 + 1) & 0x07;
 
     if (pattern)
     {
@@ -404,6 +510,11 @@ std::uint8_t PPU::pixelBackground()
 
 void PPU::shiftReload()
 {
+    _shiftPatternLo >>= 8;
+    _shiftPatternHi >>= 8;
+    _shiftPaletteLo >>= 8;
+    _shiftPaletteHi >>= 8;
+
     _shiftPatternLo |= (std::uint16_t)bitrev8(_latchLoBG) << 8;
     _shiftPatternHi |= (std::uint16_t)bitrev8(_latchHiBG) << 8;
     _shiftPaletteLo |= (_latchAT & 0x01) ? 0xff00 : 0x0000;

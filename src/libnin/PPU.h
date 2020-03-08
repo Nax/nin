@@ -60,6 +60,15 @@ private:
         bool altSpritePattern:1;
         bool altBackgroundPattern:1;
         bool largeSprites:1;
+        bool backgroundEnable:1;
+        bool backgroundEnableLeft:1;
+        bool spriteEnable:1;
+        bool spriteEnableLeft:1;
+        bool rendering:1;
+        bool grayscale:1;
+        bool emphasisRed:1;
+        bool emphasisGreen:1;
+        bool emphasisBlue:1;
     };
 
     using AnyFuncPtr = void* (PPU::*)(void);
@@ -67,6 +76,7 @@ private:
 
     Handler handleWait();
     Handler handleVBlank();
+
     Handler handlePreScan();
     Handler handleScan();
     Handler handleScanNT0();
@@ -77,8 +87,21 @@ private:
     Handler handleScanLoBG1();
     Handler handleScanHiBG0();
     Handler handleScanHiBG1();
+    Handler handleNextNT0();
+    Handler handleNextNT1();
+    Handler handleNextAT0();
+    Handler handleNextAT1();
+    Handler handleNextLoBG0();
+    Handler handleNextLoBG1();
+    Handler handleNextHiBG0();
+    Handler handleNextHiBG1();
 
     Handler wait(std::uint32_t cycles, Handler next);
+
+    void            fetchNT();
+    void            fetchAT();
+    void            fetchLoBG();
+    void            fetchHiBG();
 
     void            emitPixel();
     std::uint8_t    pixelBackground();
@@ -98,7 +121,9 @@ private:
     std::uint16_t   _v;
     std::uint16_t   _t;
     std::uint8_t    _x;
+    std::uint8_t    _x2;
     bool            _w:1;
+    bool            _prescan:1;
 
     Flags           _flags;
 
