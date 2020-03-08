@@ -4,7 +4,10 @@
 </p>
 
 ![badge-version](https://img.shields.io/github/v/release/Nax/nin?include_prereleases)
-![badge-build](https://github.com/Nax/nin/workflows/Nin/badge.svg)
+![badge-license](https://img.shields.io/github/license/Nax/nin)
+![badge-build](https://img.shields.io/github/workflow/status/Nax/nin/Nin)
+![badge-stars](https://img.shields.io/github/stars/Nax/nin)
+![badge-downloads](https://img.shields.io/github/downloads/Nax/nin/total)
 
 ## Overview
 
