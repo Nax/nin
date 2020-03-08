@@ -1,6 +1,10 @@
 name: Nin
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -64,6 +68,7 @@ jobs:
         name: ${{ matrix.name }}
         path: build/pkg
   release:
+    if: github.event_name == "release"
     needs: [build]
     runs-on: ubuntu-latest
     steps:
