@@ -2,9 +2,11 @@ name: Nin
 
 on:
   push:
+    branches:
+      - "*"
+    tags:
+      - "v*"
   pull_request:
-  release:
-    types: [created]
 
 jobs:
   build:
@@ -68,7 +70,7 @@ jobs:
         name: ${{ matrix.name }}
         path: build/pkg
   release:
-    if: github.event_name == 'release' && github.event.action == 'created'
+    if: startsWith(github.ref, 'refs/tags/')
     needs: [build]
     runs-on: ubuntu-latest
     steps:
@@ -88,4 +90,10 @@ jobs:
           name: macOS
           path: pkg
       - name: Release
-        run: ls -la pkg
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "pkg/*"
+          draft: true
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
