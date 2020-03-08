@@ -1,6 +1,12 @@
-# nin
+<p align="center">
+  <img with="256" height="256" src="https://raw.githubusercontent.com/Nax/nin/master/data/nin.png"/>
+  <p align="center">The advanced NES emulator</p>
+</p>
 
-![Nin](https://github.com/Nax/nin/workflows/Nin/badge.svg)
+![badge-version](https://img.shields.io/github/v/release/Nax/nin?include_prereleases)
+![badge-build](https://github.com/Nax/nin/workflows/Nin/badge.svg)
+
+## Overview
 
 Nin is an advanced Nintendo Entertainement System and Famicom emulator that is actively being developped.
 
