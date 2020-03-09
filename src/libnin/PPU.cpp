@@ -302,12 +302,17 @@ PPU::Handler PPU::handleVBlank()
 
 PPU::Handler PPU::handlePreScan()
 {
-    std::printf("PPU CYC: %lld\n", (long long int)debugCyc);
+    //std::printf("PPU CYC: %lld\n", (long long int)debugCyc);
 
     _nmi.unset(NMI_OCCURED);
     _prescan = true;
     _spriteZeroNext = false;
     _spriteZeroHit = false;
+    for (int i = 0; i < 8; ++i)
+    {
+        _shiftSpriteHi[i] = 0x00;
+        _shiftSpriteLo[i] = 0x00;
+    }
     if (_flags.rendering)
     {
         _v = _t;
@@ -450,11 +455,17 @@ PPU::Handler PPU::handleNextHiBG1()
     if (_step)
     {
         if (_prescan)
+        {
+            _scanline = 0;
             return wait(5, dummy());
+        }
         if (_scanline + 1 < 240)
         {
-            spriteEvaluation();
-            spriteFetch();
+            if (_flags.rendering)
+            {
+                spriteEvaluation();
+                spriteFetch();
+            }
             _scanline++;
             return wait(5, (Handler)&PPU::handleScan);
         }
