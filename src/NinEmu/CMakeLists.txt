@@ -42,7 +42,7 @@ elseif(WIN32)
     list(APPEND SOURCES "${CMAKE_SOURCE_DIR}/data/nin.rc")
 endif()
 
-add_executable(nin WIN32 MACOSX_BUNDLE ${SOURCES})
+add_executable(nin MACOSX_BUNDLE ${SOURCES})
 target_include_directories(nin PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(nin OpenGL::GL OpenAL::AL libnin Qt5::Core Qt5::Widgets Qt5::Gamepad)
 

@@ -94,6 +94,7 @@ private:
     Handler handleVBlank();
 
     Handler handlePreScan();
+    Handler handleScanDummy();
     Handler handleScan();
     Handler handleScanNT0();
     Handler handleScanNT1();
@@ -113,6 +114,7 @@ private:
     Handler handleNextHiBG1();
 
     Handler wait(std::uint32_t cycles, Handler next);
+    Handler dummy();
 
     void            fetchNT();
     void            fetchAT();
@@ -146,6 +148,7 @@ private:
     bool            _prescan:1;
     bool            _spriteZeroNext:1;
     bool            _spriteZeroHit:1;
+    bool            _oddFrame:1;
 
     Flags           _flags;
     Sprite          _oam2[8];

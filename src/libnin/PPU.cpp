@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <cstdio>
 #include <cstring>
 #include <cmath>
 #include <libnin/PPU.h>
@@ -37,6 +38,8 @@
 #include <libnin/Video.h>
 
 using namespace libnin;
+
+static std::size_t debugCyc;
 
 static constexpr const std::uint8_t bitrev8(std::uint8_t v)
 {
@@ -119,6 +122,7 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _prescan{}
 , _spriteZeroNext{}
 , _spriteZeroHit{}
+, _oddFrame{}
 , _flags{}
 , _readBuf{}
 , _latchNT{}
@@ -277,6 +281,7 @@ void PPU::tick(std::size_t cycles)
     while (cycles--)
     {
         _handler = (Handler)(this->*_handler)();
+        debugCyc++;
     }
 }
 
@@ -297,6 +302,8 @@ PPU::Handler PPU::handleVBlank()
 
 PPU::Handler PPU::handlePreScan()
 {
+    std::printf("PPU CYC: %lld\n", (long long int)debugCyc);
+
     _nmi.unset(NMI_OCCURED);
     _prescan = true;
     _spriteZeroNext = false;
@@ -306,8 +313,14 @@ PPU::Handler PPU::handlePreScan()
         _v = _t;
     }
     _step = 0;
-    return wait(321, (Handler)&PPU::handleNextNT0);
+    return wait(320, (Handler)&PPU::handleNextNT0);
 }
+
+PPU::Handler PPU::handleScanDummy()
+{
+    return (Handler)&PPU::handleScan;
+}
+
 
 PPU::Handler PPU::handleScan()
 {
@@ -384,7 +397,7 @@ PPU::Handler PPU::handleScanHiBG1()
         _v = incY(_v);
     }
     _step = 0;
-    return wait(84, (Handler)&PPU::handleNextNT0);
+    return wait(65, (Handler)&PPU::handleNextNT0);
 }
 
 PPU::Handler PPU::handleNextNT0()
@@ -437,16 +450,16 @@ PPU::Handler PPU::handleNextHiBG1()
     if (_step)
     {
         if (_prescan)
-            return wait(4, (Handler)&PPU::handleScan);
+            return wait(5, dummy());
         if (_scanline + 1 < 240)
         {
             spriteEvaluation();
             spriteFetch();
             _scanline++;
-            return wait(4, (Handler)&PPU::handleScan);
+            return wait(5, (Handler)&PPU::handleScan);
         }
         _scanline = 0;
-        return wait(4, (Handler)&PPU::handleVBlank);
+        return wait(5 + 341, (Handler)&PPU::handleVBlank);
     }
     _step = 1;
     return (Handler)&PPU::handleNextNT0;
@@ -455,10 +468,19 @@ PPU::Handler PPU::handleNextHiBG1()
 
 PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
 {
-    _clock = cycles;
+    _clock = cycles - 1;
     _handler2 = next;
 
     return (Handler)&PPU::handleWait;
+}
+
+PPU::Handler PPU::dummy()
+{
+    Handler h;
+
+    h = (_oddFrame && _flags.backgroundEnable) ? (Handler)&PPU::handleScan : (Handler)&PPU::handleScanDummy;
+    _oddFrame = !_oddFrame;
+    return h;
 }
 
 void PPU::fetchNT()
@@ -647,7 +669,7 @@ std::uint8_t PPU::pixelSprite(std::uint8_t bg)
             pattern |= ((_shiftSpriteHi[i] >> shift) & 0x01) << 1;
             if (pattern)
             {
-                if (_spriteZeroNext && i == 0 && bg)
+                if (_spriteZeroNext && i == 0 && bg && !(_step == 31 && _x2 == 7))
                 {
                     _spriteZeroHit = true;
                 }
