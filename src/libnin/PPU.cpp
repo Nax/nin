@@ -435,11 +435,11 @@ PPU::Handler PPU::handleNextHiBG1()
     {
         if (_prescan)
             return wait(4, (Handler)&PPU::handleScan);
-        _scanline++;
-        if (_scanline < 240)
+        if (_scanline + 1 < 240)
         {
             spriteEvaluation();
             spriteFetch();
+            _scanline++;
             return wait(4, (Handler)&PPU::handleScan);
         }
         _scanline = 0;
@@ -485,13 +485,15 @@ void PPU::fetchHiBG()
 void PPU::spriteEvaluation()
 {
     std::uint16_t y;
+    std::uint8_t spriteHeight;
     _oam2Count = 0;
 
     std::memset(_oam2, 0xff, 32);
+    spriteHeight = _flags.largeSprites ? 16 : 8;
     for (int i = 0; i < 64; ++i)
     {
         y = _memory.oam[4 * i];
-        if (_scanline >= y && _scanline < y + 8)
+        if (_scanline >= y && _scanline < y + spriteHeight)
         {
             // Sprite y-hit
             memcpy(_oam2[_oam2Count].raw, _memory.oam + i * 4, 4);
@@ -506,6 +508,7 @@ void PPU::spriteFetch()
 {
     std::uint16_t y;
     std::uint16_t tile;
+    std::uint16_t nametable;
     std::uint16_t addr;
 
     int i;
@@ -514,10 +517,31 @@ void PPU::spriteFetch()
     {
         y = _scanline - _oam2[i].y;
         tile = _oam2[i].tile;
-        addr = (tile << 4) | y;
+        nametable = 0;
 
+        if (_oam2[i].yFlip)
+        {
+            if (_flags.largeSprites)
+                y = 15 - y;
+            else
+                y = 7 - y;
+        }
         if (!_flags.largeSprites && _flags.altSpritePattern)
-            addr |= 0x1000;
+        {
+            nametable = 0x1000;
+        }
+        if (_flags.largeSprites && tile & 0x01)
+        {
+            tile &= ~0x01;
+            nametable = 0x1000;
+        }
+        if (y > 7)
+        {
+            y &= 7;
+            tile++;
+        }
+
+        addr = nametable | (tile << 4) | y;
 
         _shiftSpriteX[i] = _oam2[i].x;
         _shiftSpriteAttr[i] = _oam2[i].raw[2];
