@@ -124,7 +124,7 @@ private:
 
     void            emitPixel();
     std::uint8_t    pixelBackground();
-    std::uint8_t    pixelSprite();
+    std::uint8_t    pixelSprite(std::uint8_t bg);
 
     void shiftReload();
 
@@ -144,6 +144,8 @@ private:
     std::uint8_t    _x2;
     bool            _w:1;
     bool            _prescan:1;
+    bool            _spriteZeroNext:1;
+    bool            _spriteZeroHit:1;
 
     Flags           _flags;
     Sprite          _oam2[8];

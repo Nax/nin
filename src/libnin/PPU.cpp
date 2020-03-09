@@ -117,6 +117,8 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _x2{}
 , _w{}
 , _prescan{}
+, _spriteZeroNext{}
+, _spriteZeroHit{}
 , _flags{}
 , _readBuf{}
 , _latchNT{}
@@ -138,7 +140,6 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 
 std::uint8_t PPU::regRead(std::uint16_t reg)
 {
-    static int Z;
     std::uint8_t value;
 
     value = 0;
@@ -150,10 +151,10 @@ std::uint8_t PPU::regRead(std::uint16_t reg)
     case 0x01:
         break;
     case 0x02: // PPUSTATUS
+        if (_spriteZeroHit)
+            value |= 0x40;
         if (_nmi.check(NMI_OCCURED))
             value |= 0x80;
-        value |= Z;
-        Z ^= 0x40;
         _nmi.unset(NMI_OCCURED);
         _w = false;
         break;
@@ -298,6 +299,8 @@ PPU::Handler PPU::handlePreScan()
 {
     _nmi.unset(NMI_OCCURED);
     _prescan = true;
+    _spriteZeroNext = false;
+    _spriteZeroHit = false;
     if (_flags.rendering)
     {
         _v = _t;
@@ -486,7 +489,9 @@ void PPU::spriteEvaluation()
 {
     std::uint16_t y;
     std::uint8_t spriteHeight;
+
     _oam2Count = 0;
+    _spriteZeroNext = false;
 
     std::memset(_oam2, 0xff, 32);
     spriteHeight = _flags.largeSprites ? 16 : 8;
@@ -496,6 +501,10 @@ void PPU::spriteEvaluation()
         if (_scanline >= y && _scanline < y + spriteHeight)
         {
             // Sprite y-hit
+            if (i == 0)
+            {
+                _spriteZeroNext = true;
+            }
             memcpy(_oam2[_oam2Count].raw, _memory.oam + i * 4, 4);
             _oam2Count++;
             if (_oam2Count == 8)
@@ -566,15 +575,6 @@ void PPU::emitPixel()
     std::uint8_t sprite;
     std::uint8_t mask;
 
-    if (_flags.spriteEnable && (_step || _flags.spriteEnableLeft))
-    {
-        sprite = pixelSprite();
-    }
-    else
-    {
-        sprite = 0x00;
-    }
-
     if (_flags.backgroundEnable && (_step || _flags.backgroundEnableLeft))
     {
         bg = pixelBackground();
@@ -582,6 +582,15 @@ void PPU::emitPixel()
     else
     {
         bg = 0x00;
+    }
+
+    if (_flags.spriteEnable && (_step || _flags.spriteEnableLeft))
+    {
+        sprite = pixelSprite(bg);
+    }
+    else
+    {
+        sprite = 0x00;
     }
     _x2 = (_x2 + 1) & 0x07;
 
@@ -614,7 +623,7 @@ std::uint8_t PPU::pixelBackground()
     return paletteIdx;
 }
 
-std::uint8_t PPU::pixelSprite()
+std::uint8_t PPU::pixelSprite(std::uint8_t bg)
 {
     std::uint16_t scanX;
     std::uint16_t spriteX;
@@ -638,6 +647,14 @@ std::uint8_t PPU::pixelSprite()
             pattern |= ((_shiftSpriteHi[i] >> shift) & 0x01) << 1;
             if (pattern)
             {
+                if (_spriteZeroNext && i == 0 && bg)
+                {
+                    _spriteZeroHit = true;
+                }
+                if (bg && _shiftSpriteAttr[i] & 0x20)
+                {
+                    return 0;
+                }
                 return ((_shiftSpriteAttr[i] & 0x03) << 2) | pattern;
             }
         }
