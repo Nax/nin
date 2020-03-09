@@ -437,7 +437,11 @@ PPU::Handler PPU::handleNextHiBG1()
             return wait(4, (Handler)&PPU::handleScan);
         _scanline++;
         if (_scanline < 240)
+        {
+            spriteEvaluation();
+            spriteFetch();
             return wait(4, (Handler)&PPU::handleScan);
+        }
         _scanline = 0;
         return wait(4, (Handler)&PPU::handleVBlank);
     }
@@ -478,9 +482,72 @@ void PPU::fetchHiBG()
     _latchHiBG = _busVideo.read((_flags.altBackgroundPattern ? 0x1000 : 0x0000) | _latchNT << 4 | 0x08 | ((_v >> 12) & 0x07));
 }
 
+void PPU::spriteEvaluation()
+{
+    std::uint16_t y;
+    _oam2Count = 0;
+
+    std::memset(_oam2, 0xff, 32);
+    for (int i = 0; i < 64; ++i)
+    {
+        y = _memory.oam[4 * i];
+        if (_scanline >= y && _scanline < y + 8)
+        {
+            // Sprite y-hit
+            memcpy(_oam2[_oam2Count].raw, _memory.oam + i * 4, 4);
+            _oam2Count++;
+            if (_oam2Count == 8)
+                break;
+        }
+    }
+}
+
+void PPU::spriteFetch()
+{
+    std::uint16_t y;
+    std::uint16_t tile;
+    std::uint16_t addr;
+
+    int i;
+
+    for (i = 0; i < _oam2Count; ++i)
+    {
+        y = _scanline - _oam2[i].y;
+        tile = _oam2[i].tile;
+        addr = (tile << 4) | y;
+
+        if (!_flags.largeSprites && _flags.altSpritePattern)
+            addr |= 0x1000;
+
+        _shiftSpriteX[i] = _oam2[i].x;
+        _shiftSpriteAttr[i] = _oam2[i].raw[2];
+        _shiftSpriteLo[i] = _busVideo.read(addr | 0x00);
+        _shiftSpriteHi[i] = _busVideo.read(addr | 0x08);
+    }
+
+    for (; i < 8; ++i)
+    {
+        _shiftSpriteX[i] = 0;
+        _shiftSpriteAttr[i] = 0;
+        _shiftSpriteLo[i] = 0;
+        _shiftSpriteHi[i] = 0;
+    }
+}
+
+
 void PPU::emitPixel()
 {
-    _video.write(_clockVideo, pixelBackground());
+    std::uint8_t color;
+    std::uint8_t bg;
+    std::uint8_t sprite;
+
+    sprite = pixelSprite();
+    bg = pixelBackground();
+    _x2 = (_x2 + 1) & 0x07;
+
+    color = _memory.palettes[sprite ? (0x10 | sprite) : bg];
+
+    _video.write(_clockVideo, color);
     _clockVideo++;
 }
 
@@ -498,14 +565,44 @@ std::uint8_t PPU::pixelBackground()
     palette |= ((_shiftPaletteLo >> shift) & 0x01);
     palette |= (((_shiftPaletteHi >> shift) & 0x01) << 1);
 
-    _x2 = (_x2 + 1) & 0x07;
-
     if (pattern)
     {
         paletteIdx = (palette << 2) | pattern;
     }
 
-    return _busVideo.read(0x3f00 | paletteIdx) & 0x3f;
+    return paletteIdx;
+}
+
+std::uint8_t PPU::pixelSprite()
+{
+    std::uint16_t scanX;
+    std::uint16_t spriteX;
+    std::uint8_t pattern;
+    std::uint8_t shift;
+
+    scanX = _step * 8 + _x2;
+
+    for (int i = 0; i < 8; ++i)
+    {
+        spriteX = _shiftSpriteX[i];
+        if (scanX >= spriteX && scanX < spriteX + 8)
+        {
+            shift = scanX - spriteX;
+            if (!(_shiftSpriteAttr[i] & 0x40)) // X Flip
+            {
+                shift = 7 - shift;
+            }
+            pattern = 0;
+            pattern |= (_shiftSpriteLo[i] >> shift) & 0x01;
+            pattern |= ((_shiftSpriteHi[i] >> shift) & 0x01) << 1;
+            if (pattern)
+            {
+                return ((_shiftSpriteAttr[i] & 0x03) << 2) | pattern;
+            }
+        }
+    }
+
+    return 0;
 }
 
 void PPU::shiftReload()

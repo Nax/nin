@@ -54,6 +54,22 @@ public:
     void            tick(std::size_t cycles);
 
 private:
+    union Sprite
+    {
+        std::uint8_t raw[4];
+        struct
+        {
+            std::uint8_t y;
+            std::uint8_t tile;
+            std::uint8_t palette : 2;
+            std::uint8_t reserved : 3;
+            std::uint8_t back : 1;
+            std::uint8_t xFlip : 1;
+            std::uint8_t yFlip : 1;
+            std::uint8_t x;
+        };
+    };
+
     struct Flags
     {
         bool incrementY:1;
@@ -103,8 +119,12 @@ private:
     void            fetchLoBG();
     void            fetchHiBG();
 
+    void            spriteEvaluation();
+    void            spriteFetch();
+
     void            emitPixel();
     std::uint8_t    pixelBackground();
+    std::uint8_t    pixelSprite();
 
     void shiftReload();
 
@@ -126,6 +146,8 @@ private:
     bool            _prescan:1;
 
     Flags           _flags;
+    Sprite          _oam2[8];
+    std::uint8_t    _oam2Count;
 
     std::uint8_t    _readBuf;
     std::uint8_t    _latchNT;
@@ -137,6 +159,11 @@ private:
     std::uint16_t   _shiftPatternHi;
     std::uint16_t   _shiftPaletteLo;
     std::uint16_t   _shiftPaletteHi;
+
+    std::uint8_t    _shiftSpriteX[8];
+    std::uint8_t    _shiftSpriteAttr[8];
+    std::uint8_t    _shiftSpriteLo[8];
+    std::uint8_t    _shiftSpriteHi[8];
 
     std::uint32_t   _clock;
     std::uint32_t   _clockVideo;
