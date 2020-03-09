@@ -564,14 +564,16 @@ void PPU::emitPixel()
     std::uint8_t color;
     std::uint8_t bg;
     std::uint8_t sprite;
+    std::uint8_t mask;
 
     sprite = pixelSprite();
     bg = pixelBackground();
     _x2 = (_x2 + 1) & 0x07;
 
+    mask = _flags.grayscale ? 0x30 : 0x3f;
     color = _memory.palettes[sprite ? (0x10 | sprite) : bg];
 
-    _video.write(_clockVideo, color);
+    _video.write(_clockVideo, color & mask);
     _clockVideo++;
 }
 
