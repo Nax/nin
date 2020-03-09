@@ -566,8 +566,23 @@ void PPU::emitPixel()
     std::uint8_t sprite;
     std::uint8_t mask;
 
-    sprite = pixelSprite();
-    bg = pixelBackground();
+    if (_flags.spriteEnable && (_step || _flags.spriteEnableLeft))
+    {
+        sprite = pixelSprite();
+    }
+    else
+    {
+        sprite = 0x00;
+    }
+
+    if (_flags.backgroundEnable && (_step || _flags.backgroundEnableLeft))
+    {
+        bg = pixelBackground();
+    }
+    else
+    {
+        bg = 0x00;
+    }
     _x2 = (_x2 + 1) & 0x07;
 
     mask = _flags.grayscale ? 0x30 : 0x3f;
