@@ -627,6 +627,9 @@ void PPU::spriteFetch()
         _shiftSpriteAttr[i] = 0;
         _shiftSpriteLo[i] = 0;
         _shiftSpriteHi[i] = 0;
+
+        _mapper.videoRead(0x1000);
+        _mapper.videoRead(0x1000);
     }
 }
 
