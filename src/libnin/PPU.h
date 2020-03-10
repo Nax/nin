@@ -94,6 +94,8 @@ private:
     Handler handleVBlank();
 
     Handler handlePreScan();
+    Handler handlePreScanReloadX();
+    Handler handlePreScanReloadY();
     Handler handleScanDummy();
     Handler handleScan();
     Handler handleScanNT0();

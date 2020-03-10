@@ -39,8 +39,6 @@
 
 using namespace libnin;
 
-static std::size_t debugCyc;
-
 static constexpr const std::uint8_t bitrev8(std::uint8_t v)
 {
     alignas(64) constexpr const std::uint8_t kLookup[] =
@@ -102,6 +100,20 @@ static std::uint16_t incY(std::uint16_t v)
         v = (v & ~0x03E0) | (y << 5);
     }
 
+    return v;
+}
+
+static std::uint16_t copyX(std::uint16_t v, std::uint16_t t)
+{
+    v &= ~kHMask;
+    v |= (t & kHMask);
+    return v;
+}
+
+static std::uint16_t copyY(std::uint16_t v, std::uint16_t t)
+{
+    v &= kHMask;
+    v |= (t & ~kHMask);
     return v;
 }
 
@@ -281,7 +293,6 @@ void PPU::tick(std::size_t cycles)
     while (cycles--)
     {
         _handler = (Handler)(this->*_handler)();
-        debugCyc++;
     }
 }
 
@@ -297,13 +308,11 @@ PPU::Handler PPU::handleVBlank()
     _video.swap();
     _clockVideo = 0;
     _nmi.set(NMI_OCCURED);
-    return wait(341 * 20, (Handler)&PPU::handlePreScan);
+    return wait(341 * 20 - 1, (Handler)&PPU::handlePreScan);
 }
 
 PPU::Handler PPU::handlePreScan()
 {
-    //std::printf("PPU CYC: %lld\n", (long long int)debugCyc);
-
     _nmi.unset(NMI_OCCURED);
     _prescan = true;
     _spriteZeroNext = false;
@@ -313,12 +322,33 @@ PPU::Handler PPU::handlePreScan()
         _shiftSpriteHi[i] = 0x00;
         _shiftSpriteLo[i] = 0x00;
     }
+    _step = 0;
+    return wait(257, (Handler)&PPU::handlePreScanReloadX);
+}
+
+PPU::Handler PPU::handlePreScanReloadX()
+{
     if (_flags.rendering)
     {
-        _v = _t;
+        _v = copyX(_v, _t);
     }
     _step = 0;
-    return wait(320, (Handler)&PPU::handleNextNT0);
+    return wait(23, (Handler)&PPU::handlePreScanReloadY);
+}
+
+PPU::Handler PPU::handlePreScanReloadY()
+{
+    if (_flags.rendering)
+    {
+        _v = copyY(_v, _t);
+    }
+    if (_step == 24)
+    {
+        _step = 0;
+        return wait(17, (Handler)&PPU::handleNextNT0);
+    }
+    _step++;
+    return (Handler)&PPU::handlePreScanReloadY;
 }
 
 PPU::Handler PPU::handleScanDummy()
@@ -398,7 +428,7 @@ PPU::Handler PPU::handleScanHiBG1()
     }
     if (_flags.rendering)
     {
-        _v = (_v & ~kHMask) | (_t & kHMask);
+        _v = copyX(_v, _t);
         _v = incY(_v);
     }
     _step = 0;
