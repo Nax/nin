@@ -38,6 +38,10 @@ static bool matchHash(NinState* state, std::uint32_t expected)
     ninDumpNametable(state, tmp + 0x400, 1);
 
     hash = qhash(tmp, 0x800);
+    /*
+    if (hash != expected)
+        printf("\n\n\nEXPECTED: 0x%08x, RESULT: 0x%08x\n\n\n", expected, hash);
+    */
     return (hash == expected);
 }
 
@@ -67,6 +71,25 @@ int main(void)
     suite.add("Blargg Branch Timing - 1 Basics",   "roms/blargg_branch_timing/1-basics.nes",    SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x7f7239ea); });
     suite.add("Blargg Branch Timing - 2 Backward", "roms/blargg_branch_timing/2-backward.nes",  SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x66f61ebc); });
     suite.add("Blargg Branch Timing - 3 Forward",  "roms/blargg_branch_timing/3-forward.nes",   SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x0598cd78); });
+
+    /* Blargg PPU Tests */
+    suite.add("Blargg PPU Tests - 1 Palette RAM",       "roms/blargg_ppu_tests/1-palette_ram.nes",      SEC_NTSC(0.50f), [](NinState* state) { return matchHash(state, 0x65dde75d); });
+    suite.add("Blargg PPU Tests - 2 Sprite RAM",        "roms/blargg_ppu_tests/2-sprite_ram.nes",       SEC_NTSC(0.50f), [](NinState* state) { return matchHash(state, 0x65dde75d); });
+    suite.add("Blargg PPU Tests - 3 VBlank Clear Time", "roms/blargg_ppu_tests/3-vbl_clear_time.nes",   SEC_NTSC(0.50f), [](NinState* state) { return matchHash(state, 0x65dde75d); });
+    suite.add("Blargg PPU Tests - 4 VRAM Access",       "roms/blargg_ppu_tests/4-vram_access.nes",      SEC_NTSC(0.50f), [](NinState* state) { return matchHash(state, 0x13aa27ec); });
+
+    /* Blargg Sprite Hit Tests */
+    suite.add("Blargg Sprite Hit Tests - 01 Basics",        "roms/blargg_sprite_hit_tests/01-basics.nes",           SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0xab309e07); });
+    suite.add("Blargg Sprite Hit Tests - 02 Alignment",     "roms/blargg_sprite_hit_tests/02-alignment.nes",        SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x8a961a81); });
+    suite.add("Blargg Sprite Hit Tests - 03 Corners",       "roms/blargg_sprite_hit_tests/03-corners.nes",          SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x22790ce3); });
+    suite.add("Blargg Sprite Hit Tests - 04 Flip",          "roms/blargg_sprite_hit_tests/04-flip.nes",             SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x04524085); });
+    suite.add("Blargg Sprite Hit Tests - 05 Left Clip",     "roms/blargg_sprite_hit_tests/05-left_clip.nes",        SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0xf0b6b9fa); });
+    suite.add("Blargg Sprite Hit Tests - 06 Right Edge",    "roms/blargg_sprite_hit_tests/06-right_edge.nes",       SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x6d74802d); });
+    suite.add("Blargg Sprite Hit Tests - 07 Screen Bottom", "roms/blargg_sprite_hit_tests/07-screen_bottom.nes",    SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x355c0002); });
+    suite.add("Blargg Sprite Hit Tests - 08 Double Height", "roms/blargg_sprite_hit_tests/08-double_height.nes",    SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x2195fb97); });
+    suite.add("Blargg Sprite Hit Tests - 09 Timing Basics", "roms/blargg_sprite_hit_tests/09-timing_basics.nes",    SEC_NTSC(1.50f), [](NinState* state) { return matchHash(state, 0xfce52375); });
+    suite.add("Blargg Sprite Hit Tests - 10 Timing Order",  "roms/blargg_sprite_hit_tests/10-timing_order.nes",     SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x24ff7b4e); });
+    suite.add("Blargg Sprite Hit Tests - 11 Edge Timing",   "roms/blargg_sprite_hit_tests/11-edge_timing.nes",      SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x7f6aa2ed); });
 
     return suite.run();
 }

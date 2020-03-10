@@ -50,7 +50,8 @@ public:
     std::uint8_t    regRead(std::uint16_t reg);
     void            regWrite(std::uint16_t reg, std::uint8_t value);
     void            oamWrite(std::uint8_t value);
-    bool            tick(std::size_t cycles);
+
+    void            tick(std::size_t cycles);
 
 private:
     union Sprite
@@ -60,22 +61,76 @@ private:
         {
             std::uint8_t y;
             std::uint8_t tile;
-            std::uint8_t palette:2;
-            std::uint8_t reserved:3;
-            std::uint8_t back:1;
-            std::uint8_t xFlip:1;
-            std::uint8_t yFlip:1;
+            std::uint8_t palette : 2;
+            std::uint8_t reserved : 3;
+            std::uint8_t back : 1;
+            std::uint8_t xFlip : 1;
+            std::uint8_t yFlip : 1;
             std::uint8_t x;
         };
     };
 
-    template <bool prerender>
-    void scanline();
+    struct Flags
+    {
+        bool incrementY:1;
+        bool altSpritePattern:1;
+        bool altBackgroundPattern:1;
+        bool largeSprites:1;
+        bool backgroundEnable:1;
+        bool backgroundEnableLeft:1;
+        bool spriteEnable:1;
+        bool spriteEnableLeft:1;
+        bool rendering:1;
+        bool grayscale:1;
+        bool emphasisRed:1;
+        bool emphasisGreen:1;
+        bool emphasisBlue:1;
+    };
 
-    void bgReload();
-    void bgFetch(std::uint16_t x);
-    void emitPixel(std::uint16_t x);
-    void spriteEvaluation(std::uint16_t cycle);
+    using AnyFuncPtr = void* (PPU::*)(void);
+    using Handler = AnyFuncPtr(PPU::*)(void);
+
+    Handler handleWait();
+    Handler handleVBlank();
+
+    Handler handlePreScan();
+    Handler handlePreScanReloadX();
+    Handler handlePreScanReloadY();
+    Handler handleScanDummy();
+    Handler handleScan();
+    Handler handleScanNT0();
+    Handler handleScanNT1();
+    Handler handleScanAT0();
+    Handler handleScanAT1();
+    Handler handleScanLoBG0();
+    Handler handleScanLoBG1();
+    Handler handleScanHiBG0();
+    Handler handleScanHiBG1();
+    Handler handleNextNT0();
+    Handler handleNextNT1();
+    Handler handleNextAT0();
+    Handler handleNextAT1();
+    Handler handleNextLoBG0();
+    Handler handleNextLoBG1();
+    Handler handleNextHiBG0();
+    Handler handleNextHiBG1();
+
+    Handler wait(std::uint32_t cycles, Handler next);
+    Handler dummy();
+
+    void            fetchNT();
+    void            fetchAT();
+    void            fetchLoBG();
+    void            fetchHiBG();
+
+    void            spriteEvaluation();
+    void            spriteFetch();
+
+    void            emitPixel();
+    std::uint8_t    pixelBackground();
+    std::uint8_t    pixelSprite(std::uint8_t bg);
+
+    void shiftReload();
 
     HardwareInfo&   _info;
     Memory&         _memory;
@@ -84,46 +139,46 @@ private:
     Mapper&         _mapper;
     Video&          _video;
 
-    std::uint16_t   _t;
+    Handler         _handler;
+    Handler         _handler2;
+
     std::uint16_t   _v;
+    std::uint16_t   _t;
     std::uint8_t    _x;
-    std::uint16_t   _scanline;
-    std::uint16_t   _cycle;
-    std::uint8_t    _latchName;
-    std::uint8_t    _latchAttr;
-    std::uint8_t    _latchTileLo;
-    std::uint8_t    _latchTileHi;
+    std::uint8_t    _x2;
+    bool            _w:1;
+    bool            _prescan:1;
+    bool            _spriteZeroNext:1;
+    bool            _spriteZeroHit:1;
+    bool            _oddFrame:1;
+
+    Flags           _flags;
+    Sprite          _oam2[8];
+    std::uint8_t    _oam2Count;
+
+    std::uint8_t    _readBuf;
+    std::uint8_t    _latchNT;
+    std::uint8_t    _latchAT;
+    std::uint8_t    _latchLoBG;
+    std::uint8_t    _latchHiBG;
+
     std::uint16_t   _shiftPatternLo;
     std::uint16_t   _shiftPatternHi;
-    std::uint16_t   _shiftPaletteHi;
     std::uint16_t   _shiftPaletteLo;
-    Sprite          _oam2[8];
-    std::uint8_t    _oam2Index;
-    std::uint8_t    _latchSpriteBitmapLo[8];
-    std::uint8_t    _latchSpriteBitmapHi[8];
-    std::uint8_t    _latchSpriteBitmapAttr[8];
-    std::uint8_t    _latchSpriteBitmapX[8];
-    unsigned        _zeroHit:1;
-    unsigned        _zeroHitNext:1;
-    unsigned        _maskEnableBackground:1;
-    unsigned        _maskEnableBackgroundLeft:1;
-    unsigned        _maskEnableSprites:1;
-    unsigned        _maskEnableSpritesLeft:1;
-    unsigned        _largeSprites:1;
-    std::uint8_t    _inhibitNmi:1;
+    std::uint16_t   _shiftPaletteHi;
+
+    std::uint8_t    _shiftSpriteX[8];
+    std::uint8_t    _shiftSpriteAttr[8];
+    std::uint8_t    _shiftSpriteLo[8];
+    std::uint8_t    _shiftSpriteHi[8];
+
+    std::uint32_t   _clock;
+    std::uint32_t   _clockVideo;
+    std::uint8_t    _scanline;
+    std::uint8_t    _step;
     std::uint8_t    _oamAddr;
-    std::uint8_t    _readBuf;
-    std::uint8_t    _latch;
-    std::uint8_t    _controller;
-    std::uint8_t    _scrollX;
-    std::uint8_t    _scrollY;
-    std::uint8_t    _w:1;
-    std::uint8_t    _zeroHitFlag:1;
-    std::uint8_t    _race0:1;
-    std::uint8_t    _race1:1;
-    bool            _frameOdd:1;
 };
 
-};
+}
 
 #endif
