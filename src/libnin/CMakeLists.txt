@@ -33,8 +33,8 @@ configure_file("${CONFIG_IN}" "${CONFIG_OUT}")
 set(SOURCES_CODEGEN_CPU "${CMAKE_BINARY_DIR}/CPU_instr.cpp")
 add_custom_command(
     OUTPUT "${SOURCES_CODEGEN_CPU}"
-    COMMAND "${RUBY}" "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb" "${CMAKE_SOURCE_DIR}/data/6502.txt" "${SOURCES_CODEGEN_CPU}"
-    DEPENDS "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb" "${CMAKE_SOURCE_DIR}/data/6502.txt"
+    COMMAND "${RUBY}" "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb" "${SOURCES_CODEGEN_CPU}"
+    DEPENDS "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb"
     COMMENT "Generating CPU_instr.cpp"
     VERBATIM
 )

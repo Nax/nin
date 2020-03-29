@@ -1,22 +1,8 @@
 class Rulebook
   def initialize
-    @templates = {}
     @steps = {}
     @next_step_id = 0
     @ops = {}
-  end
-
-  def read_templates(path)
-    File.open(path) do |f|
-      f.each_line do |line|
-        line.chomp!
-        unless line.empty?
-          name, tpl = *line.split(" ", 2)
-          raise StandardError, "Rule conflict: #{name}" if @templates.include?(name)
-          @templates[name] = tpl
-        end
-      end
-    end
   end
 
   def add_rule(op, rule)
@@ -122,7 +108,7 @@ class Rulebook
     step = @steps[index]
     tpl = nil
     next_step = ref_step(step[1]);
-    tpl = (["Handler next = #{next_step};"] + step[0].map{|x| (@templates[x] or raise StandardError, "Missing template: #{x}")} + ["return next;"]).join(" ")
+    tpl = ["Handler next = #{next_step};", *(step[0]), "return next;"].join(" ")
     str = "template<> CPU::Handler CPU::instruction<#{"0x%03x" % index}>(void) { #{tpl} }\n"
     str
   end
@@ -152,7 +138,7 @@ class Rulebook
     end
 
     File.open(path, "w") do |f|
-      f.write "#include <libnin/CPU.h>\n"
+      f.write "#include <libnin/CPU_impl.h>\n"
       f.write "#include <libnin/Memory.h>\n"
       f.write "\n"
       f.write "using namespace libnin;\n"
@@ -239,7 +225,6 @@ def make_nop_absolute(); ['AddrAbsLo', 'AddrAbsHi', 'ReadAddr']; end
 def make_nop_absolute_x(); ['AddrAbsLo', 'AddrAbsHiX', ['ReadAddrCarry', 'CarryFix'], 'ReadAddr']; end
 
 book = Rulebook.new
-book.read_templates ARGV[0]
 
 def build_arith_block(book, base, prefix, op)
   book.add_rule base + 0x09, make_arith_imm(prefix, op)
@@ -484,4 +469,4 @@ end
 
 book.optimize
 
-book.emit_file ARGV[1]
+book.emit_file ARGV[0]
