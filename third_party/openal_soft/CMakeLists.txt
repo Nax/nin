@@ -25,12 +25,12 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 include(ExternalProject)
-set(OPENALSOFT_VERSION 1.19.1)
+set(OPENALSOFT_VERSION 1.20.1)
 
 ExternalProject_Add(
     openal_soft
-    URL                 "https://openal-soft.org/openal-releases/openal-soft-${OPENALSOFT_VERSION}.tar.bz2"
-    URL_HASH            "SHA256=5C2F87FF5188B95E0DC4769719A9D89CE435B8322B4478B95DD4B427FE84B2E9"
+    URL                 "https://github.com/kcat/openal-soft/archive/openal-soft-${OPENALSOFT_VERSION}.tar.gz"
+    URL_HASH            "SHA256=C32D10473457A8B545AAB50070FE84BE2B5B041E1F2099012777EE6BE0057C13"
     INSTALL_DIR			"${CMAKE_BINARY_DIR}/third_party"
     CMAKE_ARGS
         "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
