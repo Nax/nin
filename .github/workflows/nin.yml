@@ -28,8 +28,10 @@ jobs:
             cmake_opts: -A Win32
           - name: macos
             os: macos-latest
-            cmake_opts: -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_DEPLOYMENT_TARGET=10.8
+            cmake_opts: -DCMAKE_BUILD_TYPE=Release
     runs-on: ${{ matrix.os }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: 10.9
     steps:
     - name: Cache Qt
       id: cache-qt
