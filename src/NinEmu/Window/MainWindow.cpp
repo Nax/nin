@@ -227,7 +227,7 @@ void MainWindow::createActions()
 
     _actionExit = new QAction(tr("E&xit"), this);
     _actionExit->setShortcut(QKeySequence::Quit);
-    connect(_actionExit, &QAction::triggered, this, &QWidget::close);
+    QObject::connect(_actionExit, &QAction::triggered, this, &QWidget::close);
 
     _pauseEmulation = new QAction(tr("Pause"), this);
     connect(_pauseEmulation, &QAction::triggered, _emu, &EmulatorWorker::pause);

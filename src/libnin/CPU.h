@@ -74,7 +74,7 @@ private:
     using AnyFuncPtr = void* (CPU::*)(void);
     using Handler = AnyFuncPtr (CPU::*)(void);
 
-    template <std::uint16_t> Handler instruction(void);
+    template <int> Handler instruction(void);
 
     Handler dispatch();
     Handler kil();

@@ -101,7 +101,7 @@ class Rulebook
     else
       handler = "instruction<#{"0x%03x" % step}>"
     end
-    "((CPU::Handler)&CPU::#{handler})"
+    "reinterpret_cast<CPU::Handler>(&CPU::#{handler})"
   end
 
   def emit_step(index)
@@ -128,7 +128,7 @@ class Rulebook
   end
 
   def emit_states
-    states = (0..@steps.keys.max).to_a.map{|x| "((CPU::Handler)&CPU::instruction<#{"0x%03x" % x}>),"}.each_slice(4).map{|x| x.join(" ")}.map{|x| "    " + x}.join("\n")
+    states = (0..@steps.keys.max).to_a.map{|x| "#{ref_step(x)},"}.each_slice(4).map{|x| x.join(" ")}.map{|x| "    " + x}.join("\n")
     "const CPU::Handler CPU::kStates[] = {\n#{states}\n};\n"
   end
 

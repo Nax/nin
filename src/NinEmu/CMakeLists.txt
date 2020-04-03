@@ -27,12 +27,22 @@
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
+find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(OpenAL REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Gamepad REQUIRED)
-find_package(QtDeploy REQUIRED)
 
-set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks;@executable_path/../lib")
+if (APPLE OR WIN32)
+    find_package(QtDeploy REQUIRED)
+endif()
+
+if (UNIX)
+    if (APPLE)
+        set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks;@executable_path/../lib")
+    else()
+        set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
+    endif()
+endif()
 
 file(GLOB_RECURSE SOURCES "*.cpp")
 if (APPLE)
@@ -44,7 +54,7 @@ endif()
 
 add_executable(nin WIN32 MACOSX_BUNDLE ${SOURCES})
 target_include_directories(nin PRIVATE "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(nin OpenGL::GL OpenAL::AL libnin Qt5::Core Qt5::Widgets Qt5::Gamepad)
+target_link_libraries(nin OpenGL::GL OpenAL::AL libnin Qt5::Core Qt5::Widgets Qt5::Gamepad Threads::Threads)
 
 if (APPLE)
     target_compile_definitions(nin PRIVATE GL_SILENCE_DEPRECATION=1)
