@@ -17,6 +17,7 @@ jobs:
           - win64
           - win32
           - macos
+          - linux
         include:
           - name: win64
             os: windows-2019
@@ -28,6 +29,9 @@ jobs:
             cmake_opts: -A Win32
           - name: macos
             os: macos-latest
+            cmake_opts: -DCMAKE_BUILD_TYPE=Release
+          - name: linux
+            os: ubuntu-16.04
             cmake_opts: -DCMAKE_BUILD_TYPE=Release
     runs-on: ${{ matrix.os }}
     env:
@@ -90,6 +94,11 @@ jobs:
         uses: actions/download-artifact@v1
         with:
           name: macOS
+          path: pkg
+      - name: Download linux
+        uses: actions/download-artifact@v1
+        with:
+          name: linux
           path: pkg
       - name: Release
         uses: softprops/action-gh-release@v1
