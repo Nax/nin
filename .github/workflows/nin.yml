@@ -48,6 +48,7 @@ jobs:
       with:
         arch: ${{ matrix.qt_arch }}
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
+        version: 5.9.9
     - name: Install Ruby
       uses: actions/setup-ruby@v1
       with:
