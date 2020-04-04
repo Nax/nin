@@ -4,5 +4,5 @@ Name=Nin
 Comment=A NES emulator
 Exec=nin
 Icon=nin
-Terminal=true
+Terminal=false
 Categories=Emulator;Game;
