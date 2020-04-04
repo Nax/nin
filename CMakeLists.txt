@@ -121,6 +121,10 @@ else()
         set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHs-c- /GR- /D_HAS_EXCEPTIONS=0")
     endif()
 
+    if (UNIX AND NOT APPLE)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-sized-deallocation")
+    endif()
+
     add_subdirectory(src)
     add_subdirectory(tests)
 endif()
