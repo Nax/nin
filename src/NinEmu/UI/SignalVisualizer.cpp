@@ -79,7 +79,7 @@ void SignalVisualizer::paintGL()
     glColor3f(_color[0], _color[1], _color[2]);
     glBegin(GL_LINE_STRIP);
     {
-        std::unique_lock lock(_mutex);
+        std::unique_lock<std::mutex> lock(_mutex);
 
         for (int i = 0; i < _sampleCount; ++i)
         {
@@ -105,7 +105,7 @@ bool SignalVisualizer::dirty() const
 
 void SignalVisualizer::setSamples(const float* samples)
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     if (!_dirty)
     {

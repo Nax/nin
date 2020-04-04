@@ -85,14 +85,14 @@ void RenderWidget::paintGL()
 
 void RenderWidget::resizeGL(int w, int h)
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     computeViewBox();
 }
 
 void RenderWidget::setPixelAspectRatio(float pixelAspectRatio)
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     _pixelAspectRatio = pixelAspectRatio;
     computeViewBox();
@@ -100,7 +100,7 @@ void RenderWidget::setPixelAspectRatio(float pixelAspectRatio)
 
 void RenderWidget::setFit(bool fit)
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     _fit = fit;
     computeViewBox();
@@ -108,7 +108,7 @@ void RenderWidget::setFit(bool fit)
 
 void RenderWidget::setIntegerScale(bool integerScale)
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     _integerScale = integerScale;
     computeViewBox();
@@ -116,7 +116,7 @@ void RenderWidget::setIntegerScale(bool integerScale)
 
 void RenderWidget::setOverscan(int x, int y)
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     _xOverscan = x;
     _yOverscan = y;
@@ -125,7 +125,7 @@ void RenderWidget::setOverscan(int x, int y)
 
 void RenderWidget::updateTexture(const char* texture)
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     memcpy(_rawTexture, texture, 256 * 240 * 4);
     QOpenGLWidget::update();

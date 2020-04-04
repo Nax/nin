@@ -30,7 +30,7 @@ int TestSuite::run()
         threads.emplace_back(&TestSuite::run_thread, this);
 
     {
-        std::unique_lock lock{_mutex};
+        std::unique_lock<std::mutex> lock{_mutex};
         for (;;)
         {
             for (;;)
@@ -104,7 +104,7 @@ void TestSuite::run_thread()
     {
         t = nullptr;
         {
-            std::unique_lock lock{_mutex};
+            std::unique_lock<std::mutex> lock{_mutex};
             for (unsigned i = 0; i < _tests.size(); ++i)
             {
                 if (_tests[i].state == TestState::Pending)

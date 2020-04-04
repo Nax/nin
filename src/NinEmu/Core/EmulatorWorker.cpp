@@ -43,7 +43,7 @@ EmulatorWorker::EmulatorWorker(QObject* parent)
 
 EmulatorWorker::~EmulatorWorker()
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     _workerState = WorkerState::Stopping;
     lock.unlock();
@@ -63,7 +63,7 @@ bool EmulatorWorker::loadRom(const QString& path)
     NinInt32 system;
     bool success;
 
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     closeRomRaw();
     raw = path.toUtf8();
@@ -109,7 +109,7 @@ bool EmulatorWorker::loadRom(const QString& path)
 
 void EmulatorWorker::closeRom()
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     closeRomRaw();
     _workerState = WorkerState::Idle;
@@ -120,7 +120,7 @@ void EmulatorWorker::closeRom()
 
 void EmulatorWorker::pause()
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     if (_workerState == WorkerState::Running)
     {
@@ -133,7 +133,7 @@ void EmulatorWorker::pause()
 
 void EmulatorWorker::resume()
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     if (_workerState == WorkerState::Paused)
     {
@@ -145,7 +145,7 @@ void EmulatorWorker::resume()
 
 void EmulatorWorker::stepFrame()
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     if (_workerState == WorkerState::Paused || _workerState == WorkerState::Running)
     {
@@ -157,7 +157,7 @@ void EmulatorWorker::stepFrame()
 
 void EmulatorWorker::stepSingle()
 {
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     if (_workerState == WorkerState::Paused || _workerState == WorkerState::Running)
     {
@@ -184,7 +184,7 @@ void EmulatorWorker::setAudioFrequency(uint32_t freq)
 
 void EmulatorWorker::syncAudio()
 {
-    std::unique_lock lock(_audioMutex);
+    std::unique_lock<std::mutex> lock(_audioMutex);
     emit audio(_audioBuffer);
 }
 
@@ -195,7 +195,7 @@ void EmulatorWorker::workerMain()
     uint64_t dt;
     uint64_t delay;
 
-    std::unique_lock lock(_mutex);
+    std::unique_lock<std::mutex> lock(_mutex);
 
     prev = Clock::now();
     _accumulator = 0;
@@ -319,7 +319,7 @@ void EmulatorWorker::audioCallback(void* arg, const float* samples)
 
     emu = (EmulatorWorker*)arg;
     {
-        std::unique_lock lock(emu->_audioMutex);
+        std::unique_lock<std::mutex> lock(emu->_audioMutex);
         memcpy(emu->_audioBuffer, samples, sizeof(emu->_audioBuffer));
     }
     emit emu->audioEvent();
