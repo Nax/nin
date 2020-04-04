@@ -25,7 +25,7 @@ jobs:
             cmake_opts: -A x64
           - name: win32
             os: windows-2019
-            qt_arch: win32_msvc2017
+            qt_arch: win32_msvc2015
             cmake_opts: -A Win32
           - name: macos
             os: macos-latest

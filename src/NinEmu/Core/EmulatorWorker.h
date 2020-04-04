@@ -102,10 +102,10 @@ private:
     std::atomic_size_t          _frameCycles;
     std::atomic_size_t          _frameDelay;
     std::atomic_size_t          _cyc;
-    std::atomic_uint8_t         _input;
-    std::atomic_uint64_t        _accumulator;
+    std::atomic_uint_fast8_t    _input;
+    std::atomic_uint_fast64_t   _accumulator;
 
-    std::atomic_uint32_t        _audioFrequency;
+    std::atomic_uint_fast32_t   _audioFrequency;
 
     std::mutex  _audioMutex;
     float       _audioBuffer[NIN_AUDIO_SAMPLE_SIZE];
