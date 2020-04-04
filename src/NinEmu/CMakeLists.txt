@@ -76,9 +76,7 @@ if (WIN32)
     install(CODE "
     execute_process(COMMAND \"${QT_DEPLOY}\" \"--release\" \"${CMAKE_INSTALL_PREFIX}/bin/nin.exe\" \"--no-compiler-runtime\" \"--no-opengl-sw\" \"--no-system-d3d-compiler\")
     ")
-endif()
-
-if (APPLE)
+elseif (APPLE)
     # TODO: un-hardcode this
     set(APP "${CMAKE_INSTALL_PREFIX}/bin/Nin.app")
     install(CODE "
@@ -87,4 +85,5 @@ if (APPLE)
     execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"$<TARGET_FILE:libnin>\" \"${APP}/Contents/lib/libnin.dylib\")
     execute_process(COMMAND \"${QT_DEPLOY}\" \"${APP}\" \"-verbose=1\")
     ")
+else()
 endif()

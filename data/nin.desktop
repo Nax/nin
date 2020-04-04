@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Nin
+Comment=A NES emulator
+Exec=nin
+Icon=nin
+Terminal=true
+Categories=Emulator;Game;

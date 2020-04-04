@@ -66,7 +66,14 @@ if (SUPERBUILD)
 		ALWAYS ON
     )
 
-    install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION . USE_SOURCE_PERMISSIONS)
+    if (UNIX AND NOT APPLE)
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION bin USE_SOURCE_PERMISSIONS)
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/lib/" DESTINATION lib USE_SOURCE_PERMISSIONS)
+        install(FILES "${CMAKE_SOURCE_DIR}/data/nin.desktop" DESTINATION share/applications)
+        install(FILES "${CMAKE_SOURCE_DIR}/data/nin.png" DESTINATION share/icons/hicolor/512x512/apps)
+    else()
+        install(DIRECTORY "${CMAKE_BINARY_DIR}/bin/" DESTINATION . USE_SOURCE_PERMISSIONS)
+    endif()
 
     # Tests
     add_custom_target(
@@ -88,12 +95,15 @@ if (SUPERBUILD)
 
     if (WIN32)
         set(CPACK_GENERATOR "ZIP")
+        include(CPack)
     elseif(APPLE)
         set(CPACK_GENERATOR "DragNDrop")
         set(CPACK_SYSTEM_NAME "mac")
+        include(CPack)
+    elseif(UNIX)
+        set(CPACK_GENERATOR "ZIP")
+        include(CPack)
     endif()
-
-    include(CPack)
 else()
     # Build
     project(Nin VERSION "${VERSION}" LANGUAGES C CXX)
