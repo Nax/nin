@@ -36,19 +36,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       MACOSX_DEPLOYMENT_TARGET: 10.9
+      QT_VERSION: 5.9.9
     steps:
     - name: Cache Qt
       id: cache-qt
       uses: actions/cache@v1
       with:
         path: ../Qt
-        key: Qt-${{ matrix.name }}
+        key: Qt-${{ env.QT_VERSION }}-${{ matrix.name }}
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
       with:
         arch: ${{ matrix.qt_arch }}
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
-        version: 5.9.9
+        version: ${{ env.QT_VERSION }}
     - name: Install Ruby
       uses: actions/setup-ruby@v1
       with:
