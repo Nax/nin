@@ -141,13 +141,17 @@ class Rulebook
       f.write "#include <libnin/CPU_impl.h>\n"
       f.write "#include <libnin/Memory.h>\n"
       f.write "\n"
-      f.write "using namespace libnin;\n"
+      f.write "namespace libnin\n"
+      f.write "{\n"
       f.write "\n"
       f.write emit_instructions
       f.write "\n"
       f.write emit_ops
       f.write "\n"
       f.write emit_states
+      f.write "\n"
+      f.write "}\n"
+      f.write "\n"
     end
   end
 
