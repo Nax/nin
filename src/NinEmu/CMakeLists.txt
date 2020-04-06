@@ -53,7 +53,7 @@ endif()
 
 add_executable(nin WIN32 MACOSX_BUNDLE ${SOURCES})
 target_include_directories(nin PRIVATE "${CMAKE_SOURCE_DIR}/src")
-target_link_libraries(nin OpenGL::GL OpenAL libnin Qt5::Core Qt5::Widgets Qt5::Gamepad Threads::Threads)
+target_link_libraries(nin OpenGL::GL OpenAL::AL libnin Qt5::Core Qt5::Widgets Qt5::Gamepad Threads::Threads)
 
 if (UNIX AND NOT APPLE)
     target_link_options(nin PRIVATE -pthread)
