@@ -9,7 +9,7 @@ if (UNIX AND NOT APPLE)
 endif()
 
 add_custom_target(
-    tests
+    test
     COMMAND nintests
     WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/data/test_roms"
     VERBATIM
