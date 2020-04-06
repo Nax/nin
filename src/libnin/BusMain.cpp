@@ -99,8 +99,6 @@ std::uint8_t BusMain::read(std::uint16_t addr)
 
 WriteAction BusMain::write(std::uint16_t addr, std::uint8_t value)
 {
-    std::uint8_t tmp;
-
     switch (addr >> 12)
     {
     case 0x0:
@@ -181,7 +179,7 @@ WriteAction BusMain::write(std::uint16_t addr, std::uint8_t value)
     return WriteAction::None;
 }
 
-static bool memoryExtractOverlap(std::uint16_t start, std::size_t len, std::uint16_t regionStart, std::size_t regionLen, std::uint16_t* overlapOffset, std::size_t* overlapLen, std::uint16_t* overlapOffsetInDest)
+static bool memoryExtractOverlap(std::uint16_t start, std::size_t len, std::uint16_t regionStart, std::size_t regionLen, std::size_t* overlapOffset, std::size_t* overlapLen, std::size_t* overlapOffsetInDest)
 {
     std::size_t offset;
     std::size_t regionEnd;
@@ -213,8 +211,8 @@ static bool memoryExtractOverlap(std::uint16_t start, std::size_t len, std::uint
 void BusMain::dump(std::uint8_t* dst, std::uint16_t start, std::size_t len)
 {
     std::size_t oLen;
-    std::uint16_t oOff;
-    std::uint16_t dOff;
+    std::size_t oOff;
+    std::size_t dOff;
 
     /* RAM */
     for (int i = 0; i < 4; ++i)

@@ -58,12 +58,12 @@ void HexView::paintEvent(QPaintEvent* event)
     uint16_t addr;
     char tmp[7];
     int offset;
-    size_t lineCount;
+    int lineCount;
 
     offset = verticalScrollBar()->value();
     lineCount = size().height() / LINE_HEIGHT;
 
-    for (size_t j = 0; j < lineCount; ++j)
+    for (int j = 0; j < lineCount; ++j)
     {
         painter.setPen(Qt::blue);
         addr = (j + offset) << 4;
@@ -90,9 +90,9 @@ void HexView::resizeEvent(QResizeEvent* event)
 
 void HexView::updateScroll()
 {
-    long maxScroll;
+    int maxScroll;
 
-    maxScroll = _bufferSize / 16;
+    maxScroll = (int)(_bufferSize / 16);
     maxScroll -= (_viewport->size().height() / LINE_HEIGHT);
 
     if (maxScroll < 0)

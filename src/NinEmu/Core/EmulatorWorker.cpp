@@ -274,8 +274,6 @@ void EmulatorWorker::workerStepFrame()
 
 void EmulatorWorker::workerStepSingle()
 {
-    size_t cyc;
-
     ninSetInput(_state, _input);
     if (ninStepInstruction(_state))
     {
