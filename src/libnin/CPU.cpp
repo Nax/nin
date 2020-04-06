@@ -61,7 +61,7 @@ std::size_t CPU::tick(std::size_t cycles)
     handler = _handler;
     for (std::size_t i = 0; i < cycles; ++i)
     {
-        handler = (Handler)((this->*handler)());
+        handler = (this->*handler)();
     }
     _handler = handler;
     return 0;
@@ -93,25 +93,25 @@ CPU::Handler CPU::dispatch()
 
 CPU::Handler CPU::kil()
 {
-    return (Handler)&CPU::kil;
+    return &CPU::kil;
 }
 
 CPU::Handler CPU::dma()
 {
-    return (Handler)&CPU::dmaRead;
+    return &CPU::dmaRead;
 }
 
 CPU::Handler CPU::dmaRead()
 {
     _dmaValue = read(_dmaAddr++);
-    return (Handler)&CPU::dmaWrite;
+    return &CPU::dmaWrite;
 }
 
 CPU::Handler CPU::dmaWrite()
 {
     _ppu.oamWrite(_dmaValue);
     _dmaCount++;
-    return _dmaCount ? (Handler)&CPU::dmaRead : _handler2;
+    return _dmaCount ? Handler(&CPU::dmaRead) : _handler2;
 }
 
 std::uint8_t CPU::read(std::uint16_t addr)
@@ -127,7 +127,9 @@ CPU::Handler CPU::write(std::uint16_t addr, std::uint8_t value, Handler next)
         _handler2 = next;
         _dmaAddr = ((std::uint16_t)value << 8);
         _dmaCount = 0;
-        return (Handler)&CPU::dma;
+        return &CPU::dma;
+    default:
+        break;
     }
     return next;
 }

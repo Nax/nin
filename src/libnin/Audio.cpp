@@ -39,8 +39,8 @@ Audio::Audio(const HardwareInfo& info)
 , _callbackArg(nullptr)
 , _targetFrequency(0)
 , _accumulator(0)
-, _samplesCursor{kLowPassFilterWidth / 2}
 , _samplesRaw{}
+, _samplesCursor{kLowPassFilterWidth / 2}
 {
 
 }

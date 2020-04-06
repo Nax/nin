@@ -32,6 +32,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <libnin/NonCopyable.h>
+#include <libnin/MemberStateHelper.h>
 
 #define PFLAG_C     0x01
 #define PFLAG_Z     0x02
@@ -63,7 +64,7 @@ class CPU : private NonCopyable
 public:
     CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
 
-    bool            dispatching() const { return _handler == (Handler)&CPU::dispatch; }
+    bool            dispatching() const { return _handler == &CPU::dispatch; }
 
     std::uint8_t    reg(int r) const { return _regs[r]; }
     std::uint16_t   pc() const { return _pc; }
@@ -71,8 +72,7 @@ public:
     std::size_t tick(std::size_t cycles);
 
 private:
-    using AnyFuncPtr = void* (CPU::*)(void);
-    using Handler = AnyFuncPtr (CPU::*)(void);
+    using Handler = MemberStateHelper<CPU>;
 
     template <int> Handler instruction(void);
 

@@ -39,7 +39,7 @@
 
 using namespace libnin;
 
-static constexpr const std::uint8_t bitrev8(std::uint8_t v)
+static constexpr std::uint8_t bitrev8(std::uint8_t v)
 {
     alignas(64) constexpr const std::uint8_t kLookup[] =
     {

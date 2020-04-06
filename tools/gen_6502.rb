@@ -101,7 +101,7 @@ class Rulebook
     else
       handler = "instruction<#{"0x%03x" % step}>"
     end
-    "reinterpret_cast<CPU::Handler>(&CPU::#{handler})"
+    "&CPU::#{handler}"
   end
 
   def emit_step(index)

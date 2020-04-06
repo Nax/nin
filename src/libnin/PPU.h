@@ -32,6 +32,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <libnin/NonCopyable.h>
+#include <libnin/MemberStateHelper.h>
 
 namespace libnin
 {
@@ -87,8 +88,7 @@ private:
         bool emphasisBlue:1;
     };
 
-    using AnyFuncPtr = void* (PPU::*)(void);
-    using Handler = AnyFuncPtr(PPU::*)(void);
+    using Handler = MemberStateHelper<PPU>;
 
     Handler handleWait();
     Handler handleVBlank();
