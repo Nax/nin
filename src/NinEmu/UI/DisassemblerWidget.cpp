@@ -374,13 +374,13 @@ void DisassemblerWidget::paintEvent(QPaintEvent* event)
     QAbstractScrollArea::paintEvent(event);
 }
 
-void DisassemblerWidget::disassemble(uint16_t pc, const uint8_t* data, size_t dataSize)
+void DisassemblerWidget::disassemble(uint16_t pc, const uint8_t* data, std::size_t dataSize)
 {
     size_t off;
 
     memset(_buffer, 0, sizeof(_buffer));
     off = 0;
-    for (int i = 0; i < 64; ++i)
+    for (int i = 0; i < std::min(64, int(dataSize / 3)); ++i)
     {
         DisasmInstr& instr = _buffer[i];
         off += disassembleInstr(instr, (pc + off) & 0xffff, data + off);

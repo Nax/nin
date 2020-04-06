@@ -30,12 +30,14 @@
 #include <NinEmu/UI/RenderWidget.h>
 
 RenderWidget::RenderWidget(QWidget* parent)
-: QOpenGLWidget(parent)
-, _texture(0)
-, _pixelAspectRatio(1.0f)
-, _fit(false)
-, _xOverscan(0)
-, _yOverscan(0)
+: QOpenGLWidget{parent}
+, _texture{}
+, _rawTexture{}
+, _fit{}
+, _integerScale{}
+, _pixelAspectRatio{1.0f}
+, _xOverscan{}
+, _yOverscan{}
 {
     memset(_rawTexture, 0, 256 * 240 * 4);
     computeViewBox();
@@ -85,6 +87,8 @@ void RenderWidget::paintGL()
 
 void RenderWidget::resizeGL(int w, int h)
 {
+    (void)w;
+    (void)h;
     std::unique_lock<std::mutex> lock(_mutex);
 
     computeViewBox();

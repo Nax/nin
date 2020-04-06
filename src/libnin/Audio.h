@@ -49,11 +49,11 @@ public:
     void push(float sample);
 
 private:
-    static constexpr const unsigned kOversampling = 8;
-    static constexpr const unsigned kTargetFrequency = 48000;
-    static constexpr const unsigned kTargetFrequencyRaw = kTargetFrequency * kOversampling;
-    static constexpr const unsigned kLowPassFilterWidth = 64;
-    static constexpr const unsigned kMaxRawSamples = NIN_AUDIO_SAMPLE_SIZE * kOversampling + kLowPassFilterWidth;
+    static constexpr const int kOversampling = 8;
+    static constexpr const int kTargetFrequency = 48000;
+    static constexpr const int kTargetFrequencyRaw = kTargetFrequency * kOversampling;
+    static constexpr const int kLowPassFilterWidth = 64;
+    static constexpr const int kMaxRawSamples = NIN_AUDIO_SAMPLE_SIZE * kOversampling + kLowPassFilterWidth;
 
     void resample();
 

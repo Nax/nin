@@ -57,9 +57,9 @@
 #define AddrAbsHiX          _addrCarry = (((_addr & 0xff) + _x) > 0xff) ? 1 : 0; _addr = (((_addr + _x) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8);
 #define AddrAbsHiY          _addrCarry = (((_addr & 0xff) + _y) > 0xff) ? 1 : 0; _addr = (((_addr + _y) & 0x00ff) | ((std::uint16_t)read(_pc++)) << 8);
 #define AddrCarry           read(_addr); _addr += (((std::uint16_t)_addrCarry) << 8);
-#define AddrCarry_SHX       read(_addr); if (_addrCarry) _addr = ((_addr & 0x00ff) | ((_addr >> 8) + 1)& _x);
-#define AddrCarry_SHY       read(_addr); if (_addrCarry) _addr = ((_addr & 0x00ff) | ((_addr >> 8) + 1)& _y);
-#define AddrCarry_AHX       read(_addr); if (_addrCarry) _addr = ((_addr & 0x00ff) | ((_addr >> 8) + 1)& _a& _x);
+#define AddrCarry_SHX       read(_addr); if (_addrCarry) _addr = (((_addr & 0x00ff) | ((_addr >> 8) + 1)) & _x);
+#define AddrCarry_SHY       read(_addr); if (_addrCarry) _addr = (((_addr & 0x00ff) | ((_addr >> 8) + 1)) & _y);
+#define AddrCarry_AHX       read(_addr); if (_addrCarry) _addr = (((_addr & 0x00ff) | ((_addr >> 8) + 1)) & _a & _x);
 #define AddrCarryIf         if (!_addrCarry) {
 #define AddrCarryEnd        return &CPU::dispatch; }
 #define AddrCarryFix        _addr += 0x100;

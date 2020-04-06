@@ -81,7 +81,7 @@ void SignalVisualizer::paintGL()
     {
         std::unique_lock<std::mutex> lock(_mutex);
 
-        for (int i = 0; i < _sampleCount; ++i)
+        for (std::size_t i = 0; i < _sampleCount; ++i)
         {
             x = mapUnit(0.f, (float)(_sampleCount - 1), (float)i);
             y = mapUnit(_min, _max, _samples[i]);

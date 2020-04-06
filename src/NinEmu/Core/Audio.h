@@ -51,9 +51,9 @@ public slots:
     void pushSamples(const float* samples);
 
 private:
-    static const unsigned kBufferCount = 4;
+    static const int kBufferCount = 4;
 
-    void adjustDrift(int numBuf);
+    void adjustDrift();
 
     ALCdevice*          _device;
     ALCcontext*         _context;

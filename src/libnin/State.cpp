@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <libnin/Util.h>
 #include <libnin/State.h>
 
 static const char kHeaderMagicNES[] = { 'N', 'E', 'S', '\x1a' };
@@ -118,6 +119,8 @@ NinError NinState::loadRomNES(const RomHeader& header, std::FILE* f)
 
 NinError NinState::loadRomFDS(const RomHeader& header, std::FILE* f)
 {
+    UNUSED(header);
+
     info.setSystem(NIN_SYSTEM_FDS);
 
     /* PRG ROM is the FDS BIOS */

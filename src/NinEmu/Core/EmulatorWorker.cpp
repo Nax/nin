@@ -32,10 +32,10 @@
 
 EmulatorWorker::EmulatorWorker(QObject* parent)
 : QObject(parent)
-, _state(nullptr)
 , _workerState(WorkerState::Idle)
 , _input(0)
 , _audioFrequency(48000)
+, _state(nullptr)
 {
     connect(this, &EmulatorWorker::audioEvent, this, &EmulatorWorker::syncAudio, Qt::QueuedConnection);
     _thread = std::thread(&EmulatorWorker::workerMain, this);
@@ -232,6 +232,7 @@ void EmulatorWorker::workerMain()
         case WorkerState::StepFrame:
             workerStepFrame();
             _workerState = WorkerState::Paused;
+            break;
         case WorkerState::StepSingle:
             workerStepSingle();
             _workerState = WorkerState::Paused;

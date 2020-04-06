@@ -78,6 +78,6 @@ int main(int argc, char** argv)
     after = Clock::now();
     duration = std::chrono::duration_cast<Duration>(after - before).count();
     cps = (std::uint64_t)((double)cyc / duration);
-    printf("%llu cycles/s\n", cps);
+    printf("%llu cycles/s\n", (long long unsigned int)cps);
     return 0;
 }

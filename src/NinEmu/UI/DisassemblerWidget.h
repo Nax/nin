@@ -43,7 +43,7 @@ public:
     DisassemblerWidget(QWidget* parent = nullptr);
 
     virtual void paintEvent(QPaintEvent* event) override;
-    void disassemble(uint16_t pc, const uint8_t* data, size_t dataSize);
+    void disassemble(uint16_t pc, const uint8_t* data, std::size_t dataSize);
 
 private:
     struct DisasmInstr

@@ -29,6 +29,8 @@
 #include <nin/nin.h>
 #include <NinEmu/Core/Audio.h>
 
+#define TOLERANCE (0.0001)
+
 Audio::Audio(QObject* parent)
 : QObject(parent)
 {
@@ -87,8 +89,6 @@ void Audio::reset()
     alSourcePlay(_source);
 }
 
-#define TOLERANCE (0.0001)
-
 void Audio::pushSamples(const float* samples)
 {
     float tmp[NIN_AUDIO_SAMPLE_SIZE + 1];
@@ -121,7 +121,7 @@ void Audio::pushSamples(const float* samples)
         _buffers.push_back(buffer);
     }
 
-    adjustDrift(attr);
+    adjustDrift();
 
     if (_buffers.empty())
     {
@@ -149,7 +149,7 @@ static double lerp(double a, double b, double coeff)
     return (1.f - coeff) * a + coeff * b;
 }
 
-void Audio::adjustDrift(ALint processedBufferCount)
+void Audio::adjustDrift()
 {
     ALint currentBufferOffset;
     std::size_t queuedSamples;

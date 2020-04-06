@@ -219,7 +219,7 @@ def make_rmw_absolute(op); ['AddrAbsLo', 'AddrAbsHi', 'RmwLoad', ['RmwStore', 'T
 def make_rmw_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 def make_rmw_absolute_y(op); ['AddrAbsLo', 'AddrAbsHiY', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 def make_rmw_indirect_x(op); ['AddrZero', 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
-def make_rmw_indirect_y(op); ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarry'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+def make_rmw_indirect_y(op); ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
 
 def make_nop_impl(); ['Nop']; end
 def make_nop_imm(); [['AddrImplIncPC', 'Nop']]; end

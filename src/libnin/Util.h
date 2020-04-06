@@ -5,4 +5,10 @@
 
 #define UNUSED(x)   ((void)x)
 
+#if defined(WIN32) || defined(_WIN32)
+# define UNREACHABLE()
+#else
+# define UNREACHABLE() __builtin_unreachable()
+#endif
+
 #endif

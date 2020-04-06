@@ -34,8 +34,8 @@
 
 HexView::HexView(const uint8_t* buffer, size_t bufferSize, QWidget* parent)
 : QAbstractScrollArea(parent)
-, _buffer(buffer)
 , _bufferSize(bufferSize)
+, _buffer(buffer)
 {
     QFont f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     setFont(f);

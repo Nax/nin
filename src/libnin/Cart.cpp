@@ -1,3 +1,4 @@
+#include <libnin/Util.h>
 #include <libnin/Cart.h>
 
 using namespace libnin;
@@ -20,6 +21,8 @@ void Cart::load(int id, std::uint16_t bankCount, std::FILE* file)
     case CART_CHR_RAM:
         bankSize = 0x400;
         break;
+    default:
+        UNREACHABLE();
     }
 
     size = bankCount * bankSize;

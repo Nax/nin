@@ -35,7 +35,7 @@
 
 using Complex = std::complex<float>;
 
-static const size_t kFourierSampleCount = 1024 * 2;
+static const int kFourierSampleCount = 1024 * 2;
 
 static void fastFourierStep(Complex* buf, Complex* out, int step)
 {
