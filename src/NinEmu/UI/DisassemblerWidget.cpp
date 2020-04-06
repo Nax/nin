@@ -351,9 +351,9 @@ void DisassemblerWidget::paintEvent(QPaintEvent* event)
     uint16_t addr;
     char tmp[7];
 
-    size_t lineCount = size().height() / 16;
+    int lineCount = size().height() / 16;
 
-    for (size_t j = 0; j < lineCount; ++j)
+    for (int j = 0; j < lineCount; ++j)
     {
         painter.setPen(Qt::blue);
         addr = _buffer[j].addr;
@@ -383,13 +383,13 @@ void DisassemblerWidget::disassemble(uint16_t pc, const uint8_t* data, size_t da
     for (int i = 0; i < 64; ++i)
     {
         DisasmInstr& instr = _buffer[i];
-        off += disassembleInstr(instr, pc + off, data + off);
+        off += disassembleInstr(instr, (pc + off) & 0xffff, data + off);
     }
 
     update();
 }
 
-size_t DisassemblerWidget::disassembleInstr(DisasmInstr& instr, uint16_t pc, const uint8_t* data)
+std::uint8_t DisassemblerWidget::disassembleInstr(DisasmInstr& instr, uint16_t pc, const uint8_t* data)
 {
     const InstrDescription* desc;
     char tmp[32];

@@ -25,10 +25,9 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 find_program(
-    RUBY ruby
+    RUBY_EXECUTABLE ruby
 )
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Ruby DEFAULT_MSG RUBY)
-
-mark_as_advanced(RUBY)
+find_package_handle_standard_args(Ruby DEFAULT_MSG RUBY_EXECUTABLE)
+mark_as_advanced(RUBY_EXECUTABLE)

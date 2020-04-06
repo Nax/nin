@@ -92,7 +92,6 @@ void Audio::reset()
 void Audio::pushSamples(const float* samples)
 {
     float tmp[NIN_AUDIO_SAMPLE_SIZE + 1];
-    int freqDt;
     ALuint buffer;
     ALint attr;
     ALsizei len;
@@ -153,7 +152,7 @@ static double lerp(double a, double b, double coeff)
 void Audio::adjustDrift(ALint processedBufferCount)
 {
     ALint currentBufferOffset;
-    uint32_t queuedSamples;
+    std::size_t queuedSamples;
     double newDrift;
 
     alGetSourcei(_source, AL_SAMPLE_OFFSET, &currentBufferOffset);

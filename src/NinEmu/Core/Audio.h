@@ -29,13 +29,12 @@
 #ifndef AUDIO_H
 #define AUDIO_H
 
-#include <QObject>
-
 #include <cstdint>
 #include <vector>
-#include <al.h>
-#include <alext.h>
-#include <alc.h>
+#include <QObject>
+#include <AL/al.h>
+#include <AL/alext.h>
+#include <AL/alc.h>
 
 class Audio : public QObject
 {

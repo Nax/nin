@@ -54,7 +54,7 @@ private:
         char        str[32];
     };
 
-    size_t disassembleInstr(DisasmInstr& instr, uint16_t pc, const uint8_t* data);
+    std::uint8_t disassembleInstr(DisasmInstr& instr, uint16_t pc, const uint8_t* data);
 
     QWidget*        _viewport;
     DisasmInstr     _buffer[64];

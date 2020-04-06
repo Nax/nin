@@ -33,7 +33,7 @@ configure_file("${CONFIG_IN}" "${CONFIG_OUT}")
 set(SOURCES_CODEGEN_CPU "${CMAKE_BINARY_DIR}/CPU_instr.cpp")
 add_custom_command(
     OUTPUT "${SOURCES_CODEGEN_CPU}"
-    COMMAND "${RUBY}" "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb" "${SOURCES_CODEGEN_CPU}"
+    COMMAND "${RUBY_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb" "${SOURCES_CODEGEN_CPU}"
     DEPENDS "${CMAKE_SOURCE_DIR}/tools/gen_6502.rb"
     COMMENT "Generating CPU_instr.cpp"
     VERBATIM
@@ -47,8 +47,5 @@ target_include_directories(libnin PRIVATE "${CMAKE_SOURCE_DIR}/src" PUBLIC "${CM
 set_target_properties(libnin PROPERTIES OUTPUT_NAME nin)
 
 if (WIN32)
-    target_compile_definitions(libnin PRIVATE _CRT_SECURE_NO_WARNINGS=1 NIN_DLL=1)
+    target_compile_definitions(libnin PRIVATE NIN_DLL=1)
 endif()
-
-install(TARGETS libnin RUNTIME DESTINATION bin LIBRARY DESTINATION lib ARCHIVE DESTINATION lib)
-install(TARGETS libnin RUNTIME DESTINATION tests)

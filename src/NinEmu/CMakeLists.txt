@@ -29,19 +29,10 @@ set(CMAKE_AUTOUIC ON)
 
 find_package(Threads REQUIRED)
 find_package(OpenGL REQUIRED)
-find_package(OpenAL REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Gamepad REQUIRED)
 
 if (APPLE OR WIN32)
     find_package(QtDeploy REQUIRED)
-endif()
-
-if (UNIX)
-    if (APPLE)
-        set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks;@executable_path/../lib")
-    else()
-        set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
-    endif()
 endif()
 
 file(GLOB_RECURSE SOURCES "*.cpp")
@@ -52,11 +43,14 @@ elseif(WIN32)
     list(APPEND SOURCES "${CMAKE_SOURCE_DIR}/data/nin.rc")
 endif()
 
+# Compilation
 add_executable(nin WIN32 MACOSX_BUNDLE ${SOURCES})
 target_include_directories(nin PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(nin OpenGL::GL OpenAL::AL libnin Qt5::Core Qt5::Widgets Qt5::Gamepad Threads::Threads)
 
-if (APPLE)
+if (UNIX AND NOT APPLE)
+    target_link_options(nin PRIVATE -pthread)
+elseif (APPLE)
     target_compile_definitions(nin PRIVATE GL_SILENCE_DEPRECATION=1)
     target_compile_options(nin PRIVATE "-Wno-unknown-pragmas")
     set_target_properties(nin
@@ -65,25 +59,12 @@ if (APPLE)
         MACOSX_BUNDLE_INFO_PLIST "${CMAKE_SOURCE_DIR}/data/nin.plist"
         MACOSX_BUNDLE_ICON_FILE "nin"
     )
+elseif(WIN32)
+    get_target_property(OPENAL_DLL OpenAL::AL IMPORTED_LOCATION)
+    add_custom_command(
+        TARGET nin POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENAL_DLL}" "${CMAKE_BINARY_DIR}/bin"
+        COMMENT "Copy OpenAL DLL"
+        VERBATIM
+    )
 endif ()
-
-install(TARGETS nin RUNTIME DESTINATION bin BUNDLE DESTINATION bin)
-
-if (WIN32)
-    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "bin")
-    include(InstallRequiredSystemLibraries)
-    install(FILES "${OPENAL_DLL}" DESTINATION bin)
-    install(CODE "
-    execute_process(COMMAND \"${QT_DEPLOY}\" \"--release\" \"${CMAKE_INSTALL_PREFIX}/bin/nin.exe\" \"--no-compiler-runtime\" \"--no-opengl-sw\" \"--no-system-d3d-compiler\")
-    ")
-elseif (APPLE)
-    # TODO: un-hardcode this
-    set(APP "${CMAKE_INSTALL_PREFIX}/bin/Nin.app")
-    install(CODE "
-    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E make_directory \"${APP}/Contents/lib\")
-    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"${OPENAL_LIBRARY}\" \"${APP}/Contents/lib/libopenal.1.dylib\")
-    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"$<TARGET_FILE:libnin>\" \"${APP}/Contents/lib/libnin.dylib\")
-    execute_process(COMMAND \"${QT_DEPLOY}\" \"${APP}\" \"-verbose=1\")
-    ")
-else()
-endif()
