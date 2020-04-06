@@ -27,36 +27,15 @@
 include(ExternalProject)
 set(OPENAL_VERSION 1.20.1)
 
-#set(ALSOFT_UTILS                OFF)
-#set(ALSOFT_EXAMPLES             OFF)
-#set(ALSOFT_TESTS                OFF)
-#set(ALSOFT_CONFIG               OFF)
-#set(ALSOFT_HRTF_DEFS            OFF)
-#set(ALSOFT_AMBDEC_PRESETS       OFF)
-#set(ALSOFT_UPDATE_BUILD_VERSION OFF)
+set(OPENAL_INSTALL_DIR "${CMAKE_BINARY_DIR}/third_party")
+set(OPENAL_INCLUDE_DIRECTORY "${OPENAL_INSTALL_DIR}/include")
 
-#if (MSVC)
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W0")
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0")
-#else()
-#    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -W")
-#    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W")
-#endif()
-
-#FetchContent_Declare(
-#    fc_openal
-#    URL                 "https://github.com/kcat/openal-soft/archive/openal-soft-${OPENAL_VERSION}.tar.gz"
-#    URL_HASH            "SHA256=C32D10473457A8B545AAB50070FE84BE2B5B041E1F2099012777EE6BE0057C13"
-    #INSTALL_DIR			"${CMAKE_BINARY_DIR}/third_party"
-    #CMAKE_ARGS
-    #    "-DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-    #    "-DCMAKE_INSTALL_PREFIX=<INSTALL_DIR>"
-    #    "-DCMAKE_C_COMPILER=${CMAKE_C_COMPILER}"
-    #    "-DCMAKE_CXX_COMPILER=${CMAKE_CXX_COMPILER}"
-    #    "-DALSOFT_UTILS=OFF"
-#)
-
-#FetchContent_MakeAvailable(fc_openal)
+if (WIN32)
+    set(OPENAL_IMPORTED_LOCATION    "${OPENAL_INSTALL_DIR}/bin/${CMAKE_SHARED_LIBRARY_PREFIX}OpenAL32${CMAKE_SHARED_LIBRARY_SUFFIX}")
+    set(OPENAL_IMPORTED_IMPLIB      "${OPENAL_INSTALL_DIR}/lib/${CMAKE_IMPORT_LIBRARY_PREFIX}OpenAL32${CMAKE_IMPORT_LIBRARY_SUFFIX}")
+else()
+    set(OPENAL_IMPORTED_LOCATION    "${OPENAL_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}openal${CMAKE_SHARED_LIBRARY_SUFFIX}")
+endif()
 
 ExternalProject_Add(
     ep_openal
@@ -75,25 +54,18 @@ ExternalProject_Add(
         "-DALSOFT_HRTF_DEFS=OFF"
         "-DALSOFT_AMBDEC_PRESETS=OFF"
         "-DALSOFT_UPDATE_BUILD_VERSION=OFF"
+    BUILD_BYPRODUCTS
+        ${OPENAL_IMPORTED_LOCATION}
+        ${OPENAL_IMPORTED_IMPLIB}
 )
+file(MAKE_DIRECTORY "${OPENAL_INCLUDE_DIRECTORY}")
 
-ExternalProject_Get_Property(ep_openal INSTALL_DIR)
-set(OPENAL_INSTALL_DIR "${INSTALL_DIR}")
 add_library(OpenAL::AL SHARED IMPORTED GLOBAL)
-add_dependencies(OpenAL::AL ep_openal)
-
 set_target_properties(
     OpenAL::AL
     PROPERTIES
-    INTERFACE_INCLUDE_DIRECTORIES "${OPENAL_INSTALL_DIR}/include"
+    INTERFACE_INCLUDE_DIRECTORIES   "${OPENAL_INCLUDE_DIRECTORY}"
+    IMPORTED_LOCATION               "${OPENAL_IMPORTED_LOCATION}"
+    IMPORTED_IMPLIB                 "${OPENAL_IMPORTED_IMPLIB}"
 )
-
-if (WIN32)
-
-else()
-    set_target_properties(
-        OpenAL::AL
-        PROPERTIES
-        IMPORTED_LOCATION "${OPENAL_INSTALL_DIR}/lib/${CMAKE_SHARED_LIBRARY_PREFIX}openal${CMAKE_SHARED_LIBRARY_SUFFIX}"
-    )
-endif()
+add_dependencies(OpenAL::AL ep_openal)
