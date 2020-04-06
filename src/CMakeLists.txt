@@ -96,5 +96,5 @@ else()
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
     )
     install(FILES "${CMAKE_SOURCE_DIR}/data/nin.desktop" DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
-    install(FILES "${CMAKE_SOURCE_DIR}/data/nin.png"     DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512")
+    install(FILES "${CMAKE_SOURCE_DIR}/data/nin.png"     DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512/apps")
 endif()
