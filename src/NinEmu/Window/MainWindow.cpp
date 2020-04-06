@@ -38,6 +38,7 @@
 #include <NinEmu/Window/DebuggerWindow.h>
 #include <NinEmu/Window/MainWindow.h>
 #include <NinEmu/Window/MemoryWindow.h>
+#include <NinEmu/Window/MemorySearchWindow.h>
 
 #define DEADZONE (0.30)
 
@@ -144,6 +145,8 @@ void MainWindow::closeEvent(QCloseEvent* event)
 {
     if (!_windowMemoryViewer.isNull())
         _windowMemoryViewer->close();
+    if (!_windowMemorySearch.isNull())
+        _windowMemorySearch->close();
     if (!_windowAudioVisualizer.isNull())
         _windowAudioVisualizer->close();
     if (!_windowDebugger.isNull())
@@ -178,6 +181,22 @@ void MainWindow::openWindowMemoryViewer()
     }
     else
         _windowMemoryViewer->activateWindow();
+}
+
+void MainWindow::openWindowMemorySearch()
+{
+    MemorySearchWindow* win;
+
+    if (_windowMemorySearch.isNull())
+    {
+        win = new MemorySearchWindow;
+        win->setAttribute(Qt::WA_DeleteOnClose);
+        connect(_emu, SIGNAL(update(NinState*)), win, SLOT(refresh(NinState*)));
+        win->show();
+        _windowMemorySearch = win;
+    }
+    else
+        _windowMemorySearch->activateWindow();
 }
 
 void MainWindow::openWindowAudioVisualizer()
@@ -244,6 +263,9 @@ void MainWindow::createActions()
     _actionMemoryViewer = new QAction(tr("Memory Viewer"), this);
     connect(_actionMemoryViewer, &QAction::triggered, this, &MainWindow::openWindowMemoryViewer);
 
+    _actionMemorySearch = new QAction(tr("Memory Search"), this);
+    connect(_actionMemorySearch, &QAction::triggered, this, &MainWindow::openWindowMemorySearch);
+
     _actionAudioVisualizer = new QAction(tr("Audio Visualizer"), this);
     connect(_actionAudioVisualizer, &QAction::triggered, this, &MainWindow::openWindowAudioVisualizer);
 
@@ -269,6 +291,7 @@ void MainWindow::createMenus()
 
     _windowMenu = menuBar()->addMenu(tr("&Window"));
     _windowMenu->addAction(_actionMemoryViewer);
+    _windowMenu->addAction(_actionMemorySearch);
     _windowMenu->addAction(_actionAudioVisualizer);
     _windowMenu->addAction(_actionDebugger);
 

@@ -42,6 +42,7 @@
 class EmulatorWorker;
 class Audio;
 class MemoryWindow;
+class MemorySearchWindow;
 class AudioVisualizerWindow;
 class DebuggerWindow;
 class Settings;
@@ -64,6 +65,7 @@ private slots:
     void openRecentFile();
 
     void openWindowMemoryViewer();
+    void openWindowMemorySearch();
     void openWindowAudioVisualizer();
     void openWindowDebugger();
 
@@ -90,6 +92,7 @@ private:
     RenderWidget*   _render;
 
     QPointer<MemoryWindow>              _windowMemoryViewer;
+    QPointer<MemorySearchWindow>        _windowMemorySearch;
     QPointer<AudioVisualizerWindow>     _windowAudioVisualizer;
     QPointer<DebuggerWindow>            _windowDebugger;
 
@@ -103,6 +106,7 @@ private:
     QAction* _actionStepFrame;
     QAction* _actionStepSingle;
     QAction* _actionMemoryViewer;
+    QAction* _actionMemorySearch;
     QAction* _actionAudioVisualizer;
     QAction* _actionDebugger;
 
