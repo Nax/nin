@@ -40,6 +40,7 @@ find_program(
         ENV QTDIR
         ENV QT_DIR
         ENV Qt5_DIR
+        ENV Qt5_ROOT
 )
 
 include(FindPackageHandleStandardArgs)

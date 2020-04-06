@@ -29,6 +29,10 @@ set(OPENAL_VERSION 1.20.1)
 
 set(OPENAL_INSTALL_DIR "${CMAKE_BINARY_DIR}/third_party")
 set(OPENAL_INCLUDE_DIRECTORY "${OPENAL_INSTALL_DIR}/include")
+set(OPENAL_LIBRARY_DIRECTORY "${OPENAL_INSTALL_DIR}/lib")
+
+file(MAKE_DIRECTORY "${OPENAL_INCLUDE_DIRECTORY}")
+file(MAKE_DIRECTORY "${OPENAL_LIBRARY_DIRECTORY}")
 
 if (WIN32)
     set(OPENAL_IMPORTED_LOCATION    "${OPENAL_INSTALL_DIR}/bin/${CMAKE_SHARED_LIBRARY_PREFIX}OpenAL32${CMAKE_SHARED_LIBRARY_SUFFIX}")
@@ -53,12 +57,18 @@ ExternalProject_Add(
         "-DALSOFT_CONFIG=OFF"
         "-DALSOFT_HRTF_DEFS=OFF"
         "-DALSOFT_AMBDEC_PRESETS=OFF"
-        "-DALSOFT_UPDATE_BUILD_VERSION=OFF"
     BUILD_BYPRODUCTS
         ${OPENAL_IMPORTED_LOCATION}
         ${OPENAL_IMPORTED_IMPLIB}
 )
-file(MAKE_DIRECTORY "${OPENAL_INCLUDE_DIRECTORY}")
+if (APPLE)
+    ExternalProject_Add_Step(
+        ep_openal
+        install_name
+        DEPENDEES install
+        COMMAND install_name_tool -id "@rpath/libopenal.dylib" "${OPENAL_IMPORTED_LOCATION}"
+    )
+endif()
 
 add_library(OpenAL::AL SHARED IMPORTED GLOBAL)
 set_target_properties(

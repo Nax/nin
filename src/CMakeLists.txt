@@ -24,6 +24,20 @@
 # OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# RPATH
+set(CMAKE_MACOSX_RPATH      TRUE)
+set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+set(CMAKE_BUILD_RPATH       "${CMAKE_BINARY_DIR}/third_party/lib")
+
+if (UNIX)
+    if (APPLE)
+        set(CMAKE_INSTALL_RPATH "@executable_path/../Frameworks;@executable_path/../lib")
+    else()
+        set(CMAKE_INSTALL_RPATH "\$ORIGIN/../lib")
+    endif()
+endif()
+
+# C++
 set (CMAKE_CXX_STANDARD 14)
 set (CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
 
@@ -54,3 +68,24 @@ add_subdirectory(ninperf)
 add_subdirectory(ninconv)
 add_subdirectory(nintests)
 add_subdirectory(NinEmu)
+
+# Install
+get_target_property(OPENAL_LIBRARY OpenAL::AL IMPORTED_LOCATION)
+if (WIN32)
+    install(TARGETS libnin RUNTIME DESTINATION .)
+    install(TARGETS nin RUNTIME DESTINATION .)
+    install(FILES "${OPENAL_LIBRARY}" DESTINATION .)
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ".")
+    include(InstallRequiredSystemLibraries)
+    install(CODE "execute_process(COMMAND \"${QT_DEPLOY}\" \"--release\" \"\${CMAKE_INSTALL_PREFIX}/nin.exe\" \"--no-compiler-runtime\" \"--no-opengl-sw\" \"--no-system-d3d-compiler\")")
+elseif (APPLE)
+    install(TARGETS nin BUNDLE DESTINATION .)
+    set(APP "\${CMAKE_INSTALL_PREFIX}/Nin.app")
+    install(CODE "
+    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E make_directory \"${APP}/Contents/lib\")
+    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"${OPENAL_LIBRARY}\" \"${APP}/Contents/lib/\")
+    execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_if_different \"$<TARGET_FILE:libnin>\" \"${APP}/Contents/lib/\")
+    execute_process(COMMAND \"${QT_DEPLOY}\" \"${APP}\" \"-verbose=1\")
+    ")
+else()
+endif()
