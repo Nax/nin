@@ -89,4 +89,12 @@ elseif (APPLE)
     execute_process(COMMAND \"${QT_DEPLOY}\" \"${APP}\" \"-verbose=1\")
     ")
 else()
+    include(GNUInstallDirs)
+    install(
+        TARGETS nin libnin
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}"
+    )
+    install(FILES "${CMAKE_SOURCE_DIR}/data/nin.desktop" DESTINATION "${CMAKE_INSTALL_DATADIR}/applications")
+    install(FILES "${CMAKE_SOURCE_DIR}/data/nin.png"     DESTINATION "${CMAKE_INSTALL_DATADIR}/icons/hicolor/512x512")
 endif()
