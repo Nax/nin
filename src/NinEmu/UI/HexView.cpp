@@ -45,7 +45,7 @@ HexView::HexView(const uint8_t* buffer, size_t bufferSize, QWidget* parent)
     setViewport(_viewport);
 
     verticalScrollBar()->setSingleStep(1);
-    verticalScrollBar()->setPageStep(1);
+    verticalScrollBar()->setPageStep(16);
     updateScroll();
 
     setAutoFillBackground(true);
