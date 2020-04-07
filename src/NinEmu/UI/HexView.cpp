@@ -40,6 +40,7 @@ HexView::HexView(const uint8_t* buffer, size_t bufferSize, QWidget* parent)
     QFont f = QFontDatabase::systemFont(QFontDatabase::FixedFont);
     setFont(f);
     setSizePolicy(QSizePolicy::Preferred, QSizePolicy::MinimumExpanding);
+    setFixedWidth(80 + 17 * 20);
 
     _viewport = new QWidget();
     setViewport(_viewport);
@@ -68,7 +69,7 @@ void HexView::paintEvent(QPaintEvent* event)
         painter.setPen(Qt::blue);
         addr = (j + offset) << 4;
         snprintf(tmp, sizeof(tmp), "0x%04X", addr);
-        painter.drawText(QPoint(0, j * LINE_HEIGHT + 14), tmp);
+        painter.drawText(QPoint(5, j * LINE_HEIGHT + 14), tmp);
         painter.setPen(Qt::black);
 
         for (unsigned i = 0; i < 16; ++i)

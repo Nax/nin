@@ -57,6 +57,13 @@ private:
         GreaterEqual
     };
 
+    enum class SearchValue
+    {
+        Previous = 0,
+        First,
+        Custom
+    };
+
     struct MemorySpan
     {
         std::uint16_t   base;
@@ -64,18 +71,23 @@ private:
     };
 
     void setSearchFunc(int searchFunc);
+    void setSearchValue(int searchValue);
+
     void updateTable();
     void updateResults();
     void reset();
+    void search();
     bool searchPredicate(std::uint16_t addr) const;
 
     QLabel*         _labelResults;
     QTableWidget*   _table;
 
     SearchFunc              _searchFunc;
+    SearchValue             _searchValue;
     std::vector<MemorySpan> _spans;
     uint8_t                 _buffer[0x10000];
     uint8_t                 _bufferPrev[0x10000];
+    uint8_t                 _bufferFirst[0x10000];
 };
 
 #endif

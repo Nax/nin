@@ -50,6 +50,9 @@ MemoryWindow::MemoryWindow(QWidget* parent)
     layout->addWidget(label);
     layout->addWidget(_hexView, 1);
     setLayout(layout);
+    show();
+
+    setFixedWidth(width());
 }
 
 void MemoryWindow::refresh(NinState* state)

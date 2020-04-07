@@ -33,13 +33,17 @@
 MemorySearchWindow::MemorySearchWindow(QWidget* parent)
 : QWidget(parent, Qt::Window)
 , _searchFunc{}
+, _searchValue{}
 , _buffer{}
 , _bufferPrev{}
+, _bufferFirst{}
 {
     setWindowTitle("Memory Search");
 
     QVBoxLayout* layout;
     layout = new QVBoxLayout;
+
+    QGridLayout* layoutToolbox = new QGridLayout;
 
     QComboBox* boxSearchFunc = new QComboBox;
     boxSearchFunc->addItem("Equal to");
@@ -49,23 +53,36 @@ MemorySearchWindow::MemorySearchWindow(QWidget* parent)
     boxSearchFunc->addItem("Lesser or equal to");
     boxSearchFunc->addItem("Greater or equal to");
     connect(boxSearchFunc, qOverload<int>(&QComboBox::activated), this, &MemorySearchWindow::setSearchFunc);
-    layout->addWidget(boxSearchFunc);
+    layoutToolbox->addWidget(boxSearchFunc, 0, 1);
+
+    QComboBox* boxSearchValue = new QComboBox;
+    boxSearchValue->addItem("the previous value");
+    boxSearchValue->addItem("the first value");
+    boxSearchValue->addItem("a custom value");
+    connect(boxSearchValue, qOverload<int>(&QComboBox::activated), this, &MemorySearchWindow::setSearchValue);
+    layoutToolbox->addWidget(boxSearchValue, 0, 2);
 
     QPushButton* btnReset = new QPushButton("New Search");
     connect(btnReset, &QPushButton::pressed, this, &MemorySearchWindow::reset);
-    layout->addWidget(btnReset);
+    layoutToolbox->addWidget(btnReset, 0, 0);
 
     QPushButton* btnSearch = new QPushButton("Search");
-    layout->addWidget(btnSearch);
+    connect(btnSearch, &QPushButton::pressed, this, &MemorySearchWindow::search);
+    layoutToolbox->addWidget(btnSearch, 1, 0);
+
+    layout->addLayout(layoutToolbox);
 
     _labelResults = new QLabel;
     layout->addWidget(_labelResults);
 
     _table = new QTableWidget;
-    _table->setColumnCount(3);
+    _table->setColumnCount(4);
     _table->setHorizontalHeaderItem(0, new QTableWidgetItem("Address"));
-    _table->setHorizontalHeaderItem(1, new QTableWidgetItem("Current Value"));
-    _table->setHorizontalHeaderItem(2, new QTableWidgetItem("Previous Value"));
+    _table->setHorizontalHeaderItem(1, new QTableWidgetItem("Current"));
+    _table->setHorizontalHeaderItem(2, new QTableWidgetItem("Previous"));
+    _table->setHorizontalHeaderItem(3, new QTableWidgetItem("First"));
+    _table->verticalHeader()->hide();
+    _table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     layout->addWidget(_table);
 
     setLayout(layout);
@@ -85,11 +102,18 @@ void MemorySearchWindow::setSearchFunc(int searchFunc)
     updateTable();
 }
 
+void MemorySearchWindow::setSearchValue(int searchValue)
+{
+    _searchValue = (SearchValue)searchValue;
+    updateTable();
+}
+
 void MemorySearchWindow::updateTable()
 {
     QTableWidgetItem* itemAddr;
     QTableWidgetItem* itemValue;
     QTableWidgetItem* itemValuePrev;
+    QTableWidgetItem* itemValueFirst;
     std::uint16_t addr;
     int count{};
     bool match;
@@ -106,6 +130,7 @@ void MemorySearchWindow::updateTable()
             itemAddr = new QTableWidgetItem(QString("0x%1").arg((int)addr, 4, 16, QChar('0')));
             itemValue = new QTableWidgetItem(QString("0x%1").arg((int)_buffer[addr], 2, 16, QChar('0')));
             itemValuePrev = new QTableWidgetItem(QString("0x%1").arg((int)_bufferPrev[addr], 2, 16, QChar('0')));
+            itemValueFirst = new QTableWidgetItem(QString("0x%1").arg((int)_bufferFirst[addr], 2, 16, QChar('0')));
 
             if (!match)
                 itemValue->setForeground(QBrush(QColor(255, 0, 0)));
@@ -113,6 +138,7 @@ void MemorySearchWindow::updateTable()
             _table->setItem(count, 0, itemAddr);
             _table->setItem(count, 1, itemValue);
             _table->setItem(count, 2, itemValuePrev);
+            _table->setItem(count, 3, itemValueFirst);
 
             count++;
             if (count >= 1000)
@@ -145,6 +171,40 @@ void MemorySearchWindow::reset()
 {
     _spans.clear();
     _spans.push_back({ 0x0000, 0xffff });
+    std::memcpy(_bufferPrev, _buffer, 0x10000);
+    std::memcpy(_bufferFirst, _buffer, 0x10000);
+    updateResults();
+}
+
+void MemorySearchWindow::search()
+{
+    std::uint16_t addr;
+    std::vector<MemorySpan> matchingSpans;
+    bool inSpan{};
+
+    for (const auto& span : _spans)
+    {
+        for (int j = 0; j <= span.size; ++j)
+        {
+            addr = span.base + j;
+            if (searchPredicate(addr))
+            {
+                if (inSpan)
+                    matchingSpans.back().size++;
+                else
+                {
+                    matchingSpans.push_back({ addr, 0x0000 });
+                    inSpan = true;
+                }
+            }
+            else
+            {
+                inSpan = false;
+            }
+        }
+    }
+
+    _spans = matchingSpans;
     std::memcpy(_bufferPrev, _buffer, 0x10000);
     updateResults();
 }
