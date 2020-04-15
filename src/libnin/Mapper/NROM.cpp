@@ -31,16 +31,19 @@
 
 using namespace libnin;
 
+void Mapper::tick_NROM(void)
+{
+}
+
+std::uint8_t Mapper::read_NROM(std::uint16_t addr)
+{
+    UNUSED(addr);
+
+    return 0;
+}
+
 void Mapper::write_NROM(std::uint16_t addr, std::uint8_t value)
 {
     UNUSED(addr);
     UNUSED(value);
 }
-
-/*
-void ninPpuMonitorHandlerNull(NinState* state, uint16_t addr)
-{
-    UNUSED(state);
-    UNUSED(addr);
-}
-*/

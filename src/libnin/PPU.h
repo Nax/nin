@@ -114,6 +114,10 @@ private:
     Handler handleNextLoBG1();
     Handler handleNextHiBG0();
     Handler handleNextHiBG1();
+    Handler handleNextDummy0();
+    Handler handleNextDummy1();
+    Handler handleNextDummy2();
+    Handler handleNextDummy3();
 
     Handler wait(std::uint32_t cycles, Handler next);
     Handler dummy();

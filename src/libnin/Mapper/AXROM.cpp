@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
@@ -33,7 +34,9 @@ using namespace libnin;
 
 void Mapper::write_AXROM(std::uint16_t addr, std::uint8_t value)
 {
-    UNUSED(addr);
-    mirror(((value >> 4) & 1) ? NIN_MIRROR_B : NIN_MIRROR_A);
-    bankPrg32k(value & 0xf);
+    if (addr >= 0x8000)
+    {
+        mirror(((value >> 4) & 1) ? NIN_MIRROR_B : NIN_MIRROR_A);
+        bankPrg32k(2, CART_PRG_ROM, value & 0xf);
+    }
 }

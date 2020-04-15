@@ -96,8 +96,14 @@ NinError NinState::loadRomNES(const RomHeader& header, std::FILE* f)
         mapper.mirror(NIN_MIRROR_H);
     else
         mapper.mirror(NIN_MIRROR_V);
-    mapper.bankPrg16k(0, 0);
-    mapper.bankPrg16k(1, -1);
+
+    /* PRG RAM */
+    mapper.bankPrg8k(1, CART_PRG_RAM, 0);
+
+    /* PRG ROM */
+    mapper.bankPrg16k(2, CART_PRG_ROM, 0);
+    mapper.bankPrg16k(4, CART_PRG_ROM, -1);
+
     mapper.bankChr8k(0);
     if (!mapper.configure((header.mapperHi << 4) | header.mapperLo, 0))
     {

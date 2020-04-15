@@ -6,6 +6,7 @@
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
 #include <libnin/PPU.h>
+#include <libnin/Util.h>
 
 using namespace libnin;
 
@@ -71,18 +72,11 @@ std::uint8_t BusMain::read(std::uint16_t addr)
         case 0x401f:
             return 0x00;
         default:
-            return 0x00;
+            return _mapper.read(addr);
         }
     case 0x5:
-        return 0x00;
     case 0x6:
     case 0x7:
-    {
-        auto& seg = _cart.segment(CART_PRG_RAM);
-        if (!seg.base)
-            return 0x00;
-        return seg.base[addr & 0x1fff];
-    }
     case 0x8:
     case 0x9:
     case 0xa:
@@ -91,9 +85,9 @@ std::uint8_t BusMain::read(std::uint16_t addr)
     case 0xd:
     case 0xe:
     case 0xf:
-        return _mapper.prg((addr >> 13) & 0x3)[addr & 0x1fff];
+        return _mapper.read(addr);
     default:
-        return 0x00;
+        UNREACHABLE();
     }
 }
 
@@ -107,6 +101,7 @@ WriteAction BusMain::write(std::uint16_t addr, std::uint8_t value)
         return WriteAction::None;
     case 0x2:
     case 0x3:
+        _mapper.handleWrite(addr, value);
         _ppu.regWrite(addr, value);
         return WriteAction::None;
     case 0x4:
@@ -152,18 +147,12 @@ WriteAction BusMain::write(std::uint16_t addr, std::uint8_t value)
         case 0x401f:
             return WriteAction::None;
         default:
+            _mapper.write(addr, value);
             return WriteAction::None;
         }
     case 0x5:
-        return WriteAction::None;
     case 0x6:
     case 0x7:
-    {
-        auto& seg = _cart.segment(CART_PRG_RAM);
-        if (seg.base)
-            seg.base[addr & 0x1fff] = value;
-        return WriteAction::None;
-    }
     case 0x8:
     case 0x9:
     case 0xa:
@@ -174,9 +163,9 @@ WriteAction BusMain::write(std::uint16_t addr, std::uint8_t value)
     case 0xf:
         _mapper.write(addr, value);
         return WriteAction::None;
+    default:
+        UNREACHABLE();
     }
-
-    return WriteAction::None;
 }
 
 static bool memoryExtractOverlap(std::uint16_t start, std::size_t len, std::uint16_t regionStart, std::size_t regionLen, std::size_t* overlapOffset, std::size_t* overlapLen, std::size_t* overlapOffsetInDest)
@@ -223,31 +212,26 @@ void BusMain::dump(std::uint8_t* dst, std::uint16_t start, std::size_t len)
         }
     }
 
-    /* 0x2000-0x5fff, not implemented */
-    if (memoryExtractOverlap(start, len, 0x2000, 0x4000, &oOff, &oLen, &dOff))
+    /* 0x2000-0x3fff, not implemented */
+    if (memoryExtractOverlap(start, len, 0x2000, 0x2000, &oOff, &oLen, &dOff))
     {
         std::memset(dst + dOff, 0xff, oLen);
     }
 
-    /* 0x6000-0x7fff, PRG ram or nothing */
-    if (memoryExtractOverlap(start, len, 0x6000, 0x2000, &oOff, &oLen, &dOff))
+    /* 0x4000-0xffff, PRG ROM/RAM via mapper */
+    for (int i = 0; i < 6; ++i)
     {
-        if (_cart.segment(CART_PRG_RAM).base)
+        if (memoryExtractOverlap(start, len, 0x4000 + i * 0x2000, 0x2000, &oOff, &oLen, &dOff))
         {
-            std::memcpy(dst + dOff, _cart.segment(CART_PRG_RAM).base + oOff, oLen);
-        }
-        else
-        {
-            std::memset(dst + dOff, 0xff, oLen);
-        }
-    }
-
-    /* 0x8000-0xffff, cart via mapper */
-    for (int i = 0; i < 4; ++i)
-    {
-        if (memoryExtractOverlap(start, len, 0x8000 + i * 0x2000, 0x2000, &oOff, &oLen, &dOff))
-        {
-            std::memcpy(dst + dOff, _mapper.prg(i) + oOff, oLen);
+            const std::uint8_t* bank = _mapper.bank(i);
+            if (bank)
+            {
+                std::memcpy(dst + dOff, bank + oOff, oLen);
+            }
+            else
+            {
+                std::memset(dst + dOff, 0xff, oLen);
+            }
         }
     }
 }

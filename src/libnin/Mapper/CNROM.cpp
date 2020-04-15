@@ -33,6 +33,8 @@ using namespace libnin;
 
 void Mapper::write_CNROM(std::uint16_t addr, std::uint8_t value)
 {
-    UNUSED(addr);
-    bankChr8k(value & 0x03);
+    if (addr >= 0x8000)
+    {
+        bankChr8k(value & 0x03);
+    }
 }

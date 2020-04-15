@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
 #include <libnin/IRQ.h>
 #include <libnin/Util.h>
@@ -36,17 +37,17 @@ void Mapper::mmc3Apply()
 {
     if (_mmc3.bankModePrgRom == 0)
     {
-        bankPrg8k(0, _mmc3.bank[6]);
-        bankPrg8k(1, _mmc3.bank[7]);
-        bankPrg8k(2, -2);
-        bankPrg8k(3, -1);
+        bankPrg8k(2, CART_PRG_ROM, _mmc3.bank[6]);
+        bankPrg8k(3, CART_PRG_ROM, _mmc3.bank[7]);
+        bankPrg8k(4, CART_PRG_ROM, -2);
+        bankPrg8k(5, CART_PRG_ROM, -1);
     }
     else
     {
-        bankPrg8k(0, -2);
-        bankPrg8k(1, _mmc3.bank[7]);
-        bankPrg8k(2, _mmc3.bank[6]);
-        bankPrg8k(3, -1);
+        bankPrg8k(2, CART_PRG_ROM, -2);
+        bankPrg8k(3, CART_PRG_ROM, _mmc3.bank[7]);
+        bankPrg8k(4, CART_PRG_ROM, _mmc3.bank[6]);
+        bankPrg8k(5, CART_PRG_ROM, -1);
     }
 
     if (_mmc3.bankModeChrRom == 0)
@@ -101,7 +102,7 @@ void Mapper::write_MMC3(std::uint16_t addr, std::uint8_t value)
         break;
     case 0xe000:
         _mmc3.irqScanlineEnabled = 0;
-        _irq.unset(IRQ_SCANLINE);
+        _irq.unset(IRQ_MAPPER1);
         break;
     case 0xe001:
         _mmc3.irqScanlineEnabled = 1;
@@ -120,7 +121,7 @@ void Mapper::videoRead_MMC3(std::uint16_t addr)
         {
             if (_mmc3.irqScanlineCounter == 0 && _mmc3.irqScanlineEnabled)
             {
-                _irq.set(IRQ_SCANLINE);
+                _irq.set(IRQ_MAPPER1);
             }
             if (_mmc3.irqScanlineCounter == 0 || _mmc3.irqScanlineReload)
             {

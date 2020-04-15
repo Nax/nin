@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
@@ -33,7 +34,9 @@ using namespace libnin;
 
 void Mapper::write_GXROM(std::uint16_t addr, std::uint8_t value)
 {
-    UNUSED(addr);
-    bankPrg32k((value >> 4) & 0x3);
-    bankChr8k(value & 0x3);
+    if (addr >= 0x8000)
+    {
+        bankPrg32k(2, CART_PRG_ROM, (value >> 4) & 0x3);
+        bankChr8k(value & 0x3);
+    }
 }
