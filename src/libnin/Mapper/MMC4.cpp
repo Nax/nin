@@ -27,6 +27,7 @@
  */
 
 #include <libnin/Mapper.h>
+#include <libnin/Cart.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
@@ -37,7 +38,7 @@ void Mapper::write_MMC4(std::uint16_t addr, std::uint8_t value)
     switch (addr & 0xf000)
     {
     case 0xa000: // PRG ROM bank
-        bankPrg16k(0, value & 0xf);
+        bankPrg16k(2, CART_PRG_ROM, value & 0xf);
         break;
     }
 }

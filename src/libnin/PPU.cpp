@@ -298,9 +298,10 @@ void PPU::tick(std::size_t cycles)
 
 PPU::Handler PPU::handleWait()
 {
-    if (--_clock)
-        return (Handler)&PPU::handleWait;
-    return _handler2;
+    if (!_clock)
+        return _handler2;
+    _clock--;
+    return &PPU::handleWait;
 }
 
 PPU::Handler PPU::handleVBlank()
@@ -432,7 +433,17 @@ PPU::Handler PPU::handleScanHiBG1()
         _v = incY(_v);
     }
     _step = 0;
-    return wait(65, (Handler)&PPU::handleNextNT0);
+    return &PPU::handleScanSpriteEval;
+}
+
+PPU::Handler PPU::handleScanSpriteEval()
+{
+    if (_flags.rendering)
+    {
+        spriteEvaluation();
+        spriteFetch();
+    }
+    return wait(64, (Handler)&PPU::handleNextNT0);
 }
 
 PPU::Handler PPU::handleNextNT0()
@@ -483,29 +494,44 @@ PPU::Handler PPU::handleNextHiBG1()
     }
 
     if (_step)
-    {
-        if (_prescan)
-        {
-            _scanline = 0;
-            return wait(5, dummy());
-        }
-        if (_scanline + 1 < 240)
-        {
-            if (_flags.rendering)
-            {
-                spriteEvaluation();
-                spriteFetch();
-            }
-            _scanline++;
-            return wait(5, (Handler)&PPU::handleScan);
-        }
-        _scanline = 0;
-        return wait(5 + 341, (Handler)&PPU::handleVBlank);
-    }
+        return &PPU::handleNextDummy0;
     _step = 1;
-    return (Handler)&PPU::handleNextNT0;
+    return  &PPU::handleNextNT0;
 }
 
+PPU::Handler PPU::handleNextDummy0()
+{
+    return &PPU::handleNextDummy1;
+}
+
+PPU::Handler PPU::handleNextDummy1()
+{
+    fetchNT();
+    return &PPU::handleNextDummy2;
+}
+
+PPU::Handler PPU::handleNextDummy2()
+{
+    return &PPU::handleNextDummy3;
+}
+
+PPU::Handler PPU::handleNextDummy3()
+{
+    fetchNT();
+
+    if (_prescan)
+    {
+        _scanline = 0;
+        return wait(1, dummy());
+    }
+    if (_scanline + 1 < 240)
+    {
+        _scanline++;
+        return wait(1, &PPU::handleScan);
+    }
+    _scanline = 0;
+    return wait(1 + 341, &PPU::handleVBlank);
+}
 
 PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
 {

@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
@@ -33,12 +34,16 @@ using namespace libnin;
 
 void Mapper::write_UXROM(std::uint16_t addr, std::uint8_t value)
 {
-    UNUSED(addr);
-    bankPrg16k(0, value);
+    if (addr >= 0x8000)
+    {
+        bankPrg16k(2, CART_PRG_ROM, value);
+    }
 }
 
 void Mapper::write_UXROM180(std::uint16_t addr, std::uint8_t value)
 {
-    UNUSED(addr);
-    bankPrg16k(1, value);
+    if (addr >= 0x8000)
+    {
+        bankPrg16k(4, CART_PRG_ROM, value);
+    }
 }

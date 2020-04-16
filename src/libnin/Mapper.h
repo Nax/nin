@@ -49,26 +49,44 @@ public:
     Mapper(Memory& memory, Cart& cart, IRQ& irq);
     ~Mapper();
 
-    std::uint8_t* prg(int i) { return _prg[i]; }
+    const std::uint8_t* bank(int slot) const { return _banks[slot]; }
     std::uint8_t* chr(int i) { return _chr[i]; }
     std::uint8_t* nametable(int i) { return _nametables[i]; }
 
     bool configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor);
     void mirror(int mirrorMode);
-    void write(std::uint16_t addr, std::uint8_t value) { (this->*_writeHandler)(addr, value); }
+
+    void            tick(void) { (this->*_tickHandler)(); }
+    std::uint8_t    read(std::uint16_t addr);
+    void            write(std::uint16_t addr, std::uint8_t value);
+    void            handleWrite(std::uint16_t addr, std::uint8_t value) { (this->*_writeHandler)(addr, value); }
+
     void videoRead(std::uint16_t addr) { (this->*_videoReadHandler)(addr); }
 
-    void bankPrg8k(std::uint8_t slot, std::int16_t bank);
-    void bankPrg16k(std::uint8_t slot, std::int16_t bank);
-    void bankPrg32k(std::int16_t bank);
+    std::uint8_t    ntRead(int nametable, std::uint16_t offset) { return (this->*_ntReadHandler)(nametable, offset); }
+    void            ntWrite(int nametable, std::uint16_t offset, std::uint8_t value) { (this->*_ntWriteHandler)(nametable, offset, value); }
+
+    std::uint8_t    chrRead(int bank, std::uint16_t offset) { return (this->*_chrReadHandler)(bank, offset); }
+    void            chrWrite(int bank, std::uint16_t offset, std::uint8_t value) { (this->*_chrWriteHandler)(bank, offset, value); }
+
+    void bankPrg8k(std::uint8_t slot, int domain, std::int16_t bank);
+    void bankPrg16k(std::uint8_t slot, int domain, std::int16_t bank);
+    void bankPrg32k(std::uint8_t slot, int domain, std::int16_t bank);
 
     void bankChr1k(std::uint8_t slot, std::int16_t bank);
+    void bankChr2k(std::uint8_t slot, std::int16_t bank);
     void bankChr4k(std::uint8_t slot, std::int16_t bank);
     void bankChr8k(std::int16_t bank);
 
 private:
+    using TickHandler = void(Mapper::*)(void);
+    using ReadHandler = std::uint8_t(Mapper::*)(std::uint16_t);
     using WriteHandler = void(Mapper::*)(std::uint16_t, std::uint8_t);
     using VideoReadHandler = void(Mapper::*)(std::uint16_t);
+    using NametableReadHandler = std::uint8_t(Mapper::*)(int, std::uint16_t);
+    using NametableWriteHandler = void(Mapper::*)(int, std::uint16_t, std::uint8_t);
+    using ChrReadHandler = std::uint8_t(Mapper::*)(int, std::uint16_t);
+    using ChrWriteHandler = void(Mapper::*)(int, std::uint16_t, std::uint8_t);
 
     struct MMC1
     {
@@ -107,7 +125,41 @@ private:
         std::uint16_t   oldVmemAddr;
     };
 
-    void write_NROM(std::uint16_t addr, std::uint8_t value);
+    struct MMC5
+    {
+        std::uint8_t    bankModePrg:2;
+        std::uint8_t    bankModeChr:2;
+        std::uint8_t    bankSelectPrg[5];
+        std::uint8_t    bankSelectChr[12];
+        std::uint8_t    nametable;
+        std::uint8_t    fillNT;
+        std::uint8_t    fillAT;
+        std::uint8_t    mul[2];
+        std::uint8_t*   chr2[8];
+
+        std::uint16_t   ppuAddr;
+        std::uint8_t    ppuAddrCount;
+        std::uint8_t    ppuIdleCount;
+        std::uint8_t    fetchCount;
+        std::uint8_t    scanline;
+        std::uint8_t    scanlineTarget;
+
+        bool ppuReading:1;
+        bool ppuSpriteFlag:1;
+        bool ppuRenderFlag:1;
+        bool mode8x16:1;
+        bool inFrame:1;
+        bool scanlineEnabled:1;
+        bool scanlinePending:1;
+    };
+
+    void tick_NULL(void);
+    void tick_MMC5(void);
+
+    std::uint8_t read_NULL(std::uint16_t addr);
+    std::uint8_t read_MMC5(std::uint16_t addr);
+
+    void write_NULL(std::uint16_t addr, std::uint8_t value);
     void write_UXROM(std::uint16_t addr, std::uint8_t value);
     void write_UXROM180(std::uint16_t addr, std::uint8_t value);
     void write_CNROM(std::uint16_t addr, std::uint8_t value);
@@ -118,10 +170,23 @@ private:
     void write_MMC2(std::uint16_t addr, std::uint8_t value);
     void write_MMC3(std::uint16_t addr, std::uint8_t value);
     void write_MMC4(std::uint16_t addr, std::uint8_t value);
+    void write_MMC5(std::uint16_t addr, std::uint8_t value);
 
     void videoRead_NULL(std::uint16_t);
     void videoRead_MMC2(std::uint16_t);
     void videoRead_MMC3(std::uint16_t);
+    void videoRead_MMC5(std::uint16_t);
+
+    std::uint8_t ntRead_NULL(int nametable, std::uint16_t offset);
+    std::uint8_t ntRead_MMC5(int nametable, std::uint16_t offset);
+
+    void ntWrite_NULL(int nametable, std::uint16_t offset, std::uint8_t value);
+    void ntWrite_MMC5(int nametable, std::uint16_t offset, std::uint8_t value);
+
+    std::uint8_t chrRead_NULL(int bank, std::uint16_t offset);
+    std::uint8_t chrRead_MMC5(int bank, std::uint16_t offset);
+
+    void chrWrite_NULL(int bank, std::uint16_t offset, std::uint8_t value);
 
     void mmc1RegWrite(std::uint16_t addr, std::uint8_t value);
     void mmc1BankPrg();
@@ -133,14 +198,24 @@ private:
 
     void mmc3Apply();
 
+    void mmc5ApplyPRG();
+    void mmc5ApplyCHR();
+
     Memory& _memory;
     Cart&   _cart;
     IRQ&    _irq;
 
-    WriteHandler        _writeHandler;
-    VideoReadHandler    _videoReadHandler;
+    TickHandler             _tickHandler;
+    ReadHandler             _readHandler;
+    WriteHandler            _writeHandler;
+    VideoReadHandler        _videoReadHandler;
+    NametableReadHandler    _ntReadHandler;
+    NametableWriteHandler   _ntWriteHandler;
+    ChrReadHandler          _chrReadHandler;
+    ChrWriteHandler         _chrWriteHandler;
 
-    std::uint8_t*   _prg[4];
+    std::uint8_t*   _banks[6];
+    bool            _banksWriteFlag[6];
     std::uint8_t*   _chr[8];
     std::uint8_t*   _nametables[4];
 
@@ -149,6 +224,7 @@ private:
         MMC1 _mmc1;
         MMC2 _mmc2;
         MMC3 _mmc3;
+        MMC5 _mmc5;
     };
 };
 

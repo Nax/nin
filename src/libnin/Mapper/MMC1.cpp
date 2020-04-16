@@ -27,15 +27,16 @@
  */
 
 #include <libnin/Mapper.h>
+#include <libnin/Cart.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
 void Mapper::mmc1RegWrite(std::uint16_t addr, std::uint8_t value)
 {
-    switch ((addr & 0x7fff) >> 13)
+    switch (addr & 0xe000)
     {
-    case 0:
+    case 0x8000:
         /* 0x8000 - 0x9fff */
         _mmc1.mirroring = value & 0x03;
         _mmc1.prgBankMode = (value >> 2) & 0x03;
@@ -44,17 +45,17 @@ void Mapper::mmc1RegWrite(std::uint16_t addr, std::uint8_t value)
         mmc1BankPrg();
         mmc1Mirror();
         break;
-    case 1:
+    case 0xa000:
         /* 0xa000 - 0xbfff */
         _mmc1.chrBank0 = value;
         mmc1BankChr();
         break;
-    case 2:
+    case 0xc000:
         /* 0xc000 - 0xdfff */
         _mmc1.chrBank1 = value;
         mmc1BankChr();
         break;
-    case 3:
+    case 0xe000:
         /* 0xe000 - 0xffff */
         _mmc1.prgBank = value & 0xf;
         mmc1BankPrg();
@@ -68,16 +69,16 @@ void Mapper::mmc1BankPrg()
     {
     case 0:
     case 1:
-        bankPrg16k(0, (_mmc1.prgBank & 0xfe) | 0);
-        bankPrg16k(1, (_mmc1.prgBank & 0xfe) | 1);
+        bankPrg16k(2, CART_PRG_ROM, (_mmc1.prgBank & 0xfe) | 0);
+        bankPrg16k(4, CART_PRG_ROM, (_mmc1.prgBank & 0xfe) | 1);
         break;
     case 2:
-        bankPrg16k(0, 0);
-        bankPrg16k(1, _mmc1.prgBank & 0xff);
+        bankPrg16k(2, CART_PRG_ROM, 0);
+        bankPrg16k(4, CART_PRG_ROM, _mmc1.prgBank & 0xff);
         break;
     case 3:
-        bankPrg16k(0, _mmc1.prgBank & 0xff);
-        bankPrg16k(1, -1);
+        bankPrg16k(2, CART_PRG_ROM, _mmc1.prgBank & 0xff);
+        bankPrg16k(4, CART_PRG_ROM, -1);
         break;
     }
 }
@@ -121,6 +122,9 @@ void Mapper::mmc1Mirror()
 void Mapper::write_MMC1(std::uint16_t addr, std::uint8_t value)
 {
     std::uint8_t shift;
+
+    if (!(addr & 0x8000))
+        return;
 
     if (value & 0x80)
     {

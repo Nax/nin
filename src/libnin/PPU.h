@@ -106,6 +106,7 @@ private:
     Handler handleScanLoBG1();
     Handler handleScanHiBG0();
     Handler handleScanHiBG1();
+    Handler handleScanSpriteEval();
     Handler handleNextNT0();
     Handler handleNextNT1();
     Handler handleNextAT0();
@@ -114,6 +115,10 @@ private:
     Handler handleNextLoBG1();
     Handler handleNextHiBG0();
     Handler handleNextHiBG1();
+    Handler handleNextDummy0();
+    Handler handleNextDummy1();
+    Handler handleNextDummy2();
+    Handler handleNextDummy3();
 
     Handler wait(std::uint32_t cycles, Handler next);
     Handler dummy();

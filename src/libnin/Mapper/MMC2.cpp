@@ -26,6 +26,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
@@ -71,7 +72,7 @@ void Mapper::write_MMC2(std::uint16_t addr, std::uint8_t value)
     switch (addr & 0xf000)
     {
     case 0xa000: // PRG ROM bank
-        bankPrg8k(0, value & 0xf);
+        bankPrg8k(2, CART_PRG_ROM, value & 0xf);
         break;
     }
 }

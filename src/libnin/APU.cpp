@@ -471,7 +471,7 @@ std::uint8_t APU::sampleDMC()
 
 std::uint8_t APU::dmcMemoryRead(std::uint16_t addr)
 {
-    return _mapper.prg((addr & 0x6000) >> 13)[addr & 0x1fff];
+    return _mapper.read(addr);
 }
 
 float APU::mix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise, uint8_t dmc)

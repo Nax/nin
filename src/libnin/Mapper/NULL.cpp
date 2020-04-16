@@ -26,21 +26,49 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void Mapper::write_NROM(std::uint16_t addr, std::uint8_t value)
+void Mapper::tick_NULL(void)
+{
+
+}
+
+std::uint8_t Mapper::read_NULL(std::uint16_t addr)
+{
+    UNUSED(addr);
+
+    return 0;
+}
+
+void Mapper::write_NULL(std::uint16_t addr, std::uint8_t value)
 {
     UNUSED(addr);
     UNUSED(value);
 }
 
-/*
-void ninPpuMonitorHandlerNull(NinState* state, uint16_t addr)
+std::uint8_t Mapper::ntRead_NULL(int nametable, std::uint16_t off)
 {
-    UNUSED(state);
-    UNUSED(addr);
+    return _nametables[nametable][off];
 }
-*/
+
+void Mapper::ntWrite_NULL(int nametable, std::uint16_t off, std::uint8_t value)
+{
+    _nametables[nametable][off] = value;
+}
+
+std::uint8_t Mapper::chrRead_NULL(int bank, std::uint16_t offset)
+{
+    return _chr[bank][offset];
+}
+
+void Mapper::chrWrite_NULL(int bank, std::uint16_t offset, std::uint8_t value)
+{
+    if (_cart.segment(CART_PRG_RAM).base)
+    {
+        _chr[bank][offset] = value;
+    }
+}

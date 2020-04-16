@@ -104,6 +104,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyc)
         state->cpu.tick(1);
         state->ppu.tick(3);
         state->apu.tick(1);
+        state->mapper.tick();
     }
 
     if (cyc)
@@ -164,6 +165,7 @@ NIN_API int ninStepInstruction(NinState* state)
         state->cpu.tick(1);
         state->ppu.tick(3);
         state->apu.tick(1);
+        state->mapper.tick();
 
         if (state->cpu.dispatching())
             break;
