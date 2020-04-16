@@ -53,23 +53,23 @@ std::uint8_t BusVideo::read(std::uint16_t addr)
     addr &= 0x3fff;
     _mapper.videoRead(addr);
     if (addr < 0x2000)
-        return _mapper.chr(addr / 0x400)[addr & 0x3ff];
+        return _mapper.chrRead(addr / 0x400, addr & 0x3ff);
     else if (addr < 0x2400)
-        return _mapper.nametable(0)[addr & 0x3ff];
+        return _mapper.ntRead(0, addr & 0x3ff);
     else if (addr < 0x2800)
-        return _mapper.nametable(1)[addr & 0x3ff];
+        return _mapper.ntRead(1, addr & 0x3ff);
     else if (addr < 0x2c00)
-        return _mapper.nametable(2)[addr & 0x3ff];
+        return _mapper.ntRead(2, addr & 0x3ff);
     else if (addr < 0x3000)
-        return _mapper.nametable(3)[addr & 0x3ff];
+        return _mapper.ntRead(3, addr & 0x3ff);
     else if (addr < 0x3400)
-        return _mapper.nametable(0)[addr & 0x3ff];
+        return _mapper.ntRead(0, addr & 0x3ff);
     else if (addr < 0x3800)
-        return _mapper.nametable(1)[addr & 0x3ff];
+        return _mapper.ntRead(1, addr & 0x3ff);
     else if (addr < 0x3c00)
-        return _mapper.nametable(2)[addr & 0x3ff];
+        return _mapper.ntRead(2, addr & 0x3ff);
     else if (addr < 0x3f00)
-        return _mapper.nametable(3)[addr & 0x3ff];
+        return _mapper.ntRead(3, addr & 0x3ff);
     else
         return _memory.palettes[addr & 0x1f];
 }
@@ -78,28 +78,23 @@ void BusVideo::write(std::uint16_t addr, std::uint8_t value)
 {
     addr &= 0x3fff;
     if (addr < 0x2000)
-    {
-        if (_cart.segment(CART_CHR_RAM).base)
-            _mapper.chr(addr / 0x400)[addr & 0x3ff] = value;
-        else
-            badIO(addr, 1);
-    }
+        _mapper.chrWrite(addr / 0x400, addr & 0x3fff, value);
     else if (addr < 0x2400)
-        _mapper.nametable(0)[addr & 0x3ff] = value;
+        _mapper.ntWrite(0, addr & 0x3ff, value);
     else if (addr < 0x2800)
-        _mapper.nametable(1)[addr & 0x3ff] = value;
+        _mapper.ntWrite(1, addr & 0x3ff, value);
     else if (addr < 0x2c00)
-        _mapper.nametable(2)[addr & 0x3ff] = value;
+        _mapper.ntWrite(2, addr & 0x3ff, value);
     else if (addr < 0x3000)
-        _mapper.nametable(3)[addr & 0x3ff] = value;
+        _mapper.ntWrite(3, addr & 0x3ff, value);
     else if (addr < 0x3400)
-        _mapper.nametable(0)[addr & 0x3ff] = value;
+        _mapper.ntWrite(0, addr & 0x3ff, value);
     else if (addr < 0x3800)
-        _mapper.nametable(1)[addr & 0x3ff] = value;
+        _mapper.ntWrite(1, addr & 0x3ff, value);
     else if (addr < 0x3c00)
-        _mapper.nametable(2)[addr & 0x3ff] = value;
+        _mapper.ntWrite(2, addr & 0x3ff, value);
     else if (addr < 0x3f00)
-        _mapper.nametable(3)[addr & 0x3ff] = value;
+        _mapper.ntWrite(3, addr & 0x3ff, value);
     else
     {
         if ((addr & 0x03) == 0)

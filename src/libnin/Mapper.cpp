@@ -9,10 +9,14 @@ Mapper::Mapper(Memory& memory, Cart& cart, IRQ& irq)
 : _memory{memory}
 , _cart{cart}
 , _irq{irq}
-, _tickHandler{&Mapper::tick_NROM}
-, _readHandler{&Mapper::read_NROM}
-, _writeHandler{&Mapper::write_NROM}
+, _tickHandler{&Mapper::tick_NULL}
+, _readHandler{&Mapper::read_NULL}
+, _writeHandler{&Mapper::write_NULL}
 , _videoReadHandler{&Mapper::videoRead_NULL}
+, _ntReadHandler{&Mapper::ntRead_NULL}
+, _ntWriteHandler{&Mapper::ntWrite_NULL}
+, _chrReadHandler{&Mapper::chrRead_NULL}
+, _chrWriteHandler{&Mapper::chrWrite_NULL}
 , _banks{}
 , _banksWriteFlag{}
 {
@@ -33,7 +37,6 @@ bool Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
     {
     case 0:
         /* NROM */
-        _writeHandler = &Mapper::write_NROM;
         break;
     case 1:
         /* MMC1 */
@@ -63,6 +66,9 @@ bool Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
         _readHandler = &Mapper::read_MMC5;
         _writeHandler = &Mapper::write_MMC5;
         _videoReadHandler = &Mapper::videoRead_MMC5;
+        _ntReadHandler = &Mapper::ntRead_MMC5;
+        _ntWriteHandler = &Mapper::ntWrite_MMC5;
+        _chrReadHandler = &Mapper::chrRead_MMC5;
         _mmc5.bankModePrg = 3;
         _mmc5.bankModeChr = 3;
         _mmc5.bankSelectPrg[4] = 0xff; 
