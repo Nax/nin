@@ -27,12 +27,18 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/UxROM.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void Mapper::write_UXROM(std::uint16_t addr, std::uint8_t value)
+void MapperUxROM::handleReset()
+{
+    bankPrg16k(2, CART_PRG_ROM, 0);
+    bankPrg16k(4, CART_PRG_ROM, -1);
+}
+
+void MapperUxROM::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
@@ -40,10 +46,3 @@ void Mapper::write_UXROM(std::uint16_t addr, std::uint8_t value)
     }
 }
 
-void Mapper::write_UXROM180(std::uint16_t addr, std::uint8_t value)
-{
-    if (addr >= 0x8000)
-    {
-        bankPrg16k(4, CART_PRG_ROM, value);
-    }
-}

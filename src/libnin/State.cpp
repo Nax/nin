@@ -2,58 +2,14 @@
 #include <cstring>
 #include <libnin/Util.h>
 #include <libnin/State.h>
+#include <libnin/RomHeader.h>
 
 using namespace libnin;
 
 static const char kHeaderMagicNES[] = { 'N', 'E', 'S', '\x1a' };
 static const char kHeaderMagicFDS[] = { 'F', 'D', 'S', '\x1a' };
 
-State::State()
-: memory{}
-, info{}
-, cart{}
-, input{}
-, irq{}
-, nmi{}
-, mapper{memory, cart, irq}
-, busVideo{memory, cart, mapper}
-, audio{info}
-, apu{info, irq, mapper, audio}
-, diskSystem{info, irq}
-, video{}
-, ppu{info, memory, nmi, busVideo, mapper, video}
-, busMain{memory, cart, mapper, ppu, apu, input}
-, cpu{memory, irq, nmi, ppu, apu, busMain}
-, save{cart}
-{
-}
-
-NinError State::loadRom(const char* path)
-{
-    std::FILE* f;
-    RomHeader header{};
-
-    /* Open the ROM */
-    f = fopen(path, "rb");
-    if (!f)
-        return NIN_ERROR_IO;
-
-    /* Read the header */
-    std::fread(&header, sizeof(header), 1, f);
-
-    /* Check for the NES signature */
-    if (std::memcmp(header.magic, kHeaderMagicNES, 4) == 0)
-        return loadRomNES(header, f);
-
-    /* Check for the iNES signature */
-    if (std::memcmp(header.magic, kHeaderMagicFDS, 4) == 0)
-        return loadRomFDS(header, f);
-
-    std::fclose(f);
-    return NIN_ERROR_BAD_FILE;
-}
-
-NinError State::loadRomNES(const RomHeader& header, std::FILE* f)
+static NinError loadRomNES(State& state, const RomHeader& header, std::FILE* f)
 {
     bool nes2{};
     std::uint16_t prgRomBankCount;
@@ -79,39 +35,34 @@ NinError State::loadRomNES(const RomHeader& header, std::FILE* f)
     }
 
     /* Load data from the cart */
-    cart.load(CART_PRG_ROM, prgRomBankCount, f);
-    cart.load(CART_PRG_RAM, prgRamBankCount, nullptr);
-    cart.load(CART_CHR_ROM, chrRomBankCount, f);
-    cart.load(CART_CHR_RAM, chrRamBankCount, nullptr);
+    state.cart->load(CART_PRG_ROM, prgRomBankCount, f);
+    state.cart->load(CART_PRG_RAM, prgRamBankCount, nullptr);
+    state.cart->load(CART_CHR_ROM, chrRomBankCount, f);
+    state.cart->load(CART_CHR_RAM, chrRamBankCount, nullptr);
 
     /* We won't need the ROM from now on */
     std::fclose(f);
 
     /* Load the region */
     if (!nes2)
-        info.setRegion(NIN_REGION_NTSC);
+        state.info->setRegion(NIN_REGION_NTSC);
     else
-        info.setRegion((NinRegion)header.nes2.region);
+        state.info->setRegion((NinRegion)header.nes2.region);
 
-    /* Load the header misc. info */
-    if (header.mirroring)
-        mapper.mirror(NIN_MIRROR_H);
-    else
-        mapper.mirror(NIN_MIRROR_V);
-
-    /* PRG RAM */
-    mapper.bankPrg8k(1, CART_PRG_RAM, 0);
-
-    /* PRG ROM */
-    mapper.bankPrg16k(2, CART_PRG_ROM, 0);
-    mapper.bankPrg16k(4, CART_PRG_ROM, -1);
-
-    mapper.bankChr8k(0);
-    if (!mapper.configure((header.mapperHi << 4) | header.mapperLo, 0))
+    /* Load the mapper */
+    state.mapper = std::unique_ptr<Mapper>(Mapper::create(*state.memory, *state.cart, *state.irq, (header.mapperHi << 4) | header.mapperLo, 0));
+    if (!state.mapper)
     {
         return NIN_ERROR_BAD_MAPPER;
     }
-    save.setBattery(!!header.battery);
+
+    /* Load the header misc. info */
+    if (header.mirroring)
+        state.mapper->mirror(NIN_MIRROR_H);
+    else
+        state.mapper->mirror(NIN_MIRROR_V);
+    state.mapper->handleReset();
+    state.save->setBattery(!!header.battery);
 
     /* Check that the file was actually long enough */
     /*
@@ -125,25 +76,88 @@ NinError State::loadRomNES(const RomHeader& header, std::FILE* f)
     return NIN_OK;
 }
 
-NinError State::loadRomFDS(const RomHeader& header, std::FILE* f)
+static NinError loadRomFDS(State& state, const RomHeader& header, std::FILE* f)
 {
     UNUSED(header);
 
-    info.setSystem(NIN_SYSTEM_FDS);
+    state.info->setSystem(NIN_SYSTEM_FDS);
 
     /* PRG ROM is the FDS BIOS */
-    cart.load(CART_PRG_ROM, 1, nullptr);
-    cart.load(CART_PRG_RAM, 4, nullptr);
-    cart.load(CART_CHR_ROM, 0, nullptr);
-    cart.load(CART_CHR_RAM, 8, nullptr);
+    state.cart->load(CART_PRG_ROM, 1, nullptr);
+    state.cart->load(CART_PRG_RAM, 4, nullptr);
+    state.cart->load(CART_CHR_ROM, 0, nullptr);
+    state.cart->load(CART_CHR_RAM, 8, nullptr);
 
-    mapper.bankChr8k(0);
+    state.mapper->bankChr8k(0);
 
     /* Load the disk */
-    diskSystem.loadDisk(f);
+    state.diskSystem->loadDisk(f);
 
     /* We won't need the ROM from now on */
     std::fclose(f);
 
     return NIN_OK;
 }
+
+static NinError loadRom(State& state, const char* path)
+{
+    std::FILE* f;
+    RomHeader header{};
+
+    /* Open the ROM */
+    f = fopen(path, "rb");
+    if (!f)
+        return NIN_ERROR_IO;
+
+    /* Read the header */
+    std::fread(&header, sizeof(header), 1, f);
+
+    /* Check for the NES signature */
+    if (std::memcmp(header.magic, kHeaderMagicNES, 4) == 0)
+        return loadRomNES(state, header, f);
+
+    /* Check for the iNES signature */
+    if (std::memcmp(header.magic, kHeaderMagicFDS, 4) == 0)
+        return loadRomFDS(state, header, f);
+
+    std::fclose(f);
+    return NIN_ERROR_BAD_FILE;
+}
+
+State* State::create(NinError& err, const char* path)
+{
+    State* s = new State;
+    NinError e;
+
+    /* Init the common systems */
+    s->memory = std::make_unique<Memory>();
+    s->info = std::make_unique<HardwareInfo>();
+    s->cart = std::make_unique<Cart>();
+    s->save = std::make_unique<Save>(*s->cart);
+    s->input = std::make_unique<Input>();
+    s->irq = std::make_unique<IRQ>();
+    s->nmi = std::make_unique<NMI>();
+    s->video = std::make_unique<Video>();
+
+    /* Load the rom - this will also select a mapper */
+    e = loadRom(*s, path);
+    if (e) goto error;
+
+    /* Init the other common systems - these depends on the mapper as well */
+    s->busVideo = std::make_unique<BusVideo>(*s->memory, *s->cart, *s->mapper);
+    s->audio = std::make_unique<Audio>(*s->info);
+    s->apu = std::make_unique<APU>(*s->info, *s->irq, *s->mapper, *s->audio);
+    s->diskSystem = std::make_unique<DiskSystem>(*s->info, *s->irq);
+    s->ppu = std::make_unique<PPU>(*s->info, *s->memory, *s->nmi, *s->busVideo, *s->mapper, *s->video);
+    s->busMain = std::make_unique<BusMain>(*s->memory, *s->cart, *s->mapper, *s->ppu, *s->apu, *s->input);
+    s->cpu = std::make_unique<CPU>(*s->memory, *s->irq, *s->nmi, *s->ppu, *s->apu, *s->busMain);
+
+    err = NIN_OK;
+    return s;
+
+error:
+    delete s;
+    err = e;
+    return nullptr;
+}
+

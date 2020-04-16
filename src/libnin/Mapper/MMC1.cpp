@@ -26,82 +26,128 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libnin/Mapper.h>
 #include <libnin/Cart.h>
+#include <libnin/Mapper/MMC1.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void Mapper::mmc1RegWrite(std::uint16_t addr, std::uint8_t value)
+MapperMMC1::MapperMMC1(Memory& memory, Cart& cart, IRQ& irq)
+: Mapper{memory, cart, irq}
+, _shift{}
+, _count{}
+, _mirroring{}
+, _prgBankMode{}
+, _chrBankMode{}
+, _chrBank0{}
+, _chrBank1{}
+, _prgBank{}
+{
+
+}
+
+void MapperMMC1::handleWrite(std::uint16_t addr, std::uint8_t value)
+{
+	std::uint8_t shift;
+
+	if (!(addr & 0x8000))
+		return;
+
+	if (value & 0x80)
+	{
+		/* Reset the internal registers */
+		_count = 0;
+		_shift = 0;
+		_prgBankMode = 3;
+		mapperBankPrg();
+		return;
+	}
+
+	shift = (((value & 1) << 4) | (_shift >> 1));
+	if (_count < 4)
+	{
+		_shift = shift;
+		_count++;
+		return;
+	}
+
+	/* Serial write completed, apply the effect */
+	_shift = 0;
+	_count = 0;
+	mapperRegWrite(addr, shift);
+}
+
+void MapperMMC1::mapperRegWrite(std::uint16_t addr, std::uint8_t value)
 {
     switch (addr & 0xe000)
     {
     case 0x8000:
         /* 0x8000 - 0x9fff */
-        _mmc1.mirroring = value & 0x03;
-        _mmc1.prgBankMode = (value >> 2) & 0x03;
-        _mmc1.chrBankMode = (value >> 4) & 0x01;
-        mmc1BankPrg();
-        mmc1BankPrg();
-        mmc1Mirror();
+        _mirroring = value & 0x03;
+        _prgBankMode = (value >> 2) & 0x03;
+        _chrBankMode = (value >> 4) & 0x01;
+
+        mapperMirror();
+        mapperBankPrg();
+        mapperBankChr();
         break;
     case 0xa000:
         /* 0xa000 - 0xbfff */
-        _mmc1.chrBank0 = value;
-        mmc1BankChr();
+        _chrBank0 = value;
+		mapperBankChr();
         break;
     case 0xc000:
         /* 0xc000 - 0xdfff */
-        _mmc1.chrBank1 = value;
-        mmc1BankChr();
+        _chrBank1 = value;
+		mapperBankChr();
         break;
     case 0xe000:
         /* 0xe000 - 0xffff */
-        _mmc1.prgBank = value & 0xf;
-        mmc1BankPrg();
+        _prgBank = value & 0xf;
+		mapperBankPrg();
         break;
     }
 }
 
-void Mapper::mmc1BankPrg()
+void MapperMMC1::mapperBankPrg()
 {
-    switch (_mmc1.prgBankMode)
+    switch (_prgBankMode)
     {
     case 0:
     case 1:
-        bankPrg16k(2, CART_PRG_ROM, (_mmc1.prgBank & 0xfe) | 0);
-        bankPrg16k(4, CART_PRG_ROM, (_mmc1.prgBank & 0xfe) | 1);
+        bankPrg16k(2, CART_PRG_ROM, (_prgBank & 0xfe) | 0);
+        bankPrg16k(4, CART_PRG_ROM, (_prgBank & 0xfe) | 1);
         break;
     case 2:
         bankPrg16k(2, CART_PRG_ROM, 0);
-        bankPrg16k(4, CART_PRG_ROM, _mmc1.prgBank & 0xff);
+        bankPrg16k(4, CART_PRG_ROM, _prgBank & 0xff);
         break;
     case 3:
-        bankPrg16k(2, CART_PRG_ROM, _mmc1.prgBank & 0xff);
+        bankPrg16k(2, CART_PRG_ROM, _prgBank & 0xff);
         bankPrg16k(4, CART_PRG_ROM, -1);
         break;
     }
 }
 
-void Mapper::mmc1BankChr()
+void MapperMMC1::mapperBankChr()
 {
-    if (_mmc1.chrBankMode)
+    if (_chrBankMode)
     {
-        bankChr4k(0, _mmc1.chrBank0);
-        bankChr4k(1, _mmc1.chrBank1);
+        bankChr4k(0, _chrBank0);
+        bankChr4k(1, _chrBank1);
     }
     else
     {
-        bankChr4k(0, _mmc1.chrBank0 & ~(0x01));
-        bankChr4k(1, _mmc1.chrBank0 | 0x01);
+        bankChr4k(0, _chrBank0 & ~(0x01));
+        bankChr4k(1, _chrBank0 | 0x01);
     }
 }
 
-void Mapper::mmc1Mirror()
+void MapperMMC1::mapperMirror()
 {
     int mirrorMode;
 
-    switch (_mmc1.mirroring)
+    switch (_mirroring)
     {
     case 0x00:
         mirrorMode = NIN_MIRROR_A;
@@ -117,35 +163,4 @@ void Mapper::mmc1Mirror()
         break;
     }
     mirror(mirrorMode);
-}
-
-void Mapper::write_MMC1(std::uint16_t addr, std::uint8_t value)
-{
-    std::uint8_t shift;
-
-    if (!(addr & 0x8000))
-        return;
-
-    if (value & 0x80)
-    {
-        /* Reset the internal registers */
-        _mmc1.count = 0;
-        _mmc1.shift = 0;
-        _mmc1.prgBankMode = 3;
-        mmc1BankPrg();
-        return;
-    }
-
-    shift = (((value & 1) << 4) | (_mmc1.shift >> 1));
-    if (_mmc1.count < 4)
-    {
-        _mmc1.shift = shift;
-        _mmc1.count++;
-        return;
-    }
-
-    /* Serial write completed, apply the effect */
-    _mmc1.shift = 0;
-    _mmc1.count = 0;
-    mmc1RegWrite(addr, shift);
 }

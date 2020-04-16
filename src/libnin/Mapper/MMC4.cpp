@@ -26,19 +26,21 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <libnin/Mapper.h>
 #include <libnin/Cart.h>
+#include <libnin/Mapper/MMC4.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void Mapper::write_MMC4(std::uint16_t addr, std::uint8_t value)
+void MapperMMC4::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
-    mmc2Common(addr, value);
     switch (addr & 0xf000)
     {
     case 0xa000: // PRG ROM bank
         bankPrg16k(2, CART_PRG_ROM, value & 0xf);
+        break;
+    default:
+        MapperMMC2::handleWrite(addr, value);
         break;
     }
 }

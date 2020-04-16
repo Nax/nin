@@ -28,95 +28,136 @@
 
 #include <libnin/Cart.h>
 #include <libnin/IRQ.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/MMC5.h>
 #include <libnin/Memory.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void Mapper::tick_MMC5(void)
+MapperMMC5::MapperMMC5(Memory& memory, Cart& cart, IRQ& irq)
+: Mapper{memory, cart, irq}
+, _bankModePrg{}
+, _bankModeChr{}
+, _bankSelectPrg{}
+, _bankSelectChr{}
+, _nametable{}
+, _fillNT{}
+, _fillAT{}
+, _mul{}
+, _chr2{}
+, _ppuAddr{}
+, _ppuAddrCount{}
+, _ppuIdleCount{}
+, _fetchCount{}
+, _scanline{}
+, _scanlineTarget{}
+, _ppuReading{}
+, _ppuSpriteFlag{}
+, _ppuRenderFlag{}
+, _mode8x16{}
+, _inFrame{}
+, _scanlineEnabled{}
+, _scanlinePending{}
 {
-    if (_mmc5.ppuReading)
-        _mmc5.ppuIdleCount = 0;
-    else
-    {
-        _mmc5.ppuIdleCount++;
-        // TODO: Fix this hack
-        if (_mmc5.ppuIdleCount == 100)
-        {
-            _mmc5.inFrame = false;
-        }
-    }
-    _mmc5.ppuReading = false;
+
 }
 
-std::uint8_t Mapper::read_MMC5(std::uint16_t addr)
+void MapperMMC5::handleReset()
+{
+    _bankModePrg = 3;
+    _bankModeChr = 3;
+    _bankSelectPrg[4] = 0xff;
+    for (int i = 0; i < 12; ++i)
+        _bankSelectChr[i] = 0xff;
+    _mul[0] = 0xff;
+    _mul[1] = 0xff;
+    applyChr();
+    applyPrg();
+}
+
+void MapperMMC5::handleTick(void)
+{
+    if (_ppuReading)
+        _ppuIdleCount = 0;
+    else
+    {
+        _ppuIdleCount++;
+        // TODO: Fix this hack
+        if (_ppuIdleCount == 100)
+        {
+            _inFrame = false;
+        }
+    }
+    _ppuReading = false;
+}
+
+std::uint8_t MapperMMC5::handleRead(std::uint16_t addr)
 {
     std::uint8_t value{};
 
     switch (addr)
     {
     case 0x5204: // IRQ Control
-        if (_mmc5.scanlinePending) value |= 0x80;
-        if (_mmc5.inFrame) value |= 0x40;
-        _mmc5.scanlinePending = false;
+        if (_scanlinePending) value |= 0x80;
+        if (_inFrame) value |= 0x40;
+        _scanlinePending = false;
         _irq.unset(IRQ_MAPPER1);
         break;
     case 0x5205: // Mul Lo
-        value = (_mmc5.mul[0] * _mmc5.mul[1]) & 0xff;
+        value = (_mul[0] * _mul[1]) & 0xff;
         break;
     case 0x5206: // Mul Hi
-        value = (_mmc5.mul[0] * _mmc5.mul[1]) >> 8;
+        value = (_mul[0] * _mul[1]) >> 8;
         break;
     case 0xfffa:
     case 0xfffb:
-        _mmc5.inFrame = false;
-        _mmc5.scanline = 0;
-        _mmc5.scanlinePending = false;
+        _inFrame = false;
+        _scanline = 0;
+        _scanlinePending = false;
         _irq.unset(IRQ_MAPPER1);
         break;
     }
     return value;
 }
 
-void Mapper::write_MMC5(std::uint16_t addr, std::uint8_t value)
+void MapperMMC5::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     switch (addr)
     {
     case 0x2000: // PPUCTRL
-        _mmc5.ppuSpriteFlag = !!(value & 0x20);
-        _mmc5.mode8x16 = (_mmc5.ppuRenderFlag && _mmc5.ppuSpriteFlag);
-        mmc5ApplyCHR();
+        _ppuSpriteFlag = !!(value & 0x20);
+        _mode8x16 = (_ppuRenderFlag && _ppuSpriteFlag);
+        applyChr();
         break;
     case 0x2001: // PPUMASK
-        _mmc5.ppuRenderFlag = !!(value & 0x18);
-        _mmc5.mode8x16 = (_mmc5.ppuRenderFlag && _mmc5.ppuSpriteFlag);
-        mmc5ApplyCHR();
+        _ppuRenderFlag = !!(value & 0x18);
+        _mode8x16 = (_ppuRenderFlag && _ppuSpriteFlag);
+        applyChr();
         break;
     case 0x5100: // PRG Mode
-        _mmc5.bankModePrg = value & 0x03;
-        mmc5ApplyPRG();
+        _bankModePrg = value & 0x03;
+        applyPrg();
         break;
     case 0x5101: // CHR Mode
-        _mmc5.bankModeChr = value & 0x03;
-        mmc5ApplyCHR();
+        _bankModeChr = value & 0x03;
+        applyChr();
         break;
     case 0x5105: // Nametable Control
-        _mmc5.nametable = value;
+        _nametable = value;
         break;
     case 0x5106: // Fill NT
-        _mmc5.fillNT = value;
+        _fillNT = value;
         break;
     case 0x5107: // Fill AT
-        _mmc5.fillAT = value & 0x03;
+        _fillAT = value & 0x03;
         break;
     case 0x5113: // PRG Select
     case 0x5114:
     case 0x5115:
     case 0x5116:
     case 0x5117:
-        _mmc5.bankSelectPrg[addr - 0x5113] = value;
-        mmc5ApplyPRG();
+        _bankSelectPrg[addr - 0x5113] = value;
+        applyPrg();
         break;
     case 0x5120: // CHR Select
     case 0x5121:
@@ -130,182 +171,66 @@ void Mapper::write_MMC5(std::uint16_t addr, std::uint8_t value)
     case 0x5129:
     case 0x512a:
     case 0x512b:
-        _mmc5.bankSelectChr[addr - 0x5120] = value;
-        mmc5ApplyCHR();
+        _bankSelectChr[addr - 0x5120] = value;
+        applyChr();
         break;
     case 0x5203: // IRQ Target
-        _mmc5.scanlineTarget = value;
+        _scanlineTarget = value;
         break;
     case 0x5204: // IRQ Control
-        _mmc5.scanlineEnabled = !!(value & 0x80);
-        if (_mmc5.scanlineEnabled && _mmc5.scanlinePending)
+        _scanlineEnabled = !!(value & 0x80);
+        if (_scanlineEnabled && _scanlinePending)
             _irq.set(IRQ_MAPPER1);
         break;
     case 0x5205: // Mul 1
-        _mmc5.mul[0] = value;
+        _mul[0] = value;
         break;
     case 0x5206: // Mul 2
-        _mmc5.mul[1] = value;
+        _mul[1] = value;
         break;
     }
 }
 
-void Mapper::mmc5ApplyPRG()
+void MapperMMC5::handleVideoRead(std::uint16_t addr)
 {
-    bankPrg8k(1, CART_PRG_RAM, _mmc5.bankSelectPrg[0]);
-    switch (_mmc5.bankModePrg)
-    {
-    case 0:
-        bankPrg8k(2, CART_PRG_ROM, (_mmc5.bankSelectPrg[4] & 0x7c) | 0x00);
-        bankPrg8k(3, CART_PRG_ROM, (_mmc5.bankSelectPrg[4] & 0x7c) | 0x01);
-        bankPrg8k(4, CART_PRG_ROM, (_mmc5.bankSelectPrg[4] & 0x7c) | 0x02);
-        bankPrg8k(5, CART_PRG_ROM, (_mmc5.bankSelectPrg[4] & 0x7c) | 0x03);
-        break;
-    case 1:
-        bankPrg8k(2, (_mmc5.bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, (_mmc5.bankSelectPrg[2] & 0x7e) | 0x00);
-        bankPrg8k(3, (_mmc5.bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, (_mmc5.bankSelectPrg[2] & 0x7e) | 0x01);
-        bankPrg8k(4, CART_PRG_ROM, (_mmc5.bankSelectPrg[4] & 0x7e) | 0x00);
-        bankPrg8k(5, CART_PRG_ROM, (_mmc5.bankSelectPrg[4] & 0x7e) | 0x01);
-        break;
-    case 2:
-        bankPrg8k(2, (_mmc5.bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, (_mmc5.bankSelectPrg[2] & 0x7e) | 0x00);
-        bankPrg8k(3, (_mmc5.bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, (_mmc5.bankSelectPrg[2] & 0x7e) | 0x01);
-        bankPrg8k(4, (_mmc5.bankSelectPrg[3] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, _mmc5.bankSelectPrg[3] & 0x7f);
-        bankPrg8k(5, CART_PRG_ROM, _mmc5.bankSelectPrg[4] & 0x7f);
-        break;
-    case 3:
-        bankPrg8k(2, (_mmc5.bankSelectPrg[1] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, _mmc5.bankSelectPrg[1] & 0x7f);
-        bankPrg8k(3, (_mmc5.bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, _mmc5.bankSelectPrg[2] & 0x7f);
-        bankPrg8k(4, (_mmc5.bankSelectPrg[3] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, _mmc5.bankSelectPrg[3] & 0x7f);
-        bankPrg8k(5, CART_PRG_ROM, _mmc5.bankSelectPrg[4] & 0x7f);
-        break;
-    }
-}
+    _ppuReading = true;
 
-void Mapper::mmc5ApplyCHR()
-{
-    const auto& seg = _cart.segment(CART_CHR_ROM);
-
-    switch (_mmc5.bankModeChr)
+    if (_ppuAddrCount == 0 && addr >= 0x2000 && addr < 0x3000)
     {
-    case 0:
-        _mmc5.chr2[0] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 0) % seg.bankCount) * 0x400;
-        _mmc5.chr2[1] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 1) % seg.bankCount) * 0x400;
-        _mmc5.chr2[2] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 2) % seg.bankCount) * 0x400;
-        _mmc5.chr2[3] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 3) % seg.bankCount) * 0x400;
-        _mmc5.chr2[4] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 4) % seg.bankCount) * 0x400;
-        _mmc5.chr2[5] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 5) % seg.bankCount) * 0x400;
-        _mmc5.chr2[6] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 6) % seg.bankCount) * 0x400;
-        _mmc5.chr2[7] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 7) % seg.bankCount) * 0x400;
-        break;
-    case 1:
-        _mmc5.chr2[0] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[3] + 0) % seg.bankCount) * 0x400;
-        _mmc5.chr2[1] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[3] + 1) % seg.bankCount) * 0x400;
-        _mmc5.chr2[2] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[3] + 2) % seg.bankCount) * 0x400;
-        _mmc5.chr2[3] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[3] + 3) % seg.bankCount) * 0x400;
-        _mmc5.chr2[4] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 0) % seg.bankCount) * 0x400;
-        _mmc5.chr2[5] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 1) % seg.bankCount) * 0x400;
-        _mmc5.chr2[6] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 2) % seg.bankCount) * 0x400;
-        _mmc5.chr2[7] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 3) % seg.bankCount) * 0x400;
-        break;
-    case 2:
-        _mmc5.chr2[0] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[1] + 0) % seg.bankCount) * 0x400;
-        _mmc5.chr2[1] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[1] + 1) % seg.bankCount) * 0x400;
-        _mmc5.chr2[2] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[3] + 0) % seg.bankCount) * 0x400;
-        _mmc5.chr2[3] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[3] + 1) % seg.bankCount) * 0x400;
-        _mmc5.chr2[4] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[5] + 0) % seg.bankCount) * 0x400;
-        _mmc5.chr2[5] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[5] + 1) % seg.bankCount) * 0x400;
-        _mmc5.chr2[6] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 0) % seg.bankCount) * 0x400;
-        _mmc5.chr2[7] = seg.base + std::uintptr_t((_mmc5.bankSelectChr[7] + 1) % seg.bankCount) * 0x400;
-        break;
-    case 3:
-        _mmc5.chr2[0] = seg.base + std::uintptr_t(_mmc5.bankSelectChr[0] % seg.bankCount) * 0x400;
-        _mmc5.chr2[1] = seg.base + std::uintptr_t(_mmc5.bankSelectChr[1] % seg.bankCount) * 0x400;
-        _mmc5.chr2[2] = seg.base + std::uintptr_t(_mmc5.bankSelectChr[2] % seg.bankCount) * 0x400;
-        _mmc5.chr2[3] = seg.base + std::uintptr_t(_mmc5.bankSelectChr[3] % seg.bankCount) * 0x400;
-        _mmc5.chr2[4] = seg.base + std::uintptr_t(_mmc5.bankSelectChr[4] % seg.bankCount) * 0x400;
-        _mmc5.chr2[5] = seg.base + std::uintptr_t(_mmc5.bankSelectChr[5] % seg.bankCount) * 0x400;
-        _mmc5.chr2[6] = seg.base + std::uintptr_t(_mmc5.bankSelectChr[6] % seg.bankCount) * 0x400;
-        _mmc5.chr2[7] = seg.base + std::uintptr_t(_mmc5.bankSelectChr[7] % seg.bankCount) * 0x400;
-        break;
-    }
-    
-    if (_mmc5.mode8x16)
-    {
-        switch (_mmc5.bankModeChr)
-        {
-        case 0:
-            bankChr8k(_mmc5.bankSelectChr[11]);
-            break;
-        case 1:
-            bankChr4k(0, _mmc5.bankSelectChr[11]);
-            bankChr4k(1, _mmc5.bankSelectChr[11]);
-            break;
-        case 2:
-            bankChr2k(0, _mmc5.bankSelectChr[9]);
-            bankChr2k(1, _mmc5.bankSelectChr[11]);
-            bankChr2k(2, _mmc5.bankSelectChr[9]);
-            bankChr2k(3, _mmc5.bankSelectChr[11]);
-            break;
-        case 3:
-            bankChr1k(0, _mmc5.bankSelectChr[8]);
-            bankChr1k(1, _mmc5.bankSelectChr[9]);
-            bankChr1k(2, _mmc5.bankSelectChr[10]);
-            bankChr1k(3, _mmc5.bankSelectChr[11]);
-            bankChr1k(4, _mmc5.bankSelectChr[8]);
-            bankChr1k(5, _mmc5.bankSelectChr[9]);
-            bankChr1k(6, _mmc5.bankSelectChr[10]);
-            bankChr1k(7, _mmc5.bankSelectChr[11]);
-            break;
-        }
+        _ppuAddr = addr;
+        _ppuAddrCount = 1;
     }
     else
     {
-        for (int i = 0; i < 8; ++i)
-            _chr[i] = _mmc5.chr2[i];
-    }
-}
-
-void Mapper::videoRead_MMC5(std::uint16_t addr)
-{
-    _mmc5.ppuReading = true;
-
-    if (_mmc5.ppuAddrCount == 0 && addr >= 0x2000 && addr < 0x3000)
-    {
-        _mmc5.ppuAddr = addr;
-        _mmc5.ppuAddrCount = 1;
-    }
-    else
-    {
-        if (addr != _mmc5.ppuAddr)
-            _mmc5.ppuAddrCount = 0;
-        else if (_mmc5.ppuAddrCount < 3)
+        if (addr != _ppuAddr)
+            _ppuAddrCount = 0;
+        else if (_ppuAddrCount < 3)
         {
-            _mmc5.ppuAddrCount++;
-            if (_mmc5.ppuAddrCount == 3)
+            _ppuAddrCount++;
+            if (_ppuAddrCount == 3)
             {
-                if (!_mmc5.inFrame)
+                if (!_inFrame)
                 {
-                    _mmc5.inFrame = true;
-                    _mmc5.scanline = 0;
-                    _mmc5.fetchCount = 1;
+                    _inFrame = true;
+                    _scanline = 0;
+                    _fetchCount = 1;
                     _irq.unset(IRQ_MAPPER1);
                 }
                 else
                 {
-                    _mmc5.scanline++;
-                    _mmc5.fetchCount = 1;
-                    if (_mmc5.scanline == 241)
+                    _scanline++;
+                    _fetchCount = 1;
+                    if (_scanline == 241)
                     {
-                        _mmc5.inFrame = false;
-                        _mmc5.scanline = 0;
-                        _mmc5.scanlinePending = false;
+                        _inFrame = false;
+                        _scanline = 0;
+                        _scanlinePending = false;
                         _irq.unset(IRQ_MAPPER1);
                     }
-                    else if (_mmc5.scanline == _mmc5.scanlineTarget)
+                    else if (_scanline == _scanlineTarget)
                     {
-                        _mmc5.scanlinePending = true;
-                        if (_mmc5.scanlineEnabled)
+                        _scanlinePending = true;
+                        if (_scanlineEnabled)
                             _irq.set(IRQ_MAPPER1);
                     }
                 }
@@ -314,14 +239,14 @@ void Mapper::videoRead_MMC5(std::uint16_t addr)
     }
 }
 
-std::uint8_t Mapper::ntRead_MMC5(int nametable, std::uint16_t off)
+std::uint8_t MapperMMC5::handleNtRead(int nametable, std::uint16_t off)
 {
     std::uint8_t value;
 
     if (off < 0x3c0)
-        _mmc5.fetchCount++;
+        _fetchCount++;
 
-    switch ((_mmc5.nametable >> (nametable * 2)) & 0x03)
+    switch ((_nametable >> (nametable * 2)) & 0x03)
     {
     case 0:
         value = _memory.vram[off + 0x000];
@@ -333,7 +258,7 @@ std::uint8_t Mapper::ntRead_MMC5(int nametable, std::uint16_t off)
         value = _memory.exvram[off];
         break;
     case 3:
-        value = (off < 0x3c0) ? _mmc5.fillNT : _mmc5.fillAT;
+        value = (off < 0x3c0) ? _fillNT : _fillAT;
         break;
     default:
         UNREACHABLE();
@@ -342,9 +267,9 @@ std::uint8_t Mapper::ntRead_MMC5(int nametable, std::uint16_t off)
     return value;
 }
 
-void Mapper::ntWrite_MMC5(int nametable, std::uint16_t off, std::uint8_t value)
+void MapperMMC5::handleNtWrite(int nametable, std::uint16_t off, std::uint8_t value)
 {
-    switch ((_mmc5.nametable >> (nametable * 2)) & 0x03)
+    switch ((_nametable >> (nametable * 2)) & 0x03)
     {
     case 0:
         _memory.vram[off + 0x000] = value;
@@ -362,9 +287,125 @@ void Mapper::ntWrite_MMC5(int nametable, std::uint16_t off, std::uint8_t value)
     }
 }
 
-std::uint8_t Mapper::chrRead_MMC5(int bank, std::uint16_t offset)
+std::uint8_t MapperMMC5::handleChrRead(int bank, std::uint16_t offset)
 {
-    if (_mmc5.mode8x16 && _mmc5.fetchCount == 33)
-        return _mmc5.chr2[bank][offset];
+    if (_mode8x16 && _fetchCount == 33)
+        return _chr2[bank][offset];
     return _chr[bank][offset];
+}
+
+void MapperMMC5::applyPrg()
+{
+    bankPrg8k(1, CART_PRG_RAM, _bankSelectPrg[0]);
+    switch (_bankModePrg)
+    {
+    case 0:
+        bankPrg8k(2, CART_PRG_ROM, (_bankSelectPrg[4] & 0x7c) | 0x00);
+        bankPrg8k(3, CART_PRG_ROM, (_bankSelectPrg[4] & 0x7c) | 0x01);
+        bankPrg8k(4, CART_PRG_ROM, (_bankSelectPrg[4] & 0x7c) | 0x02);
+        bankPrg8k(5, CART_PRG_ROM, (_bankSelectPrg[4] & 0x7c) | 0x03);
+        break;
+    case 1:
+        bankPrg8k(2, (_bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, (_bankSelectPrg[2] & 0x7e) | 0x00);
+        bankPrg8k(3, (_bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, (_bankSelectPrg[2] & 0x7e) | 0x01);
+        bankPrg8k(4, CART_PRG_ROM, (_bankSelectPrg[4] & 0x7e) | 0x00);
+        bankPrg8k(5, CART_PRG_ROM, (_bankSelectPrg[4] & 0x7e) | 0x01);
+        break;
+    case 2:
+        bankPrg8k(2, (_bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, (_bankSelectPrg[2] & 0x7e) | 0x00);
+        bankPrg8k(3, (_bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, (_bankSelectPrg[2] & 0x7e) | 0x01);
+        bankPrg8k(4, (_bankSelectPrg[3] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, _bankSelectPrg[3] & 0x7f);
+        bankPrg8k(5, CART_PRG_ROM, _bankSelectPrg[4] & 0x7f);
+        break;
+    case 3:
+        bankPrg8k(2, (_bankSelectPrg[1] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, _bankSelectPrg[1] & 0x7f);
+        bankPrg8k(3, (_bankSelectPrg[2] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, _bankSelectPrg[2] & 0x7f);
+        bankPrg8k(4, (_bankSelectPrg[3] & 0x80) ? CART_PRG_ROM : CART_PRG_RAM, _bankSelectPrg[3] & 0x7f);
+        bankPrg8k(5, CART_PRG_ROM, _bankSelectPrg[4] & 0x7f);
+        break;
+    }
+}
+
+void MapperMMC5::applyChr()
+{
+    const auto& seg = _cart.segment(CART_CHR_ROM);
+
+    switch (_bankModeChr)
+    {
+    case 0:
+        _chr2[0] = seg.base + std::uintptr_t((_bankSelectChr[7] + 0) % seg.bankCount) * 0x400;
+        _chr2[1] = seg.base + std::uintptr_t((_bankSelectChr[7] + 1) % seg.bankCount) * 0x400;
+        _chr2[2] = seg.base + std::uintptr_t((_bankSelectChr[7] + 2) % seg.bankCount) * 0x400;
+        _chr2[3] = seg.base + std::uintptr_t((_bankSelectChr[7] + 3) % seg.bankCount) * 0x400;
+        _chr2[4] = seg.base + std::uintptr_t((_bankSelectChr[7] + 4) % seg.bankCount) * 0x400;
+        _chr2[5] = seg.base + std::uintptr_t((_bankSelectChr[7] + 5) % seg.bankCount) * 0x400;
+        _chr2[6] = seg.base + std::uintptr_t((_bankSelectChr[7] + 6) % seg.bankCount) * 0x400;
+        _chr2[7] = seg.base + std::uintptr_t((_bankSelectChr[7] + 7) % seg.bankCount) * 0x400;
+        break;
+    case 1:
+        _chr2[0] = seg.base + std::uintptr_t((_bankSelectChr[3] + 0) % seg.bankCount) * 0x400;
+        _chr2[1] = seg.base + std::uintptr_t((_bankSelectChr[3] + 1) % seg.bankCount) * 0x400;
+        _chr2[2] = seg.base + std::uintptr_t((_bankSelectChr[3] + 2) % seg.bankCount) * 0x400;
+        _chr2[3] = seg.base + std::uintptr_t((_bankSelectChr[3] + 3) % seg.bankCount) * 0x400;
+        _chr2[4] = seg.base + std::uintptr_t((_bankSelectChr[7] + 0) % seg.bankCount) * 0x400;
+        _chr2[5] = seg.base + std::uintptr_t((_bankSelectChr[7] + 1) % seg.bankCount) * 0x400;
+        _chr2[6] = seg.base + std::uintptr_t((_bankSelectChr[7] + 2) % seg.bankCount) * 0x400;
+        _chr2[7] = seg.base + std::uintptr_t((_bankSelectChr[7] + 3) % seg.bankCount) * 0x400;
+        break;
+    case 2:
+        _chr2[0] = seg.base + std::uintptr_t((_bankSelectChr[1] + 0) % seg.bankCount) * 0x400;
+        _chr2[1] = seg.base + std::uintptr_t((_bankSelectChr[1] + 1) % seg.bankCount) * 0x400;
+        _chr2[2] = seg.base + std::uintptr_t((_bankSelectChr[3] + 0) % seg.bankCount) * 0x400;
+        _chr2[3] = seg.base + std::uintptr_t((_bankSelectChr[3] + 1) % seg.bankCount) * 0x400;
+        _chr2[4] = seg.base + std::uintptr_t((_bankSelectChr[5] + 0) % seg.bankCount) * 0x400;
+        _chr2[5] = seg.base + std::uintptr_t((_bankSelectChr[5] + 1) % seg.bankCount) * 0x400;
+        _chr2[6] = seg.base + std::uintptr_t((_bankSelectChr[7] + 0) % seg.bankCount) * 0x400;
+        _chr2[7] = seg.base + std::uintptr_t((_bankSelectChr[7] + 1) % seg.bankCount) * 0x400;
+        break;
+    case 3:
+        _chr2[0] = seg.base + std::uintptr_t(_bankSelectChr[0] % seg.bankCount) * 0x400;
+        _chr2[1] = seg.base + std::uintptr_t(_bankSelectChr[1] % seg.bankCount) * 0x400;
+        _chr2[2] = seg.base + std::uintptr_t(_bankSelectChr[2] % seg.bankCount) * 0x400;
+        _chr2[3] = seg.base + std::uintptr_t(_bankSelectChr[3] % seg.bankCount) * 0x400;
+        _chr2[4] = seg.base + std::uintptr_t(_bankSelectChr[4] % seg.bankCount) * 0x400;
+        _chr2[5] = seg.base + std::uintptr_t(_bankSelectChr[5] % seg.bankCount) * 0x400;
+        _chr2[6] = seg.base + std::uintptr_t(_bankSelectChr[6] % seg.bankCount) * 0x400;
+        _chr2[7] = seg.base + std::uintptr_t(_bankSelectChr[7] % seg.bankCount) * 0x400;
+        break;
+    }
+
+    if (_mode8x16)
+    {
+        switch (_bankModeChr)
+        {
+        case 0:
+            bankChr8k(_bankSelectChr[11]);
+            break;
+        case 1:
+            bankChr4k(0, _bankSelectChr[11]);
+            bankChr4k(1, _bankSelectChr[11]);
+            break;
+        case 2:
+            bankChr2k(0, _bankSelectChr[9]);
+            bankChr2k(1, _bankSelectChr[11]);
+            bankChr2k(2, _bankSelectChr[9]);
+            bankChr2k(3, _bankSelectChr[11]);
+            break;
+        case 3:
+            bankChr1k(0, _bankSelectChr[8]);
+            bankChr1k(1, _bankSelectChr[9]);
+            bankChr1k(2, _bankSelectChr[10]);
+            bankChr1k(3, _bankSelectChr[11]);
+            bankChr1k(4, _bankSelectChr[8]);
+            bankChr1k(5, _bankSelectChr[9]);
+            bankChr1k(6, _bankSelectChr[10]);
+            bankChr1k(7, _bankSelectChr[11]);
+            break;
+        }
+    }
+    else
+    {
+        for (int i = 0; i < 8; ++i)
+            _chr[i] = _chr2[i];
+    }
 }

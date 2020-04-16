@@ -30,14 +30,16 @@
 #include <nin/nin.h>
 #include <libnin/State.h>
 
+using namespace libnin;
+
 NIN_API void ninAudioSetFrequency(NinState* state, uint32_t frequency)
 {
-    state->audio.setTargetFrequency(frequency);
+    state->audio->setTargetFrequency(frequency);
 }
 
 NIN_API void ninAudioSetCallback(NinState* state, NINAUDIOCALLBACK callback, void* arg)
 {
-    state->audio.setCallback(callback, arg);
+    state->audio->setCallback(callback, arg);
 }
 
 NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
@@ -45,31 +47,31 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
     switch (info)
     {
     case NIN_INFO_SYSTEM:
-        *dst = state->info.system();
+        *dst = state->info->system();
         break;
     case NIN_INFO_CLOCK_RATE:
-        *dst = state->info.specs().clockRate;
+        *dst = state->info->specs().clockRate;
         break;
     case NIN_INFO_FRAME_CYCLES:
-        *dst = state->info.specs().frameCycles;
+        *dst = state->info->specs().frameCycles;
         break;
     case NIN_INFO_FRAME_DELAY:
-        *dst = state->info.specs().frameDelay;
+        *dst = state->info->specs().frameDelay;
         break;
     case NIN_INFO_PC:
-        *dst = state->cpu.pc();
+        *dst = state->cpu->pc();
         break;
     case NIN_INFO_REG_A:
-        *dst = state->cpu.reg(REG_A);
+        *dst = state->cpu->reg(REG_A);
         break;
     case NIN_INFO_REG_X:
-        *dst = state->cpu.reg(REG_X);
+        *dst = state->cpu->reg(REG_X);
         break;
     case NIN_INFO_REG_Y:
-        *dst = state->cpu.reg(REG_Y);
+        *dst = state->cpu->reg(REG_Y);
         break;
     case NIN_INFO_REG_S:
-        *dst = state->cpu.reg(REG_S);
+        *dst = state->cpu->reg(REG_S);
         break;
     default:
         *dst = 0;
@@ -79,32 +81,32 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
 
 NIN_API void ninSetSaveFile(NinState* state, const char* path)
 {
-    state->save.setSaveFile(path);
+    state->save->setSaveFile(path);
 }
 
 NIN_API void ninSyncSave(NinState* state)
 {
-    state->save.sync();
+    state->save->sync();
 }
 
 NIN_API const uint32_t* ninGetScreenBuffer(NinState* state)
 {
-    return state->video.front();
+    return state->video->front();
 }
 
 NIN_API void ninSetInput(NinState* state, uint8_t input)
 {
-    state->input.set(input);
+    state->input->set(input);
 }
 
 NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyc)
 {
     for (std::size_t i = 0; i < cycles; ++i)
     {
-        state->cpu.tick(1);
-        state->ppu.tick(3);
-        state->apu.tick(1);
-        state->mapper.tick();
+        state->cpu->tick(1);
+        state->ppu->tick(3);
+        state->apu->tick(1);
+        state->mapper->handleTick();
     }
 
     if (cyc)
@@ -112,12 +114,12 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyc)
         *cyc = 0;
     }
 
-    return state->video.changed();
+    return state->video->changed();
 }
 
 NIN_API void ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len)
 {
-    state->busMain.dump(dst, start, len);
+    state->busMain->dump(dst, start, len);
 }
 
 NIN_API NinError ninCreateState(NinState** dst, const char* path)
@@ -125,18 +127,15 @@ NIN_API NinError ninCreateState(NinState** dst, const char* path)
     NinState* state;
     NinError err;
 
-    state = new NinState{};
-    state->audio.setTargetFrequency(48000);
+    state = (NinState*)State::create(err, path);
 
-    if ((err = state->loadRom(path)) != NIN_OK)
+    if (err == NIN_OK)
     {
-        ninDestroyState(state);
-        *dst = NULL;
-        return err;
+        state->audio->setTargetFrequency(48000);
     }
 
     *dst = state;
-    return NIN_OK;
+    return err;
 }
 
 NIN_API void ninDestroyState(NinState* state)
@@ -154,7 +153,7 @@ NIN_API void ninLoadBiosFDS(NinState* state, const char* path)
     f = std::fopen(path, "rb");
     if (!f)
         return;
-    state->cart.load(CART_PRG_ROM, 1, f);
+    state->cart->load(CART_PRG_ROM, 1, f);
     std::fclose(f);
 }
 
@@ -162,16 +161,16 @@ NIN_API int ninStepInstruction(NinState* state)
 {
     for (int i = 0; i < 8; ++i)
     {
-        state->cpu.tick(1);
-        state->ppu.tick(3);
-        state->apu.tick(1);
-        state->mapper.tick();
+        state->cpu->tick(1);
+        state->ppu->tick(3);
+        state->apu->tick(1);
+        state->mapper->handleTick();
 
-        if (state->cpu.dispatching())
+        if (state->cpu->dispatching())
             break;
     }
 
-    return state->video.changed();
+    return state->video->changed();
 }
 
 NIN_API void ninDumpNametable(NinState* state, uint8_t* dst, int nametable)
@@ -179,5 +178,5 @@ NIN_API void ninDumpNametable(NinState* state, uint8_t* dst, int nametable)
     std::uint16_t base;
 
     base = (nametable & 0x01) ? 0x400 : 0x000;
-    std::memcpy(dst, state->memory.vram + base, 0x400);
+    std::memcpy(dst, state->memory->vram + base, 0x400);
 }

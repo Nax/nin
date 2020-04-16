@@ -3,34 +3,92 @@
 #include <libnin/Cart.h>
 #include <libnin/Util.h>
 
+#include <libnin/Mapper/AxROM.h>
+#include <libnin/Mapper/CNROM.h>
+#include <libnin/Mapper/ColorDreams.h>
+#include <libnin/Mapper/GxROM.h>
+#include <libnin/Mapper/MMC1.h>
+#include <libnin/Mapper/MMC2.h>
+#include <libnin/Mapper/MMC3.h>
+#include <libnin/Mapper/MMC4.h>
+#include <libnin/Mapper/MMC5.h>
+#include <libnin/Mapper/UxROM.h>
+
+#define MAPPER(major, minor, klass, ...)  case ((major << 16) | minor): mapper = new klass(memory, cart, irq, __VA_ARGS__); break
+
 using namespace libnin;
 
 Mapper::Mapper(Memory& memory, Cart& cart, IRQ& irq)
-: _memory{memory}
-, _cart{cart}
-, _irq{irq}
-, _tickHandler{&Mapper::tick_NULL}
-, _readHandler{&Mapper::read_NULL}
-, _writeHandler{&Mapper::write_NULL}
-, _videoReadHandler{&Mapper::videoRead_NULL}
-, _ntReadHandler{&Mapper::ntRead_NULL}
-, _ntWriteHandler{&Mapper::ntWrite_NULL}
-, _chrReadHandler{&Mapper::chrRead_NULL}
-, _chrWriteHandler{&Mapper::chrWrite_NULL}
-, _banks{}
-, _banksWriteFlag{}
+: _memory{ memory }
+, _cart{ cart }
+, _irq{ irq }
+, _prg{}
+, _prgWriteFlag{}
 , _chr{}
 , _nametables{}
 {
     mirror(NIN_MIRROR_H);
-    configure(0, 0);
+    bankChr8k(0);
+    bankPrg8k(1, CART_PRG_RAM, 0);
+    bankPrg8k(2, CART_PRG_ROM, 0);
+    bankPrg8k(3, CART_PRG_ROM, 1);
+    bankPrg8k(4, CART_PRG_ROM, -2);
+    bankPrg8k(5, CART_PRG_ROM, -1);
 }
 
 Mapper::~Mapper()
 {
-
 }
 
+Mapper* Mapper::create(Memory& memory, Cart& cart, IRQ& irq, int mapperMajor, int mapperMinor)
+{
+    Mapper* mapper{};
+
+    switch ((mapperMajor << 16) | mapperMinor)
+    {
+        MAPPER(0,  0, Mapper);
+        MAPPER(1,  0, MapperMMC1);
+        MAPPER(2,  0, MapperUxROM);
+        MAPPER(3,  0, MapperCNROM);
+        MAPPER(4,  0, MapperMMC3);
+        MAPPER(5,  0, MapperMMC5);
+        MAPPER(7,  0, MapperAxROM);
+        MAPPER(9,  0, MapperMMC2);
+        MAPPER(10, 0, MapperMMC4);
+        MAPPER(11, 0, MapperColorDreams);
+        MAPPER(66, 0, MapperGxROM);
+    default:
+        break;
+    }
+
+    return mapper;
+}
+
+const std::uint8_t* Mapper::bank(int slot) const
+{
+    return _prg[slot];
+}
+
+std::uint8_t Mapper::read(std::uint16_t addr)
+{
+    std::uint8_t value = handleRead(addr);
+    int slot = ((addr - 0x4000) / 0x2000);
+
+    return _prg[slot] ? _prg[slot][addr & 0x1fff] : value;
+}
+
+void Mapper::write(std::uint16_t addr, std::uint8_t value)
+{
+    int slot = ((addr - 0x4000) / 0x2000);
+
+    if (_prg[slot] && _prgWriteFlag[slot])
+    {
+        _prg[slot][addr & 0x1fff] = value;
+    }
+    handleWrite(addr, value);
+}
+
+#if 0
 bool Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
 {
     UNUSED(mapperMinor);
@@ -73,7 +131,7 @@ bool Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
         _chrReadHandler = &Mapper::chrRead_MMC5;
         _mmc5.bankModePrg = 3;
         _mmc5.bankModeChr = 3;
-        _mmc5.bankSelectPrg[4] = 0xff; 
+        _mmc5.bankSelectPrg[4] = 0xff;
         for (int i = 0; i < 12; ++i)
             _mmc5.bankSelectChr[i] = 0xff;
         _mmc5.mul[0] = 0xff;
@@ -118,6 +176,7 @@ bool Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
     }
     return true;
 }
+#endif
 
 void Mapper::mirror(int mirrorMode)
 {
@@ -150,39 +209,19 @@ void Mapper::mirror(int mirrorMode)
     }
 }
 
-std::uint8_t Mapper::read(std::uint16_t addr)
-{
-    std::uint8_t value = (this->*_readHandler)(addr);
-    int slot = ((addr - 0x4000) / 0x2000);
-
-
-    return _banks[slot] ? _banks[slot][addr & 0x1fff] : value;
-}
-
-void Mapper::write(std::uint16_t addr, std::uint8_t value)
-{
-    int slot = ((addr - 0x4000) / 0x2000);
-
-    if (_banks[slot] && _banksWriteFlag[slot])
-    {
-        _banks[slot][addr & 0x1fff] = value;
-    }
-    handleWrite(addr, value);
-}
-
 void Mapper::bankPrg8k(std::uint8_t slot, int domain, std::int16_t bank)
 {
     const CartSegment& seg = _cart.segment(domain);
     bank += seg.bankCount;
     if (seg.base)
     {
-        _banks[slot] = seg.base + std::uintptr_t(std::uint16_t(bank) & (seg.bankCount - 1)) * 0x2000;
-        _banksWriteFlag[slot] = (domain == CART_PRG_RAM);
+        _prg[slot] = seg.base + std::uintptr_t(std::uint16_t(bank) & (seg.bankCount - 1)) * 0x2000;
+        _prgWriteFlag[slot] = (domain == CART_PRG_RAM);
     }
     else
     {
-        _banks[slot] = nullptr;
-        _banksWriteFlag[slot] = false;
+        _prg[slot] = nullptr;
+        _prgWriteFlag[slot] = false;
     }
 }
 
@@ -243,7 +282,50 @@ void Mapper::bankChr8k(std::int16_t bank)
     bankChr1k(7, bank * 8 + 7);
 }
 
-void Mapper::videoRead_NULL(std::uint16_t addr)
+void Mapper::handleReset()
 {
-    UNUSED(addr);
+
+}
+
+void Mapper::handleTick()
+{
+
+}
+
+std::uint8_t Mapper::handleRead(std::uint16_t addr)
+{
+    return 0x00;
+}
+
+void Mapper::handleWrite(std::uint16_t addr, std::uint8_t value)
+{
+
+}
+
+void Mapper::handleVideoRead(std::uint16_t addr)
+{
+
+}
+
+std::uint8_t Mapper::handleNtRead(int nametable, std::uint16_t offset)
+{
+    return _nametables[nametable][offset];
+}
+
+void Mapper::handleNtWrite(int nametable, std::uint16_t offset, std::uint8_t value)
+{
+    _nametables[nametable][offset] = value;
+}
+
+std::uint8_t Mapper::handleChrRead(int bank, std::uint16_t offset)
+{
+    return _chr[bank][offset];
+}
+
+void Mapper::handleChrWrite(int bank, std::uint16_t offset, std::uint8_t value)
+{
+    if (_cart.segment(CART_CHR_RAM).base)
+    {
+        _chr[bank][offset] = value;
+    }
 }

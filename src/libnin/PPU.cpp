@@ -272,7 +272,7 @@ void PPU::regWrite(std::uint16_t reg, std::uint8_t value)
             _t &= 0xff00;
             _t |= (value & 0x00ff);
             _v = _t;
-            _mapper.videoRead(_v);
+            _mapper.handleVideoRead(_v);
         }
         _w = !_w;
         break;
@@ -654,8 +654,8 @@ void PPU::spriteFetch()
         _shiftSpriteLo[i] = 0;
         _shiftSpriteHi[i] = 0;
 
-        _mapper.videoRead(0x1000);
-        _mapper.videoRead(0x1000);
+        _mapper.handleVideoRead(0x1000);
+        _mapper.handleVideoRead(0x1000);
     }
 }
 

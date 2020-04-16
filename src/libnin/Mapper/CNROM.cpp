@@ -27,11 +27,12 @@
  */
 
 #include <libnin/Mapper.h>
+#include <libnin/Mapper/CNROM.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void Mapper::write_CNROM(std::uint16_t addr, std::uint8_t value)
+void MapperCNROM::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {

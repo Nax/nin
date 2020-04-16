@@ -27,66 +27,48 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/MMC3.h>
 #include <libnin/IRQ.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void Mapper::mmc3Apply()
+MapperMMC3::MapperMMC3(Memory& memory, Cart& cart, IRQ& irq)
+: Mapper{memory, cart, irq}
+, _bankSelect{}
+, _bank{}
+, _bankModePrgRom{}
+, _bankModeChrRom{}
+, _irqScanlineEnabled{}
+, _irqScanlineReload{}
+, _irqScanlineCounter{}
+, _irqScanlineReloadValue{}
+, _irqScanlineFilterShifter{}
+, _oldVmemAddr{}
 {
-    if (_mmc3.bankModePrgRom == 0)
-    {
-        bankPrg8k(2, CART_PRG_ROM, _mmc3.bank[6]);
-        bankPrg8k(3, CART_PRG_ROM, _mmc3.bank[7]);
-        bankPrg8k(4, CART_PRG_ROM, -2);
-        bankPrg8k(5, CART_PRG_ROM, -1);
-    }
-    else
-    {
-        bankPrg8k(2, CART_PRG_ROM, -2);
-        bankPrg8k(3, CART_PRG_ROM, _mmc3.bank[7]);
-        bankPrg8k(4, CART_PRG_ROM, _mmc3.bank[6]);
-        bankPrg8k(5, CART_PRG_ROM, -1);
-    }
 
-    if (_mmc3.bankModeChrRom == 0)
-    {
-        bankChr1k(0, _mmc3.bank[0] & ~1);
-        bankChr1k(1, _mmc3.bank[0] | 1);
-        bankChr1k(2, _mmc3.bank[1] & ~1);
-        bankChr1k(3, _mmc3.bank[1] | 1);
-        bankChr1k(4, _mmc3.bank[2]);
-        bankChr1k(5, _mmc3.bank[3]);
-        bankChr1k(6, _mmc3.bank[4]);
-        bankChr1k(7, _mmc3.bank[5]);
-    }
-    else
-    {
-        bankChr1k(0, _mmc3.bank[2]);
-        bankChr1k(1, _mmc3.bank[3]);
-        bankChr1k(2, _mmc3.bank[4]);
-        bankChr1k(3, _mmc3.bank[5]);
-        bankChr1k(4, _mmc3.bank[0] & ~1);
-        bankChr1k(5, _mmc3.bank[0] | 1);
-        bankChr1k(6, _mmc3.bank[1] & ~1);
-        bankChr1k(7, _mmc3.bank[1] | 1);
-    }
 }
 
-void Mapper::write_MMC3(std::uint16_t addr, std::uint8_t value)
+void MapperMMC3::handleReset()
+{
+    _bank[6] = 0;
+    _bank[7] = 1;
+    apply();
+}
+
+void MapperMMC3::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     switch (addr & 0xe001)
     {
     case 0x8000: // Bank select
-        _mmc3.bankSelect = value & 0x7;
-        _mmc3.bankModePrgRom = (value >> 6) & 0x01;
-        _mmc3.bankModeChrRom = (value >> 7) & 0x01;
-        mmc3Apply();
+        _bankSelect = value & 0x7;
+        _bankModePrgRom = (value >> 6) & 0x01;
+        _bankModeChrRom = (value >> 7) & 0x01;
+        apply();
         break;
     case 0x8001: // Bank data
-        _mmc3.bank[_mmc3.bankSelect] = value;
-        mmc3Apply();
+        _bank[_bankSelect] = value;
+        apply();
         break;
     case 0xa000:
         if ((value & 0x01) == 0)
@@ -95,45 +77,86 @@ void Mapper::write_MMC3(std::uint16_t addr, std::uint8_t value)
             mirror(NIN_MIRROR_V);
         break;
     case 0xc000:
-        _mmc3.irqScanlineReloadValue = value;
+        _irqScanlineReloadValue = value;
         break;
     case 0xc001:
-        _mmc3.irqScanlineReload = 1;
+        _irqScanlineReload = 1;
         break;
     case 0xe000:
-        _mmc3.irqScanlineEnabled = 0;
+        _irqScanlineEnabled = 0;
         _irq.unset(IRQ_MAPPER1);
         break;
     case 0xe001:
-        _mmc3.irqScanlineEnabled = 1;
+        _irqScanlineEnabled = 1;
         break;
     }
 }
 
-void Mapper::videoRead_MMC3(std::uint16_t addr)
+void MapperMMC3::handleVideoRead(std::uint16_t addr)
 {
     if (addr >= 0x3f00)
         return;
 
-    if (((_mmc3.oldVmemAddr & 0x1000) == 0x0000) && ((addr & 0x1000) == 0x1000))
+    if (((_oldVmemAddr & 0x1000) == 0x0000) && ((addr & 0x1000) == 0x1000))
     {
-        if (!_mmc3.irqScanlineFilterShifter)
+        if (!_irqScanlineFilterShifter)
         {
-            if (_mmc3.irqScanlineCounter == 0 && _mmc3.irqScanlineEnabled)
+            if (_irqScanlineCounter == 0 && _irqScanlineEnabled)
             {
                 _irq.set(IRQ_MAPPER1);
             }
-            if (_mmc3.irqScanlineCounter == 0 || _mmc3.irqScanlineReload)
+            if (_irqScanlineCounter == 0 || _irqScanlineReload)
             {
-                _mmc3.irqScanlineCounter = _mmc3.irqScanlineReloadValue;
-                _mmc3.irqScanlineReload = 0;
+                _irqScanlineCounter = _irqScanlineReloadValue;
+                _irqScanlineReload = 0;
             }
             else
-                _mmc3.irqScanlineCounter--;
+                _irqScanlineCounter--;
         }
-        _mmc3.irqScanlineFilterShifter = 0x8000;
+        _irqScanlineFilterShifter = 0x8000;
     }
     else
-        _mmc3.irqScanlineFilterShifter >>= 1;
-    _mmc3.oldVmemAddr = addr;
+        _irqScanlineFilterShifter >>= 1;
+    _oldVmemAddr = addr;
+}
+
+void MapperMMC3::apply()
+{
+    if (_bankModePrgRom == 0)
+    {
+        bankPrg8k(2, CART_PRG_ROM, _bank[6]);
+        bankPrg8k(3, CART_PRG_ROM, _bank[7]);
+        bankPrg8k(4, CART_PRG_ROM, -2);
+        bankPrg8k(5, CART_PRG_ROM, -1);
+    }
+    else
+    {
+        bankPrg8k(2, CART_PRG_ROM, -2);
+        bankPrg8k(3, CART_PRG_ROM, _bank[7]);
+        bankPrg8k(4, CART_PRG_ROM, _bank[6]);
+        bankPrg8k(5, CART_PRG_ROM, -1);
+    }
+
+    if (_bankModeChrRom == 0)
+    {
+        bankChr1k(0, _bank[0] & ~1);
+        bankChr1k(1, _bank[0] | 1);
+        bankChr1k(2, _bank[1] & ~1);
+        bankChr1k(3, _bank[1] | 1);
+        bankChr1k(4, _bank[2]);
+        bankChr1k(5, _bank[3]);
+        bankChr1k(6, _bank[4]);
+        bankChr1k(7, _bank[5]);
+    }
+    else
+    {
+        bankChr1k(0, _bank[2]);
+        bankChr1k(1, _bank[3]);
+        bankChr1k(2, _bank[4]);
+        bankChr1k(3, _bank[5]);
+        bankChr1k(4, _bank[0] & ~1);
+        bankChr1k(5, _bank[0] | 1);
+        bankChr1k(6, _bank[1] & ~1);
+        bankChr1k(7, _bank[1] | 1);
+    }
 }

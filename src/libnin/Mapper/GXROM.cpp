@@ -27,12 +27,12 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/GxROM.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void Mapper::write_GXROM(std::uint16_t addr, std::uint8_t value)
+void MapperGxROM::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
