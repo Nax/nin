@@ -19,6 +19,8 @@ Mapper::Mapper(Memory& memory, Cart& cart, IRQ& irq)
 , _chrWriteHandler{&Mapper::chrWrite_NULL}
 , _banks{}
 , _banksWriteFlag{}
+, _chr{}
+, _nametables{}
 {
     mirror(NIN_MIRROR_H);
     configure(0, 0);

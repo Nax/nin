@@ -47,6 +47,6 @@ void Save::sync()
         return;
 
     std::fseek(_file, 0, SEEK_SET);
-    std::fwrite(prgRam.base, prgRam.bankCount * 0x2000, 1, _file);
+    std::fwrite(prgRam.base, std::size_t(prgRam.bankCount) * 0x2000, 1, _file);
     std::fflush(_file);
 }

@@ -78,7 +78,7 @@ void BusVideo::write(std::uint16_t addr, std::uint8_t value)
 {
     addr &= 0x3fff;
     if (addr < 0x2000)
-        _mapper.chrWrite(addr / 0x400, addr & 0x3fff, value);
+        _mapper.chrWrite(addr / 0x400, addr & 0x3ff, value);
     else if (addr < 0x2400)
         _mapper.ntWrite(0, addr & 0x3ff, value);
     else if (addr < 0x2800)
