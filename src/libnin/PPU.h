@@ -106,6 +106,7 @@ private:
     Handler handleScanLoBG1();
     Handler handleScanHiBG0();
     Handler handleScanHiBG1();
+    Handler handleScanSpriteEval();
     Handler handleNextNT0();
     Handler handleNextNT1();
     Handler handleNextAT0();

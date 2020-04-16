@@ -433,7 +433,17 @@ PPU::Handler PPU::handleScanHiBG1()
         _v = incY(_v);
     }
     _step = 0;
-    return wait(65, (Handler)&PPU::handleNextNT0);
+    return &PPU::handleScanSpriteEval;
+}
+
+PPU::Handler PPU::handleScanSpriteEval()
+{
+    if (_flags.rendering)
+    {
+        spriteEvaluation();
+        spriteFetch();
+    }
+    return wait(64, (Handler)&PPU::handleNextNT0);
 }
 
 PPU::Handler PPU::handleNextNT0()
@@ -516,11 +526,6 @@ PPU::Handler PPU::handleNextDummy3()
     }
     if (_scanline + 1 < 240)
     {
-        if (_flags.rendering)
-        {
-            spriteEvaluation();
-            spriteFetch();
-        }
         _scanline++;
         return wait(1, &PPU::handleScan);
     }

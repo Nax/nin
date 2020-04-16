@@ -31,6 +31,8 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
+#include <cstdio>
+
 using namespace libnin;
 
 void Mapper::tick_MMC5(void)
@@ -40,6 +42,7 @@ void Mapper::tick_MMC5(void)
     else
     {
         _mmc5.ppuIdleCount++;
+        // TODO: Fix this hack
         if (_mmc5.ppuIdleCount == 100)
         {
             _mmc5.inFrame = false;
@@ -76,8 +79,6 @@ std::uint8_t Mapper::read_MMC5(std::uint16_t addr)
     }
     return value;
 }
-
-#include <cstdio>
 
 void Mapper::write_MMC5(std::uint16_t addr, std::uint8_t value)
 {
@@ -258,12 +259,10 @@ void Mapper::videoRead_MMC5(std::uint16_t addr)
                     _mmc5.inFrame = true;
                     _mmc5.scanline = 0;
                     _irq.unset(IRQ_MAPPER1);
-                    printf("SCANLINE: %d, TARGET: %d\n", _mmc5.scanline, _mmc5.scanlineTarget);
                 }
                 else
                 {
                     _mmc5.scanline++;
-                    printf("SCANLINE: %d, TARGET: %d\n", _mmc5.scanline, _mmc5.scanlineTarget);
                     if (_mmc5.scanline == 241)
                     {
                         _mmc5.inFrame = false;
