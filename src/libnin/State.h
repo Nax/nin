@@ -44,12 +44,11 @@
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
 #include <libnin/NMI.h>
+#include <libnin/NonCopyable.h>
 #include <libnin/PPU.h>
 #include <libnin/Save.h>
 #include <libnin/Util.h>
 #include <libnin/Video.h>
-
-using namespace libnin;
 
 #define RAM_SIZE    0x800
 #define VRAM_SIZE   0x800
@@ -59,15 +58,16 @@ using namespace libnin;
 
 #define DEBUG_LEVEL 0
 
-typedef void    (*NinPrgWriteHandler)(NinState* state, uint16_t addr, uint8_t value);
-
 #define MIRRORING_HORIZONTAL    0
 #define MIRRORING_VERTICAL      1
 #define MIRRORING_QUAD          2
 
 #define CLOCK_RATE_NTSC     1789773
 
-struct NinState
+namespace libnin
+{
+
+class State : private NonCopyable
 {
 private:
     struct RomHeaderLegacy
@@ -77,16 +77,16 @@ private:
 
     struct RomHeaderNes2
     {
-        std::uint8_t     mapperEx:4;
-        std::uint8_t     submapper:4;
-        std::uint8_t     prgRomSizeHi:4;
-        std::uint8_t     chrRomSizeHi:4;
-        std::uint8_t     prgRamSizeShift:4;
-        std::uint8_t     prgNvramSizeShift:4;
-        std::uint8_t     chrRamSizeShift:4;
-        std::uint8_t     chrNvramSizeShift:4;
-        std::uint8_t     region:2;
-        std::uint8_t     reserved0:6;
+        std::uint8_t     mapperEx : 4;
+        std::uint8_t     submapper : 4;
+        std::uint8_t     prgRomSizeHi : 4;
+        std::uint8_t     chrRomSizeHi : 4;
+        std::uint8_t     prgRamSizeShift : 4;
+        std::uint8_t     prgNvramSizeShift : 4;
+        std::uint8_t     chrRamSizeShift : 4;
+        std::uint8_t     chrNvramSizeShift : 4;
+        std::uint8_t     region : 2;
+        std::uint8_t     reserved0 : 6;
         std::uint8_t     reserved[3];
     };
 
@@ -95,15 +95,15 @@ private:
         char            magic[4];
         std::uint8_t    prgRomSize;
         std::uint8_t    chrRomSize;
-        std::uint8_t    mirroring:1;
-        std::uint8_t    battery:1;
-        std::uint8_t    trainer:1;
-        std::uint8_t    quadScreen:1;
-        std::uint8_t    mapperLo:4;
-        std::uint8_t    vs:1;
-        std::uint8_t    playChoice:1;
-        std::uint8_t    magicNes2:2;
-        std::uint8_t    mapperHi:4;
+        std::uint8_t    mirroring : 1;
+        std::uint8_t    battery : 1;
+        std::uint8_t    trainer : 1;
+        std::uint8_t    quadScreen : 1;
+        std::uint8_t    mapperLo : 4;
+        std::uint8_t    vs : 1;
+        std::uint8_t    playChoice : 1;
+        std::uint8_t    magicNes2 : 2;
+        std::uint8_t    mapperHi : 4;
 
         union
         {
@@ -113,7 +113,7 @@ private:
     };
 
 public:
-    NinState();
+    State();
 
     NinError loadRom(const char* path);
     NinError loadRomNES(const RomHeader& header, std::FILE* f);
@@ -136,5 +136,10 @@ public:
     CPU                 cpu;
     Save                save;
 };
+
+}
+
+/* Expose the state to the world */
+struct NinState : public libnin::State {};
 
 #endif

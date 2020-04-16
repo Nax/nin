@@ -3,10 +3,12 @@
 #include <libnin/Util.h>
 #include <libnin/State.h>
 
+using namespace libnin;
+
 static const char kHeaderMagicNES[] = { 'N', 'E', 'S', '\x1a' };
 static const char kHeaderMagicFDS[] = { 'F', 'D', 'S', '\x1a' };
 
-NinState::NinState()
+State::State()
 : memory{}
 , info{}
 , cart{}
@@ -26,7 +28,7 @@ NinState::NinState()
 {
 }
 
-NinError NinState::loadRom(const char* path)
+NinError State::loadRom(const char* path)
 {
     std::FILE* f;
     RomHeader header{};
@@ -51,7 +53,7 @@ NinError NinState::loadRom(const char* path)
     return NIN_ERROR_BAD_FILE;
 }
 
-NinError NinState::loadRomNES(const RomHeader& header, std::FILE* f)
+NinError State::loadRomNES(const RomHeader& header, std::FILE* f)
 {
     bool nes2{};
     std::uint16_t prgRomBankCount;
@@ -123,7 +125,7 @@ NinError NinState::loadRomNES(const RomHeader& header, std::FILE* f)
     return NIN_OK;
 }
 
-NinError NinState::loadRomFDS(const RomHeader& header, std::FILE* f)
+NinError State::loadRomFDS(const RomHeader& header, std::FILE* f)
 {
     UNUSED(header);
 
