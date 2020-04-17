@@ -3,6 +3,7 @@
 #include <libnin/Cart.h>
 #include <libnin/Util.h>
 
+#include <libnin/Mapper/Action52.h>
 #include <libnin/Mapper/AxROM.h>
 #include <libnin/Mapper/CNROM.h>
 #include <libnin/Mapper/ColorDreams.h>
@@ -46,17 +47,18 @@ Mapper* Mapper::create(Memory& memory, Cart& cart, IRQ& irq, int mapperMajor, in
 
     switch ((mapperMajor << 16) | mapperMinor)
     {
-        MAPPER(0,  0, Mapper);
-        MAPPER(1,  0, MapperMMC1);
-        MAPPER(2,  0, MapperUxROM);
-        MAPPER(3,  0, MapperCNROM);
-        MAPPER(4,  0, MapperMMC3);
-        MAPPER(5,  0, MapperMMC5);
-        MAPPER(7,  0, MapperAxROM);
-        MAPPER(9,  0, MapperMMC2);
-        MAPPER(10, 0, MapperMMC4);
-        MAPPER(11, 0, MapperColorDreams);
-        MAPPER(66, 0, MapperGxROM);
+        MAPPER(0,   0, Mapper);
+        MAPPER(1,   0, MapperMMC1);
+        MAPPER(2,   0, MapperUxROM);
+        MAPPER(3,   0, MapperCNROM);
+        MAPPER(4,   0, MapperMMC3);
+        MAPPER(5,   0, MapperMMC5);
+        MAPPER(7,   0, MapperAxROM);
+        MAPPER(9,   0, MapperMMC2);
+        MAPPER(10,  0, MapperMMC4);
+        MAPPER(11,  0, MapperColorDreams);
+        MAPPER(66,  0, MapperGxROM);
+        MAPPER(228, 0, MapperAction52);
     default:
         break;
     }
@@ -87,96 +89,6 @@ void Mapper::write(std::uint16_t addr, std::uint8_t value)
     }
     handleWrite(addr, value);
 }
-
-#if 0
-bool Mapper::configure(std::uint16_t mapperMajor, std::uint8_t mapperMinor)
-{
-    UNUSED(mapperMinor);
-
-    switch (mapperMajor)
-    {
-    case 0:
-        /* NROM */
-        break;
-    case 1:
-        /* MMC1 */
-        _mmc1 = MMC1{};
-        _writeHandler = &Mapper::write_MMC1;
-        break;
-    case 2:
-        /* UxROM (180) */
-        _writeHandler = &Mapper::write_UXROM;
-        break;
-    case 3:
-        /* CNROM */
-        _writeHandler = &Mapper::write_CNROM;
-        break;
-    case 4:
-        /* MMC3 */
-        _mmc3 = MMC3{};
-        _writeHandler = &Mapper::write_MMC3;
-        _videoReadHandler = &Mapper::videoRead_MMC3;
-        _mmc3.bank[6] = 0;
-        _mmc3.bank[7] = 1;
-        break;
-    case 5:
-        /* MMC5 */
-        _mmc5 = MMC5{};
-        _tickHandler = &Mapper::tick_MMC5;
-        _readHandler = &Mapper::read_MMC5;
-        _writeHandler = &Mapper::write_MMC5;
-        _videoReadHandler = &Mapper::videoRead_MMC5;
-        _ntReadHandler = &Mapper::ntRead_MMC5;
-        _ntWriteHandler = &Mapper::ntWrite_MMC5;
-        _chrReadHandler = &Mapper::chrRead_MMC5;
-        _mmc5.bankModePrg = 3;
-        _mmc5.bankModeChr = 3;
-        _mmc5.bankSelectPrg[4] = 0xff;
-        for (int i = 0; i < 12; ++i)
-            _mmc5.bankSelectChr[i] = 0xff;
-        _mmc5.mul[0] = 0xff;
-        _mmc5.mul[1] = 0xff;
-        break;
-    case 7:
-        /* AXROM */
-        bankPrg8k(3, CART_PRG_ROM, 2);
-        mirror(NIN_MIRROR_A);
-        _writeHandler = &Mapper::write_AXROM;
-        break;
-    case 9:
-        /* MMC2 */
-        _mmc2 = MMC2{};
-        _writeHandler = &Mapper::write_MMC2;
-        _videoReadHandler = &Mapper::videoRead_MMC2;
-        bankPrg8k(3, CART_PRG_ROM, -3);
-        bankPrg8k(4, CART_PRG_ROM, -2);
-        bankPrg8k(5, CART_PRG_ROM, -1);
-        break;
-    case 10:
-        /* MMC4 */
-        /* Implemented as a MMC2 variant */
-        _mmc2 = MMC2{};
-        _writeHandler = &Mapper::write_MMC4;
-        _videoReadHandler = &Mapper::videoRead_MMC2;
-        break;
-    case 11:
-        /* ColorDreams */
-        _writeHandler = &Mapper::write_ColorDreams;
-        break;
-    case 66:
-        /* GXROM */
-        _writeHandler = &Mapper::write_GXROM;
-        break;
-    case 180:
-        /* UxROM (180) */
-        _writeHandler = &Mapper::write_UXROM180;
-        break;
-    default:
-        return false;
-    }
-    return true;
-}
-#endif
 
 void Mapper::mirror(int mirrorMode)
 {
@@ -215,7 +127,7 @@ void Mapper::bankPrg8k(std::uint8_t slot, int domain, std::int16_t bank)
     bank += seg.bankCount;
     if (seg.base)
     {
-        _prg[slot] = seg.base + std::uintptr_t(std::uint16_t(bank) & (seg.bankCount - 1)) * 0x2000;
+        _prg[slot] = seg.base + std::uintptr_t(std::uint16_t(bank) % seg.bankCount) * 0x2000;
         _prgWriteFlag[slot] = (domain == CART_PRG_RAM);
     }
     else
@@ -247,12 +159,12 @@ void Mapper::bankChr1k(std::uint8_t slot, std::int16_t bank)
     if (segRam.base)
     {
         bank += segRam.bankCount;
-        _chr[slot] = segRam.base + std::uintptr_t(bank & (segRam.bankCount - 1)) * 0x400;
+        _chr[slot] = segRam.base + std::uintptr_t(bank % segRam.bankCount) * 0x400;
     }
     else
     {
         bank += segRom.bankCount;
-        _chr[slot] = segRom.base + std::uintptr_t(bank & (segRom.bankCount - 1)) * 0x400;
+        _chr[slot] = segRom.base + std::uintptr_t(bank % segRom.bankCount) * 0x400;
     }
 }
 
