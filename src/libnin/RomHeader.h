@@ -13,8 +13,8 @@ struct RomHeaderLegacy
 
 struct RomHeaderNes2
 {
-    std::uint8_t     mapperEx : 4;
-    std::uint8_t     submapper : 4;
+    std::uint8_t     mapperEx:4;
+    std::uint8_t     submapper:4;
     std::uint8_t     prgRomSizeHi : 4;
     std::uint8_t     chrRomSizeHi : 4;
     std::uint8_t     prgRamSizeShift : 4;

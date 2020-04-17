@@ -32,24 +32,55 @@
 
 using namespace libnin;
 
-template <bool conflicts, int bank, int shift>
-static void applyUxROM(Mapper& mapper, std::uint16_t addr, std::uint8_t value)
+template <>
+void Mapper::handleReset<MapperID::Action52>()
 {
+    bankPrg32k(2, CART_PRG_ROM, 0);
+    bankChr8k(0);
+}
+
+template <>
+void Mapper::handleWrite<MapperID::Action52>(std::uint16_t addr, std::uint8_t value)
+{
+    std::uint16_t prgBank;
+    std::uint16_t chrBank;
+
     if (addr >= 0x8000)
     {
-        if (conflicts)
+        chrBank = ((addr & 0x000f) << 2) | (value & 0x03);
+        prgBank = (addr >> 6) & 0x1f;
+        switch ((addr >> 0xb) & 0x3)
         {
-            value &= mapper.bank(((addr - 0x8000) / 0x2000) + 2)[addr & 0x1fff];
+        case 0:
+            prgBank += 0;
+            break;
+        case 1:
+            prgBank += 32;
+            break;
+        case 2:
+            break;
+        case 3:
+            prgBank += 64;
         }
-        mapper.bankPrg16k(bank, CART_PRG_ROM, value >> shift);
+
+        bankChr8k(chrBank);
+        if (addr & 0x20)
+        {
+            bankPrg16k(2, CART_PRG_ROM, prgBank);
+            bankPrg16k(4, CART_PRG_ROM, prgBank);
+        }
+        else
+        {
+            bankPrg16k(2, CART_PRG_ROM, (prgBank & 0xfffe) | 0);
+            bankPrg16k(4, CART_PRG_ROM, (prgBank & 0xfffe) | 1);
+        }
+        mirror(addr & 0x2000 ? NIN_MIRROR_V : NIN_MIRROR_H);
     }
 }
 
-#define X(mapper, conflicts, bank, shift)   \
-template <> void Mapper::handleWrite<MapperID::mapper>(std::uint16_t addr, std::uint8_t value) { applyUxROM<conflicts, bank, shift>(*this, addr, value); }  \
-template <> void Mapper::init<MapperID::mapper>() { _handleWrite = &Mapper::handleWrite<MapperID::mapper>; }
-
-X(UxROM,                true,   2, 0);
-X(UxROM_NoConflicts,    false,  2, 0);
-X(UxROM_UN1ROM,         true,   2, 2);
-X(UxROM_UNROM180,       true,   4, 0);
+template <>
+void Mapper::init<MapperID::Action52>()
+{
+    _handleReset = &Mapper::handleReset<MapperID::Action52>;
+    _handleWrite = &Mapper::handleWrite<MapperID::Action52>;
+}

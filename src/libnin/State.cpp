@@ -16,6 +16,8 @@ static NinError loadRomNES(State& state, const RomHeader& header, std::FILE* f)
     std::uint16_t prgRamBankCount;
     std::uint16_t chrRomBankCount;
     std::uint16_t chrRamBankCount;
+    int mapper{};
+    int submapper{};
 
     /* Check for the nes2 signature */
     if (header.magicNes2 == 0x2)
@@ -50,7 +52,14 @@ static NinError loadRomNES(State& state, const RomHeader& header, std::FILE* f)
         state.info->setRegion((NinRegion)header.nes2.region);
 
     /* Load the mapper */
-    state.mapper = std::unique_ptr<Mapper>(Mapper::create(*state.memory, *state.cart, *state.irq, (header.mapperHi << 4) | header.mapperLo, 0));
+    mapper = (header.mapperHi << 4) | header.mapperLo;
+    if (nes2)
+    {
+        mapper |= ((std::uint16_t)header.nes2.mapperEx << 8);
+        submapper = header.nes2.submapper;
+    }
+
+    state.mapper = std::unique_ptr<Mapper>(Mapper::create(*state.memory, *state.cart, *state.irq, mapper, submapper));
     if (!state.mapper)
     {
         return NIN_ERROR_BAD_MAPPER;
@@ -61,7 +70,7 @@ static NinError loadRomNES(State& state, const RomHeader& header, std::FILE* f)
         state.mapper->mirror(NIN_MIRROR_H);
     else
         state.mapper->mirror(NIN_MIRROR_V);
-    state.mapper->handleReset();
+    state.mapper->reset();
     state.save->setBattery(!!header.battery);
 
     /* Check that the file was actually long enough */

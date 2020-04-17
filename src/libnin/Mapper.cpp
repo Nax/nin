@@ -3,26 +3,21 @@
 #include <libnin/Cart.h>
 #include <libnin/Util.h>
 
-#include <libnin/Mapper/Action52.h>
-#include <libnin/Mapper/AxROM.h>
-#include <libnin/Mapper/CNROM.h>
-#include <libnin/Mapper/ColorDreams.h>
-#include <libnin/Mapper/GxROM.h>
-#include <libnin/Mapper/MMC1.h>
-#include <libnin/Mapper/MMC2.h>
-#include <libnin/Mapper/MMC3.h>
-#include <libnin/Mapper/MMC4.h>
-#include <libnin/Mapper/MMC5.h>
-#include <libnin/Mapper/UxROM.h>
-
-#define MAPPER(major, minor, klass, ...)  case ((major << 16) | minor): mapper = new klass(memory, cart, irq, __VA_ARGS__); break
-
 using namespace libnin;
 
 Mapper::Mapper(Memory& memory, Cart& cart, IRQ& irq)
-: _memory{ memory }
-, _cart{ cart }
-, _irq{ irq }
+: _memory{memory}
+, _cart{cart}
+, _irq{irq}
+, _handleReset{&Mapper::handleReset<MapperID::NROM>}
+, _handleTick{&Mapper::handleTick<MapperID::NROM>}
+, _handleRead{&Mapper::handleRead<MapperID::NROM>}
+, _handleWrite{&Mapper::handleWrite<MapperID::NROM>}
+, _handleVideoRead{&Mapper::handleVideoRead<MapperID::NROM>}
+, _handleNtRead{&Mapper::handleNtRead<MapperID::NROM>}
+, _handleNtWrite{&Mapper::handleNtWrite<MapperID::NROM>}
+, _handleChrRead{&Mapper::handleChrRead<MapperID::NROM>}
+, _handleChrWrite{&Mapper::handleChrWrite<MapperID::NROM>}
 , _prg{}
 , _prgWriteFlag{}
 , _chr{}
@@ -43,37 +38,21 @@ Mapper::~Mapper()
 
 Mapper* Mapper::create(Memory& memory, Cart& cart, IRQ& irq, int mapperMajor, int mapperMinor)
 {
+    MapperID mapperID;
     Mapper* mapper{};
 
-    switch ((mapperMajor << 16) | mapperMinor)
-    {
-        MAPPER(0,   0, Mapper);
-        MAPPER(1,   0, MapperMMC1);
-        MAPPER(2,   0, MapperUxROM);
-        MAPPER(3,   0, MapperCNROM);
-        MAPPER(4,   0, MapperMMC3);
-        MAPPER(5,   0, MapperMMC5);
-        MAPPER(7,   0, MapperAxROM);
-        MAPPER(9,   0, MapperMMC2);
-        MAPPER(10,  0, MapperMMC4);
-        MAPPER(11,  0, MapperColorDreams);
-        MAPPER(66,  0, MapperGxROM);
-        MAPPER(228, 0, MapperAction52);
-    default:
-        break;
-    }
+    mapperID = getMapperID(mapperMajor, mapperMinor);
+    if (mapperID == MapperID::Unknown)
+        return nullptr;
 
+    mapper = new Mapper{memory, cart, irq};
+    mapper->initMatching<MapperID(0)>(mapperID);
     return mapper;
-}
-
-const std::uint8_t* Mapper::bank(int slot) const
-{
-    return _prg[slot];
 }
 
 std::uint8_t Mapper::read(std::uint16_t addr)
 {
-    std::uint8_t value = handleRead(addr);
+    std::uint8_t value = (this->*_handleRead)(addr);
     int slot = ((addr - 0x4000) / 0x2000);
 
     return _prg[slot] ? _prg[slot][addr & 0x1fff] : value;
@@ -87,7 +66,7 @@ void Mapper::write(std::uint16_t addr, std::uint8_t value)
     {
         _prg[slot][addr & 0x1fff] = value;
     }
-    handleWrite(addr, value);
+    (this->*_handleWrite)(addr, value);
 }
 
 void Mapper::mirror(int mirrorMode)
@@ -194,46 +173,70 @@ void Mapper::bankChr8k(std::int16_t bank)
     bankChr1k(7, bank * 8 + 7);
 }
 
+template <>
+void Mapper::initMatching<MapperID::MAX>(MapperID id2)
+{
+    UNUSED(id2);
+}
+
+template <MapperID id>
+void Mapper::initMatching(MapperID id2)
+{
+    if (id == id2)
+        init<id>();
+    else
+        initMatching<MapperID((int)id + 1)>(id2);
+}
+
+template <MapperID id>
 void Mapper::handleReset()
 {
 
 }
 
+template <MapperID id>
 void Mapper::handleTick()
 {
 
 }
 
+template <MapperID id>
 std::uint8_t Mapper::handleRead(std::uint16_t addr)
 {
     return 0x00;
 }
 
+template <MapperID id>
 void Mapper::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
 
 }
 
+template <MapperID id>
 void Mapper::handleVideoRead(std::uint16_t addr)
 {
 
 }
 
+template <MapperID id>
 std::uint8_t Mapper::handleNtRead(int nametable, std::uint16_t offset)
 {
     return _nametables[nametable][offset];
 }
 
+template <MapperID id>
 void Mapper::handleNtWrite(int nametable, std::uint16_t offset, std::uint8_t value)
 {
     _nametables[nametable][offset] = value;
 }
 
+template <MapperID id>
 std::uint8_t Mapper::handleChrRead(int bank, std::uint16_t offset)
 {
     return _chr[bank][offset];
 }
 
+template <MapperID id>
 void Mapper::handleChrWrite(int bank, std::uint16_t offset, std::uint8_t value)
 {
     if (_cart.segment(CART_CHR_RAM).base)

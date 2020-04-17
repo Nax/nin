@@ -27,16 +27,23 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper/ColorDreams.h>
+#include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void MapperColorDreams::handleWrite(std::uint16_t addr, std::uint8_t value)
+template <>
+void Mapper::handleWrite<MapperID::ColorDreams>(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
         bankPrg32k(2, CART_PRG_ROM, value & 0x3);
         bankChr8k(value >> 4);
     }
+}
+
+template <>
+void Mapper::init<MapperID::ColorDreams>()
+{
+    _handleWrite = &Mapper::handleWrite<MapperID::ColorDreams>;
 }

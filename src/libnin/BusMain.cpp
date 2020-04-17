@@ -101,7 +101,7 @@ WriteAction BusMain::write(std::uint16_t addr, std::uint8_t value)
         return WriteAction::None;
     case 0x2:
     case 0x3:
-        _mapper.handleWrite(addr, value);
+        _mapper.writePassive(addr, value);
         _ppu.regWrite(addr, value);
         return WriteAction::None;
     case 0x4:

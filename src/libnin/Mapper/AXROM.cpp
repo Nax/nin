@@ -27,16 +27,40 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper/AxROM.h>
+#include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void MapperAxROM::handleWrite(std::uint16_t addr, std::uint8_t value)
+template <>
+void Mapper::handleWrite<MapperID::AxROM>(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
         mirror(((value >> 4) & 1) ? NIN_MIRROR_B : NIN_MIRROR_A);
         bankPrg32k(2, CART_PRG_ROM, value & 0xf);
     }
+}
+
+template <>
+void Mapper::handleWrite<MapperID::AxROM_Conflicts>(std::uint16_t addr, std::uint8_t value)
+{
+    if (addr >= 0x8000)
+    {
+        value &= _prg[(addr - 0x8000) / 0x2000 + 2][addr & 0x1fff];
+        mirror(((value >> 4) & 1) ? NIN_MIRROR_B : NIN_MIRROR_A);
+        bankPrg32k(2, CART_PRG_ROM, value & 0xf);
+    }
+}
+
+template <>
+void Mapper::init<MapperID::AxROM>()
+{
+    _handleWrite = &Mapper::handleWrite<MapperID::AxROM>;
+}
+
+template <>
+void Mapper::init<MapperID::AxROM_Conflicts>()
+{
+    _handleWrite = &Mapper::handleWrite<MapperID::AxROM_Conflicts>;
 }
