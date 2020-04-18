@@ -30,6 +30,7 @@
 #define LIBNIN_MAPPER_H 1
 
 #include <cstdint>
+#include <nin/nin.h>
 #include <libnin/Mapper/MMC1.h>
 #include <libnin/Mapper/MMC2.h>
 #include <libnin/Mapper/MMC3.h>
@@ -52,9 +53,8 @@ class Mapper : private NonCopyable
 {
 public:
     Mapper(Memory& memory, Cart& cart, IRQ& irq);
-    ~Mapper();
 
-    static Mapper* create(Memory& memory, Cart& cart, IRQ& irq, int major, int minor);
+    NinError configure(int mapper, int submapper);
 
     std::uint8_t*       bank(int slot)          { return _prg[slot]; }
     const std::uint8_t* bank(int slot) const    { return _prg[slot]; }

@@ -23,6 +23,24 @@ Mapper::Mapper(Memory& memory, Cart& cart, IRQ& irq)
 , _chr{}
 , _nametables{}
 {
+
+}
+
+NinError Mapper::configure(int mapper, int submapper)
+{
+    MapperID mapperID;
+
+    mapperID = getMapperID(mapper, submapper);
+    switch (mapperID)
+    {
+    case MapperID::Bad:
+        return NIN_ERROR_BAD_MAPPER;
+    case MapperID::Unknown:
+        return NIN_ERROR_UNKNOWN_MAPPER;
+    default:
+        break;
+    }
+
     mirror(NIN_MIRROR_H);
     bankChr8k(0);
     bankPrg8k(1, CART_PRG_RAM, 0);
@@ -30,24 +48,8 @@ Mapper::Mapper(Memory& memory, Cart& cart, IRQ& irq)
     bankPrg8k(3, CART_PRG_ROM, 1);
     bankPrg8k(4, CART_PRG_ROM, -2);
     bankPrg8k(5, CART_PRG_ROM, -1);
-}
-
-Mapper::~Mapper()
-{
-}
-
-Mapper* Mapper::create(Memory& memory, Cart& cart, IRQ& irq, int mapperMajor, int mapperMinor)
-{
-    MapperID mapperID;
-    Mapper* mapper{};
-
-    mapperID = getMapperID(mapperMajor, mapperMinor);
-    if (mapperID == MapperID::Unknown)
-        return nullptr;
-
-    mapper = new Mapper{memory, cart, irq};
-    mapper->initMatching<MapperID(0)>(mapperID);
-    return mapper;
+    initMatching<MapperID(0)>(mapperID);
+    return NIN_OK;
 }
 
 std::uint8_t Mapper::read(std::uint16_t addr)
