@@ -1,34 +1,24 @@
 #ifndef LIBNIN_MAPPER_MMC3_H
 #define LIBNIN_MAPPER_MMC3_H 1
 
-#include <libnin/Mapper.h>
+#include <cstdint>
 
 namespace libnin
 {
 
-class MapperMMC3 : public Mapper
+struct MapperMMC3
 {
-public:
-    MapperMMC3(Memory& memory, Cart& cart, IRQ& irq);
+    std::uint8_t    bankSelect:3;
+    std::uint8_t    bank[8];
+    std::uint8_t    bankModePrgRom:1;
+    std::uint8_t    bankModeChrRom:1;
 
-    void handleReset() override;
-    void handleWrite(std::uint16_t addr, std::uint8_t value) override;
-    void handleVideoRead(std::uint16_t addr) override;
-
-private:
-    void apply();
-
-    std::uint8_t _bankSelect:3;
-    std::uint8_t _bank[8];
-    std::uint8_t _bankModePrgRom:1;
-    std::uint8_t _bankModeChrRom:1;
-
-    std::uint8_t    _irqScanlineEnabled:1;
-    std::uint8_t    _irqScanlineReload:1;
-    std::uint8_t    _irqScanlineCounter;
-    std::uint8_t    _irqScanlineReloadValue;
-    std::uint16_t   _irqScanlineFilterShifter;
-    std::uint16_t   _oldVmemAddr;
+    std::uint8_t    irqScanlineEnabled:1;
+    std::uint8_t    irqScanlineReload:1;
+    std::uint8_t    irqScanlineCounter;
+    std::uint8_t    irqScanlineReloadValue;
+    std::uint16_t   irqScanlineFilterShifter;
+    std::uint16_t   oldVmemAddr;
 };
 
 }

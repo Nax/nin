@@ -30,7 +30,6 @@
 #define LIBNIN_STATE_H 1
 
 #include <cstdlib>
-#include <memory>
 #include <nin/nin.h>
 #include <libnin/APU.h>
 #include <libnin/Audio.h>
@@ -71,27 +70,26 @@ namespace libnin
 class State : private NonCopyable
 {
 public:
+    State();
+
     static State* create(NinError& err, const char* path);
 
-    std::unique_ptr<Memory>         memory;
-    std::unique_ptr<HardwareInfo>   info;
-    std::unique_ptr<Cart>           cart;
-    std::unique_ptr<Save>           save;
-    std::unique_ptr<Input>          input;
-    std::unique_ptr<IRQ>            irq;
-    std::unique_ptr<NMI>            nmi;
-    std::unique_ptr<Video>          video;
-    std::unique_ptr<Mapper>         mapper;
-    std::unique_ptr<BusVideo>       busVideo;
-    std::unique_ptr<Audio>          audio;
-    std::unique_ptr<APU>            apu;
-    std::unique_ptr<DiskSystem>     diskSystem;
-    std::unique_ptr<PPU>            ppu;
-    std::unique_ptr<BusMain>        busMain;
-    std::unique_ptr<CPU>            cpu;
-
-private:
-    State() {}
+    Memory         memory;
+    HardwareInfo   info;
+    Cart           cart;
+    Save           save;
+    Input          input;
+    IRQ            irq;
+    NMI            nmi;
+    Video          video;
+    Mapper         mapper;
+    BusVideo       busVideo;
+    Audio          audio;
+    APU            apu;
+    DiskSystem     diskSystem;
+    PPU            ppu;
+    BusMain        busMain;
+    CPU            cpu;
 };
 
 }

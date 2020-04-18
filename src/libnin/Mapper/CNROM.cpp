@@ -26,16 +26,23 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
-#include <libnin/Mapper/CNROM.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
 
-void MapperCNROM::handleWrite(std::uint16_t addr, std::uint8_t value)
+template <>
+void Mapper::handleWrite<MapperID::CNROM>(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
         bankChr8k(value & 0x03);
     }
+}
+
+template <>
+void Mapper::init<MapperID::CNROM>()
+{
+    _handleWrite = &Mapper::handleWrite<MapperID::CNROM>;
 }
