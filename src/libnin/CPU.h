@@ -128,7 +128,8 @@ private:
     std::uint16_t   _dmaAddr;
     std::uint8_t    _dmaCount;
     std::uint8_t    _dmaValue;
-    bool            _nmi2:1;
+    bool            _nmiPending:1;
+    bool            _odd:1;
     bool            _reset:1;
 };
 

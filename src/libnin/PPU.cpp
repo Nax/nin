@@ -124,7 +124,7 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _busVideo{busVideo}
 , _mapper{mapper}
 , _video{video}
-, _handler{(Handler)&PPU::handlePreScan}
+, _handler{(Handler)&PPU::handleScan}
 , _handler2{}
 , _v{}
 , _t{}
@@ -135,6 +135,8 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _spriteZeroNext{}
 , _spriteZeroHit{}
 , _oddFrame{}
+, _nmiRace{}
+, _nmiSup{}
 , _flags{}
 , _readBuf{}
 , _latchNT{}
@@ -167,6 +169,8 @@ std::uint8_t PPU::regRead(std::uint16_t reg)
     case 0x01:
         break;
     case 0x02: // PPUSTATUS
+        if (_nmiRace)
+            _nmiSup = true;
         if (_spriteZeroHit)
             value |= 0x40;
         if (_nmi.check(NMI_OCCURED))
@@ -304,11 +308,20 @@ PPU::Handler PPU::handleWait()
     return &PPU::handleWait;
 }
 
-PPU::Handler PPU::handleVBlank()
+PPU::Handler PPU::handleVBlank0()
 {
+    _nmiRace = true;
+    return &PPU::handleVBlank1;
+}
+
+PPU::Handler PPU::handleVBlank1()
+{
+    if (!_nmiSup)
+        _nmi.set(NMI_OCCURED);
+    _nmiRace = false;
+    _nmiSup = false;
     _video.swap();
     _clockVideo = 0;
-    _nmi.set(NMI_OCCURED);
     return wait(341 * 20 - 1, (Handler)&PPU::handlePreScan);
 }
 
@@ -324,7 +337,7 @@ PPU::Handler PPU::handlePreScan()
         _shiftSpriteLo[i] = 0x00;
     }
     _step = 0;
-    return wait(257, (Handler)&PPU::handlePreScanReloadX);
+    return wait(255, (Handler)&PPU::handlePreScanReloadX);
 }
 
 PPU::Handler PPU::handlePreScanReloadX()
@@ -334,7 +347,7 @@ PPU::Handler PPU::handlePreScanReloadX()
         _v = copyX(_v, _t);
     }
     _step = 0;
-    return wait(23, (Handler)&PPU::handlePreScanReloadY);
+    return wait(22, (Handler)&PPU::handlePreScanReloadY);
 }
 
 PPU::Handler PPU::handlePreScanReloadY()
@@ -346,23 +359,16 @@ PPU::Handler PPU::handlePreScanReloadY()
     if (_step == 24)
     {
         _step = 0;
-        return wait(17, (Handler)&PPU::handleNextNT0);
+        return wait(16, &PPU::handleNextNT0);
     }
     _step++;
-    return (Handler)&PPU::handlePreScanReloadY;
+    return &PPU::handlePreScanReloadY;
 }
-
-PPU::Handler PPU::handleScanDummy()
-{
-    return (Handler)&PPU::handleScan;
-}
-
 
 PPU::Handler PPU::handleScan()
 {
-    _prescan = false;
     _step = 0;
-    return (Handler)&PPU::handleScanNT0;
+    return &PPU::handleScanNT0;
 }
 
 PPU::Handler PPU::handleScanNT0()
@@ -425,7 +431,7 @@ PPU::Handler PPU::handleScanHiBG1()
     _step++;
     if (_step < 32)
     {
-        return (Handler)&PPU::handleScanNT0;
+        return &PPU::handleScanNT0;
     }
     if (_flags.rendering)
     {
@@ -443,7 +449,7 @@ PPU::Handler PPU::handleScanSpriteEval()
         spriteEvaluation();
         spriteFetch();
     }
-    return wait(64, (Handler)&PPU::handleNextNT0);
+    return wait(63, (Handler)&PPU::handleNextNT0);
 }
 
 PPU::Handler PPU::handleNextNT0()
@@ -521,16 +527,18 @@ PPU::Handler PPU::handleNextDummy3()
 
     if (_prescan)
     {
+        _prescan = false;
         _scanline = 0;
-        return wait(1, dummy());
+        _step = 0;
+        return dummy();
     }
     if (_scanline + 1 < 240)
     {
         _scanline++;
-        return wait(1, &PPU::handleScan);
+        return &PPU::handleScan;
     }
     _scanline = 0;
-    return wait(1 + 341, &PPU::handleVBlank);
+    return wait(341, &PPU::handleVBlank0);
 }
 
 PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
@@ -538,14 +546,21 @@ PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
     _clock = cycles - 1;
     _handler2 = next;
 
-    return (Handler)&PPU::handleWait;
+    return &PPU::handleWait;
 }
 
 PPU::Handler PPU::dummy()
 {
     Handler h;
 
-    h = (_oddFrame && _flags.backgroundEnable) ? (Handler)&PPU::handleScan : (Handler)&PPU::handleScanDummy;
+    if (_oddFrame && _flags.backgroundEnable)
+    {
+        h = &PPU::handleScanNT0;
+    }
+    else
+    {
+        h = &PPU::handleScan;
+    }
     _oddFrame = !_oddFrame;
     return h;
 }

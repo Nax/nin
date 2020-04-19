@@ -91,12 +91,12 @@ private:
     using Handler = MemberStateHelper<PPU>;
 
     Handler handleWait();
-    Handler handleVBlank();
+    Handler handleVBlank0();
+    Handler handleVBlank1();
 
     Handler handlePreScan();
     Handler handlePreScanReloadX();
     Handler handlePreScanReloadY();
-    Handler handleScanDummy();
     Handler handleScan();
     Handler handleScanNT0();
     Handler handleScanNT1();
@@ -123,13 +123,13 @@ private:
     Handler wait(std::uint32_t cycles, Handler next);
     Handler dummy();
 
-    void            fetchNT();
-    void            fetchAT();
-    void            fetchLoBG();
-    void            fetchHiBG();
+    void fetchNT();
+    void fetchAT();
+    void fetchLoBG();
+    void fetchHiBG();
 
-    void            spriteEvaluation();
-    void            spriteFetch();
+    void spriteEvaluation();
+    void spriteFetch();
 
     void            emitPixel();
     std::uint8_t    pixelBackground();
@@ -156,6 +156,8 @@ private:
     bool            _spriteZeroNext:1;
     bool            _spriteZeroHit:1;
     bool            _oddFrame:1;
+    bool            _nmiRace:1;
+    bool            _nmiSup:1;
 
     Flags           _flags;
     Sprite          _oam2[8];
