@@ -30,6 +30,11 @@
 #define LIBNIN_CPU_IMPL_H 1
 
 #include <libnin/CPU.h>
+#include <libnin/IRQ.h>
+#include <libnin/NMI.h>
+
+#define PollInterrupts      _nmiPending = _nmi.high(); _irqPending = (_irq.high() && !(_p & PFLAG_I));
+#define PollInterrupts2     _nmiPending = (_nmiPending || _nmi.high()); _irqPending = (_irqPending || (_irq.high() && !(_p & PFLAG_I)));
 
 #define SelectSourceA   _selSrc = REG_A;
 #define SelectSourceX   _selSrc = REG_X;

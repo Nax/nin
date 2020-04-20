@@ -15,6 +15,7 @@ public:
     std::uint32_t cycleExtraIncrement;
     std::uint32_t firstVisibleScanline;
     std::uint16_t vblank;
+    std::uint16_t apuFrameIrq;
     std::uint16_t apuFrameCycles[5];
     std::uint16_t apuNoisePeriod[16];
     std::uint16_t apuDmcPeriod[16];

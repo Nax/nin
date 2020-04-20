@@ -228,7 +228,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
             frameQuarter();
             frameHalf();
         }
-        _resetClock = (_frameCounter & 0x01) ? 4 : 3;
+        _resetClock = (_frameCounter & 0x01) ? 3 : 3;
         break;
     }
 }
@@ -275,16 +275,18 @@ void APU::tick(std::size_t cycles)
             frameHalf();
         }
 
-        if (_frameCounter >= maxApuCycle - 1)
+        if (_frameCounter >= _info.specs().apuFrameIrq + 2)
         {
             if (!_mode && !_irqInhibit)
+            {
                 _irq.set(IRQ_APU_FRAME);
+            }
         }
 
         if (_frameCounter == maxApuCycle + 1)
             _frameCounter = 1;
         else
-            _frameCounter++;;
+            _frameCounter++;
 
         /* Load the triangle sample */
         triangleSample = sampleTriangle();
