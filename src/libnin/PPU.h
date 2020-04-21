@@ -157,6 +157,7 @@ private:
     bool            _spriteZeroNext:1;
     bool            _spriteZeroHit:1;
     bool            _oddFrame:1;
+    bool            _dummySkip:1;
     bool            _nmiRace:1;
     bool            _nmiSup:1;
 

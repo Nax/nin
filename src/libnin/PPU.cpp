@@ -135,6 +135,7 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _spriteZeroNext{}
 , _spriteZeroHit{}
 , _oddFrame{}
+, _dummySkip{}
 , _nmiRace{}
 , _nmiSup{}
 , _flags{}
@@ -152,6 +153,8 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _scanline{}
 , _step{}
 , _oamAddr{}
+, _pixelBuffer{}
+, _pixelBufferBits{}
 {
 
 }
@@ -331,7 +334,7 @@ PPU::Handler PPU::handleVBlank0()
 
 PPU::Handler PPU::handleVBlank1()
 {
-    if (!_nmiSup)
+    //if (!_nmiSup)
         _nmi.set(NMI_OCCURED);
     _nmiRace = false;
     _nmiSup = false;
@@ -527,6 +530,7 @@ PPU::Handler PPU::handleNextDummy0()
 
 PPU::Handler PPU::handleNextDummy1()
 {
+    _dummySkip = (_oddFrame && _flags.backgroundEnable);
     fetchNT();
     return &PPU::handleNextDummy2;
 }
@@ -545,7 +549,8 @@ PPU::Handler PPU::handleNextDummy3()
         _prescan = false;
         _scanline = 0;
         _step = 0;
-        return dummy();
+        _oddFrame = !_oddFrame;
+        return _dummySkip ? &PPU::handleScanNT0 : &PPU::handleScan;
     }
     if (_scanline + 1 < 240)
     {
@@ -568,7 +573,7 @@ PPU::Handler PPU::dummy()
 {
     Handler h;
 
-    if (_oddFrame && (_flags.backgroundEnable || 1))
+    if (_oddFrame && (_flags.backgroundEnable))
     {
         h = &PPU::handleScanNT0;
     }
