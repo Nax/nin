@@ -228,7 +228,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
             frameQuarter();
             frameHalf();
         }
-        _resetClock = (_frameCounter & 0x01) ? 3 : 3;
+        _resetClock = (_frameCounter & 0x01) ? 4 : 3;
         break;
     }
 }
@@ -275,7 +275,7 @@ void APU::tick(std::size_t cycles)
             frameHalf();
         }
 
-        if (_frameCounter >= _info.specs().apuFrameIrq + 2)
+        if (_frameCounter >= _info.specs().apuFrameIrq)
         {
             if (!_mode && !_irqInhibit)
             {

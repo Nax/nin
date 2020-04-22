@@ -158,7 +158,7 @@ private:
     std::uint16_t       _frameCounter;
     std::uint8_t        _mode:1;
     std::uint8_t        _irqInhibit:1;
-    std::uint8_t        _resetClock:1;
+    std::uint8_t        _resetClock;
 };
 
 };
