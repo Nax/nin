@@ -5,9 +5,10 @@
 
 using namespace libnin;
 
-Mapper::Mapper(Memory& memory, Cart& cart, IRQ& irq)
+Mapper::Mapper(Memory& memory, Cart& cart, Disk& disk, IRQ& irq)
 : _memory{memory}
 , _cart{cart}
+, _disk{disk}
 , _irq{irq}
 , _handleReset{&Mapper::handleReset<MapperID::NROM>}
 , _handleTick{&Mapper::handleTick<MapperID::NROM>}

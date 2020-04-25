@@ -37,7 +37,7 @@
 #include <libnin/BusVideo.h>
 #include <libnin/Cart.h>
 #include <libnin/CPU.h>
-#include <libnin/DiskSystem.h>
+#include <libnin/Disk.h>
 #include <libnin/HardwareInfo.h>
 #include <libnin/Input.h>
 #include <libnin/IRQ.h>
@@ -74,22 +74,22 @@ public:
 
     static State* create(NinError& err, const char* path);
 
-    Memory         memory;
-    HardwareInfo   info;
-    Cart           cart;
-    Save           save;
-    Input          input;
-    IRQ            irq;
-    NMI            nmi;
-    Video          video;
-    Mapper         mapper;
-    BusVideo       busVideo;
-    Audio          audio;
-    APU            apu;
-    DiskSystem     diskSystem;
-    PPU            ppu;
-    BusMain        busMain;
-    CPU            cpu;
+    Memory          memory;
+    HardwareInfo    info;
+    Cart            cart;
+    Disk            disk;
+    Save            save;
+    Input           input;
+    IRQ             irq;
+    NMI             nmi;
+    Video           video;
+    Mapper          mapper;
+    BusVideo        busVideo;
+    Audio           audio;
+    APU             apu;
+    PPU             ppu;
+    BusMain         busMain;
+    CPU             cpu;
 };
 
 }

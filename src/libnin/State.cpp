@@ -88,6 +88,7 @@ static NinError loadRomFDS(State& state, const RomHeader& header, std::FILE* f)
     UNUSED(header);
 
     state.info.setSystem(NIN_SYSTEM_FDS);
+    state.info.setRegion(NIN_REGION_NTSC);
 
     /* PRG ROM is the FDS BIOS */
     state.cart.load(CART_PRG_ROM, 1, nullptr);
@@ -95,10 +96,13 @@ static NinError loadRomFDS(State& state, const RomHeader& header, std::FILE* f)
     state.cart.load(CART_CHR_ROM, 0, nullptr);
     state.cart.load(CART_CHR_RAM, 8, nullptr);
 
+    state.mapper.configure(20, 0);
+    state.mapper.mirror(NIN_MIRROR_H);
     state.mapper.bankChr8k(0);
+    state.mapper.reset();
 
     /* Load the disk */
-    state.diskSystem.loadDisk(f);
+    state.disk.load(f);
 
     /* We won't need the ROM from now on */
     std::fclose(f);
@@ -135,16 +139,16 @@ State::State()
 : memory{}
 , info{}
 , cart{}
+, disk{}
 , save{cart}
 , input{}
 , irq{}
 , nmi{}
 , video{}
-, mapper{memory, cart, irq}
+, mapper{memory, cart, disk, irq}
 , busVideo{memory, cart, mapper}
 , audio{info}
 , apu{info, irq, mapper, audio}
-, diskSystem{info, irq}
 , ppu{info, memory, nmi, busVideo, mapper, video}
 , busMain{memory, cart, mapper, ppu, apu, input}
 , cpu{memory, irq, nmi, ppu, apu, busMain}

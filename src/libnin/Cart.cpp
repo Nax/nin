@@ -6,6 +6,7 @@ using namespace libnin;
 void Cart::load(int id, std::uint16_t bankCount, std::FILE* file)
 {
     CartSegment& seg = _segments[id];
+
     std::uint32_t size;
     std::uint32_t bankSize;
 
