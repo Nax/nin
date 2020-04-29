@@ -135,6 +135,7 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _spriteZeroNext{}
 , _spriteZeroHit{}
 , _oddFrame{}
+, _dummySkip{}
 , _nmiRace{}
 , _nmiSup{}
 , _flags{}
@@ -152,6 +153,8 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _scanline{}
 , _step{}
 , _oamAddr{}
+, _pixelBuffer{}
+, _pixelBufferBits{}
 {
 
 }
@@ -297,7 +300,22 @@ void PPU::tick(std::size_t cycles)
     while (cycles--)
     {
         _handler = (Handler)(this->*_handler)();
+        processPixel();
     }
+}
+
+void PPU::processPixel()
+{
+    std::uint8_t mask;
+
+    if (_pixelBufferBits & 0x01)
+    {
+        mask = _flags.grayscale ? 0x30 : 0x3f;
+        _video.write(_clockVideo, _pixelBuffer & mask);
+        _clockVideo++;
+    }
+    _pixelBufferBits >>= 1;
+    _pixelBuffer >>= 8;
 }
 
 PPU::Handler PPU::handleWait()
@@ -316,7 +334,7 @@ PPU::Handler PPU::handleVBlank0()
 
 PPU::Handler PPU::handleVBlank1()
 {
-    if (!_nmiSup)
+    //if (!_nmiSup)
         _nmi.set(NMI_OCCURED);
     _nmiRace = false;
     _nmiSup = false;
@@ -512,6 +530,7 @@ PPU::Handler PPU::handleNextDummy0()
 
 PPU::Handler PPU::handleNextDummy1()
 {
+    _dummySkip = (_oddFrame && _flags.backgroundEnable);
     fetchNT();
     return &PPU::handleNextDummy2;
 }
@@ -530,7 +549,8 @@ PPU::Handler PPU::handleNextDummy3()
         _prescan = false;
         _scanline = 0;
         _step = 0;
-        return dummy();
+        _oddFrame = !_oddFrame;
+        return _dummySkip ? &PPU::handleScanNT0 : &PPU::handleScan;
     }
     if (_scanline + 1 < 240)
     {
@@ -553,7 +573,7 @@ PPU::Handler PPU::dummy()
 {
     Handler h;
 
-    if (_oddFrame && _flags.backgroundEnable)
+    if (_oddFrame && (_flags.backgroundEnable))
     {
         h = &PPU::handleScanNT0;
     }
@@ -680,7 +700,7 @@ void PPU::emitPixel()
     std::uint8_t color;
     std::uint8_t bg;
     std::uint8_t sprite;
-    std::uint8_t mask;
+    //std::uint8_t mask;
 
     if (_flags.backgroundEnable && (_step || _flags.backgroundEnableLeft))
     {
@@ -701,11 +721,11 @@ void PPU::emitPixel()
     }
     _x2 = (_x2 + 1) & 0x07;
 
-    mask = _flags.grayscale ? 0x30 : 0x3f;
+    //mask = _flags.grayscale ? 0x30 : 0x3f;
     color = _memory.palettes[sprite ? (0x10 | sprite) : bg];
 
-    _video.write(_clockVideo, color & mask);
-    _clockVideo++;
+    _pixelBuffer |= ((std::uint32_t)color << 16);
+    _pixelBufferBits |= (0x01 << 2);
 }
 
 std::uint8_t PPU::pixelBackground()

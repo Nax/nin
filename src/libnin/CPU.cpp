@@ -49,6 +49,7 @@ CPU::CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
 , _p{PFLAG_I}
 , _p2{}
 , _nmiPending{}
+, _irqPending{}
 , _odd{}
 , _reset{true}
 {
@@ -71,23 +72,28 @@ std::size_t CPU::tick(std::size_t cycles)
 
 CPU::Handler CPU::dispatch()
 {
+    Handler handler;
     std::uint16_t op;
 
     if (_nmiPending)
     {
+        _nmiPending = false;
+        _irqPending = false;
+
         op = 0x102;
         _nmi.ack();
     }
-    else if (_irq.high() && !(_p & PFLAG_I))
+    else if (_irqPending)
     {
+        _irqPending = false;
         op = 0x101;
     }
     else
     {
         op = read(_pc++);
     }
-    _nmiPending = _nmi.high();
-    return kOps[op];
+    handler = kOps[op];
+    return (this->*handler)();
 }
 
 CPU::Handler CPU::kil()

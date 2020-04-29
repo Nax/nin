@@ -129,6 +129,7 @@ private:
     std::uint8_t    _dmaCount;
     std::uint8_t    _dmaValue;
     bool            _nmiPending:1;
+    bool            _irqPending:1;
     bool            _odd:1;
     bool            _reset:1;
 };

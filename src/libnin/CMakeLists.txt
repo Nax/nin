@@ -44,7 +44,7 @@ list(APPEND SOURCES "${CONFIG_OUT}" "${SOURCES_CODEGEN_CPU}")
 
 add_library(libnin SHARED ${SOURCES})
 target_include_directories(libnin PRIVATE "${CMAKE_SOURCE_DIR}/src" PUBLIC "${CMAKE_SOURCE_DIR}/include" "${CMAKE_BINARY_DIR}/include")
-set_target_properties(libnin PROPERTIES OUTPUT_NAME nin)
+set_target_properties(libnin PROPERTIES OUTPUT_NAME libnin)
 
 if (WIN32)
     target_compile_definitions(libnin PRIVATE NIN_DLL=1)

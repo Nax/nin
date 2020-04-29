@@ -160,73 +160,73 @@ class Rulebook
   end
 end
 
-def make_brk; [['AddrSet_BRK', 'AddrImplIncPC'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP', 'DecS', 'FlagSetI'], 'VectorPCL', 'VectorPCH']; end
-def make_reset; [['AddrSet_RESET', 'AddrImpl', 'FlagSetI'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
-def make_irq; [['AddrSet_BRK', 'AddrImpl'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP_NoB', 'DecS', 'FlagSetI'], 'VectorPCL', 'VectorPCH']; end
-def make_nmi; [['AddrSet_NMI', 'AddrImpl'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP_NoB', 'DecS'], 'VectorPCL', 'VectorPCH']; end
+def make_brk; ['Nop', ['AddrSet_BRK', 'AddrImplIncPC'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP', 'DecS', 'FlagSetI'], 'VectorPCL', 'VectorPCH']; end
+def make_reset; ['Nop', ['AddrSet_RESET', 'AddrImpl', 'FlagSetI'], 'DecS', 'DecS', 'DecS', 'VectorPCL', 'VectorPCH']; end
+def make_irq; ['Nop', ['AddrSet_BRK', 'AddrImpl'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP_NoB', 'DecS', 'FlagSetI'], 'VectorPCL', 'VectorPCH']; end
+def make_nmi; ['Nop', ['AddrSet_NMI', 'AddrImpl'], ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], ['PushP_NoB', 'DecS'], 'VectorPCL', 'VectorPCH']; end
 
-def make_branch(cond); [['AddrZero', cond, 'BranchTake'], 'BranchTake2', 'Nop']; end
+def make_branch(cond); ['PollInterrupts', ['AddrZero', cond, 'BranchTake'], ['BranchTake2', 'PollInterrupts2'], 'Nop']; end
 
-def make_store_zero(prefix); [[prefix, 'AddrZero'], 'WriteRegZero']; end
-def make_store_zero_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'WriteRegZero']; end
-def make_store_zero_y(prefix); [[prefix, 'AddrZero'], 'AddrZeroY', 'WriteRegZero']; end
-def make_store_absolute(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHi', 'WriteReg']; end
-def make_store_absolute_x(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiX', 'AddrCarry', 'WriteReg']; end
-def make_store_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'AddrCarry', 'WriteReg']; end
-def make_store_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'WriteReg']; end
-def make_store_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'WriteReg']; end
+def make_store_zero(prefix); ['Nop', [prefix, 'AddrZero', 'PollInterrupts'], 'WriteRegZero']; end
+def make_store_zero_x(prefix); ['Nop', [prefix, 'AddrZero'], ['AddrZeroX', 'PollInterrupts'], 'WriteRegZero']; end
+def make_store_zero_y(prefix); ['Nop', [prefix, 'AddrZero'], ['AddrZeroY', 'PollInterrupts'], 'WriteRegZero']; end
+def make_store_absolute(prefix); ['Nop', [prefix, 'AddrAbsLo'], ['AddrAbsHi', 'PollInterrupts'], 'WriteReg']; end
+def make_store_absolute_x(prefix); ['Nop', [prefix, 'AddrAbsLo'], 'AddrAbsHiX', ['AddrCarry', 'PollInterrupts'], 'WriteReg']; end
+def make_store_absolute_y(prefix); ['Nop', [prefix, 'AddrAbsLo'], 'AddrAbsHiY', ['AddrCarry', 'PollInterrupts'], 'WriteReg']; end
+def make_store_indirect_x(prefix); ['Nop', [prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', ['AddrIndirectHi', 'PollInterrupts'], 'WriteReg']; end
+def make_store_indirect_y(prefix); ['Nop', [prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['AddrCarry', 'PollInterrupts'], 'WriteReg']; end
 
-def make_store_ax_zero(); [['AddrZero'], 'WriteRegZero_SAX']; end
-def make_store_ax_zero_x(); [['AddrZero'], 'AddrZeroX', 'WriteRegZero_SAX']; end
-def make_store_ax_zero_y(); [['AddrZero'], 'AddrZeroY', 'WriteRegZero_SAX']; end
-def make_store_ax_absolute(); [['AddrAbsLo'], 'AddrAbsHi', 'WriteReg_SAX']; end
-def make_store_ax_absolute_x(); [['AddrAbsLo'], 'AddrAbsHiX', 'AddrCarry', 'WriteReg_SAX']; end
-def make_store_ax_absolute_y(); [['AddrAbsLo'], 'AddrAbsHiY', 'AddrCarry', 'WriteReg_SAX']; end
-def make_store_ax_indirect_x(); [['AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'WriteReg_SAX']; end
-def make_store_ax_indirect_y(); [['AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'WriteReg_SAX']; end
+def make_store_ax_zero(); ['Nop', ['AddrZero', 'PollInterrupts'], 'WriteRegZero_SAX']; end
+def make_store_ax_zero_x(); ['Nop', ['AddrZero'], ['AddrZeroX', 'PollInterrupts'], 'WriteRegZero_SAX']; end
+def make_store_ax_zero_y(); ['Nop', ['AddrZero'], ['AddrZeroY', 'PollInterrupts'], 'WriteRegZero_SAX']; end
+def make_store_ax_absolute(); ['Nop', ['AddrAbsLo'], ['AddrAbsHi', 'PollInterrupts'], 'WriteReg_SAX']; end
+def make_store_ax_absolute_x(); ['Nop', ['AddrAbsLo'], 'AddrAbsHiX', ['AddrCarry', 'PollInterrupts'], 'WriteReg_SAX']; end
+def make_store_ax_absolute_y(); ['Nop', ['AddrAbsLo'], 'AddrAbsHiY', ['AddrCarry', 'PollInterrupts'], 'WriteReg_SAX']; end
+def make_store_ax_indirect_x(); ['Nop', ['AddrZero'], 'AddrZeroX', 'AddrIndirectLo', ['AddrIndirectHi', 'PollInterrupts'], 'WriteReg_SAX']; end
+def make_store_ax_indirect_y(); ['Nop', ['AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['AddrCarry', 'PollInterrupts'], 'WriteReg_SAX']; end
 
-def make_load_zero(prefix); [[prefix, 'AddrZero'], 'ReadRegZero']; end
-def make_load_zero_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'ReadRegZero']; end
-def make_load_zero_y(prefix); [[prefix, 'AddrZero'], 'AddrZeroY', 'ReadRegZero']; end
-def make_load_absolute(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHi', 'ReadReg']; end
-def make_load_absolute_x(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiX', 'ReadRegCarry', 'ReadReg']; end
-def make_load_absolute_y(prefix); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', 'ReadRegCarry', 'ReadReg']; end
-def make_load_indirect_x(prefix); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'ReadReg']; end
-def make_load_indirect_y(prefix); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'ReadRegCarry', 'ReadReg']; end
+def make_load_zero(prefix); ['Nop', [prefix, 'AddrZero', 'PollInterrupts'], 'ReadRegZero']; end
+def make_load_zero_x(prefix); ['Nop', [prefix, 'AddrZero'], ['AddrZeroX', 'PollInterrupts'], 'ReadRegZero']; end
+def make_load_zero_y(prefix); ['Nop', [prefix, 'AddrZero'], ['AddrZeroY', 'PollInterrupts'], 'ReadRegZero']; end
+def make_load_absolute(prefix); ['Nop', [prefix, 'AddrAbsLo'], ['AddrAbsHi', 'PollInterrupts'], 'ReadReg']; end
+def make_load_absolute_x(prefix); ['Nop', [prefix, 'AddrAbsLo'], ['AddrAbsHiX', 'PollInterrupts'], ['ReadRegCarry', 'PollInterrupts'], 'ReadReg']; end
+def make_load_absolute_y(prefix); ['Nop', [prefix, 'AddrAbsLo'], ['AddrAbsHiY', 'PollInterrupts'], ['ReadRegCarry', 'PollInterrupts'], 'ReadReg']; end
+def make_load_indirect_x(prefix); ['Nop', [prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', ['AddrIndirectHi', 'PollInterrupts'], 'ReadReg']; end
+def make_load_indirect_y(prefix); ['Nop', [prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY', 'PollInterrupts'], ['ReadRegCarry', 'PollInterrupts'], 'ReadReg']; end
 
-def make_load_ax_zero(); [['AddrZero'], 'ReadRegZero_AX']; end
-def make_load_ax_zero_x(); [['AddrZero'], 'AddrZeroX', 'ReadRegZero_AX']; end
-def make_load_ax_zero_y(); [['AddrZero'], 'AddrZeroY', 'ReadRegZero_AX']; end
-def make_load_ax_absolute(); [['AddrAbsLo'], 'AddrAbsHi', 'ReadReg_AX']; end
-def make_load_ax_absolute_x(); [['AddrAbsLo'], 'AddrAbsHiX', 'ReadRegCarry_AX', 'ReadReg_AX']; end
-def make_load_ax_absolute_y(); [['AddrAbsLo'], 'AddrAbsHiY', 'ReadRegCarry_AX', 'ReadReg_AX']; end
-def make_load_ax_indirect_x(); [['AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'ReadReg_AX']; end
-def make_load_ax_indirect_y(); [['AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'ReadRegCarry_AX', 'ReadReg_AX']; end
+def make_load_ax_zero(); ['Nop', ['AddrZero', 'PollInterrupts'], 'ReadRegZero_AX']; end
+def make_load_ax_zero_x(); ['Nop', ['AddrZero'], ['AddrZeroX', 'PollInterrupts'], 'ReadRegZero_AX']; end
+def make_load_ax_zero_y(); ['Nop', ['AddrZero'], ['AddrZeroY', 'PollInterrupts'], 'ReadRegZero_AX']; end
+def make_load_ax_absolute(); ['Nop', ['AddrAbsLo'], ['AddrAbsHi', 'PollInterrupts'], 'ReadReg_AX']; end
+def make_load_ax_absolute_x(); ['Nop', ['AddrAbsLo'], ['AddrAbsHiX', 'PollInterrupts'], ['ReadRegCarry_AX', 'PollInterrupts'], 'ReadReg_AX']; end
+def make_load_ax_absolute_y(); ['Nop', ['AddrAbsLo'], ['AddrAbsHiY', 'PollInterrupts'], ['ReadRegCarry_AX', 'PollInterrupts'], 'ReadReg_AX']; end
+def make_load_ax_indirect_x(); ['Nop', ['AddrZero'], 'AddrZeroX', 'AddrIndirectLo', ['AddrIndirectHi', 'PollInterrupts'], 'ReadReg_AX']; end
+def make_load_ax_indirect_y(); ['Nop', ['AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY', 'PollInterrupts'], ['ReadRegCarry_AX', 'PollInterrupts'], 'ReadReg_AX']; end
 
-def make_arith_imm(prefix, op); [[prefix, 'TmpLoadImm', op]]; end
-def make_arith_zero(prefix, op); [[prefix, 'AddrZero'], ['TmpLoadZero', op]]; end
-def make_arith_zero_x(prefix, op); [[prefix, 'AddrZero'], 'AddrZeroX', ['TmpLoadZero', op]]; end
-def make_arith_absolute(prefix, op); [[prefix, 'AddrAbsLo'], 'AddrAbsHi', ['TmpLoad', op]]; end
-def make_arith_absolute_x(prefix, op); [[prefix, 'AddrAbsLo'], 'AddrAbsHiX', ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
-def make_arith_absolute_y(prefix, op); [[prefix, 'AddrAbsLo'], 'AddrAbsHiY', ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
-def make_arith_indirect_x(prefix, op); [[prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', ['TmpLoad', op]]; end
-def make_arith_indirect_y(prefix, op); [[prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix'], ['TmpLoad', op]]; end
+def make_arith_imm(prefix, op); ['PollInterrupts', [prefix, 'TmpLoadImm', op]]; end
+def make_arith_zero(prefix, op); ['Nop', [prefix, 'AddrZero', 'PollInterrupts'], ['TmpLoadZero', op]]; end
+def make_arith_zero_x(prefix, op); ['Nop', [prefix, 'AddrZero'], ['AddrZeroX', 'PollInterrupts'], ['TmpLoadZero', op]]; end
+def make_arith_absolute(prefix, op); ['Nop', [prefix, 'AddrAbsLo'], ['AddrAbsHi', 'PollInterrupts'], ['TmpLoad', op]]; end
+def make_arith_absolute_x(prefix, op); ['Nop', [prefix, 'AddrAbsLo'], ['AddrAbsHiX', 'PollInterrupts'], ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix', 'PollInterrupts'], ['TmpLoad', op]]; end
+def make_arith_absolute_y(prefix, op); ['Nop', [prefix, 'AddrAbsLo'], ['AddrAbsHiY', 'PollInterrupts'], ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix', 'PollInterrupts'], ['TmpLoad', op]]; end
+def make_arith_indirect_x(prefix, op); ['Nop', [prefix, 'AddrZero'], 'AddrZeroX', 'AddrIndirectLo', ['AddrIndirectHi', 'PollInterrupts'], ['TmpLoad', op]]; end
+def make_arith_indirect_y(prefix, op); ['Nop', [prefix, 'AddrZero'], 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY', 'PollInterrupts'], ['TmpLoad', 'AddrCarryIf', op, 'AddrCarryEnd', 'AddrCarryFix', 'PollInterrupts'], ['TmpLoad', op]]; end
 
-def make_rmw_acc(op); [['AddrImpl', 'TmpLoadAcc', op, 'TmpStoreAcc']]; end
-def make_rmw_zero(op); ['AddrZero', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStoreZero']; end
-def make_rmw_zero_x(op); ['AddrZero', 'AddrZeroX', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStoreZero']; end
-def make_rmw_absolute(op); ['AddrAbsLo', 'AddrAbsHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
-def make_rmw_absolute_x(op); ['AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
-def make_rmw_absolute_y(op); ['AddrAbsLo', 'AddrAbsHiY', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
-def make_rmw_indirect_x(op); ['AddrZero', 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
-def make_rmw_indirect_y(op); ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw'], 'RmwStore']; end
+def make_rmw_acc(op); ['PollInterrupts', ['AddrImpl', 'TmpLoadAcc', op, 'TmpStoreAcc']]; end
+def make_rmw_zero(op); ['Nop', 'AddrZero', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw', 'PollInterrupts'], 'RmwStoreZero']; end
+def make_rmw_zero_x(op); ['Nop', 'AddrZero', 'AddrZeroX', 'RmwLoadZero', ['TmpLoadRmw', op, 'TmpStoreRmw', 'PollInterrupts'], 'RmwStoreZero']; end
+def make_rmw_absolute(op); ['Nop', 'AddrAbsLo', 'AddrAbsHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw', 'PollInterrupts'], 'RmwStore']; end
+def make_rmw_absolute_x(op); ['Nop', 'AddrAbsLo', 'AddrAbsHiX', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw', 'PollInterrupts'], 'RmwStore']; end
+def make_rmw_absolute_y(op); ['Nop', 'AddrAbsLo', 'AddrAbsHiY', ['DummyLoad', 'CarryFix'], 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw', 'PollInterrupts'], 'RmwStore']; end
+def make_rmw_indirect_x(op); ['Nop', 'AddrZero', 'AddrZeroX', 'AddrIndirectLo', 'AddrIndirectHi', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw', 'PollInterrupts'], 'RmwStore']; end
+def make_rmw_indirect_y(op); ['Nop', 'AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry', 'RmwLoad', ['RmwStore', 'TmpLoadRmw', op, 'TmpStoreRmw', 'PollInterrupts'], 'RmwStore']; end
 
-def make_nop_impl(); ['Nop']; end
-def make_nop_imm(); [['AddrImplIncPC', 'Nop']]; end
-def make_nop_zero(); ['AddrImplIncPC', 'Nop']; end
-def make_nop_zero_x(); ['AddrImplIncPC', 'Nop', 'Nop']; end
-def make_nop_absolute(); ['AddrAbsLo', 'AddrAbsHi', 'ReadAddr']; end
-def make_nop_absolute_x(); ['AddrAbsLo', 'AddrAbsHiX', ['ReadAddrCarry', 'CarryFix'], 'ReadAddr']; end
+def make_nop_impl(); ['PollInterrupts', 'Nop']; end
+def make_nop_imm(); ['PollInterrupts', ['AddrImplIncPC', 'Nop']]; end
+def make_nop_zero(); ['Nop', ['AddrImplIncPC', 'PollInterrupts'], 'Nop']; end
+def make_nop_zero_x(); ['Nop', 'AddrImplIncPC', 'PollInterrupts', 'Nop']; end
+def make_nop_absolute(); ['Nop', 'AddrAbsLo', ['AddrAbsHi', 'PollInterrupts'], 'ReadAddr']; end
+def make_nop_absolute_x(); ['Nop', 'AddrAbsLo', ['AddrAbsHiX', 'PollInterrupts'], ['ReadAddrCarry', 'CarryFix', 'PollInterrupts'], 'ReadAddr']; end
 
 book = Rulebook.new
 
@@ -270,28 +270,28 @@ book.add_rule 0x101, make_irq()
 book.add_rule 0x102, make_nmi()
 
 # Stack
-book.add_rule 0x08, ['AddrImpl', ['PushP', 'DecS']]
-book.add_rule 0x28, ['AddrImpl', 'IncS', 'PullP']
-book.add_rule 0x48, ['AddrImpl', ['PushA', 'DecS']]
-book.add_rule 0x68, ['AddrImpl', 'IncS', 'PullA']
+book.add_rule 0x08, ['Nop', ['AddrImpl', 'PollInterrupts'], ['PushP', 'DecS']]
+book.add_rule 0x28, ['Nop', 'AddrImpl', ['IncS', 'PollInterrupts'], 'PullP']
+book.add_rule 0x48, ['Nop', ['AddrImpl', 'PollInterrupts'], ['PushA', 'DecS']]
+book.add_rule 0x68, ['Nop', 'AddrImpl', ['IncS', 'PollInterrupts'], 'PullA']
 
 # Jumps
-book.add_rule 0x20, ['AddrZero', 'Nop', ['PushPCH', 'DecS'], ['PushPCL', 'DecS'], 'SwitchPC']
-book.add_rule 0x40, ['AddrImpl', 'IncS', ['PullP', 'IncS'], ['PullPCL', 'IncS'], 'PullPCH']
-book.add_rule 0x60, ['AddrImpl', 'IncS', ['PullPCL', 'IncS'], 'PullPCH', ['AddrImpl', 'IncPC']]
+book.add_rule 0x20, ['Nop', 'AddrZero', 'Nop', ['PushPCH', 'DecS'], ['PushPCL', 'DecS', 'PollInterrupts'], 'SwitchPC']
+book.add_rule 0x40, ['Nop', 'AddrImpl', 'IncS', ['PullP', 'IncS'], ['PullPCL', 'IncS', 'PollInterrupts'], 'PullPCH']
+book.add_rule 0x60, ['Nop', 'AddrImpl', 'IncS', ['PullPCL', 'IncS'], ['PullPCH', 'PollInterrupts'], ['AddrImpl', 'IncPC']]
 
-book.add_rule 0x4c, ['AddrZero', 'SwitchPC']
-book.add_rule 0x6c, ['AddrAbsLo', 'AddrAbsHi', 'VectorPCL', 'VectorPCH_NoCarry']
+book.add_rule 0x4c, ['Nop', ['AddrZero', 'PollInterrupts'], 'SwitchPC']
+book.add_rule 0x6c, ['Nop', 'AddrAbsLo', 'AddrAbsHi', ['VectorPCL', 'PollInterrupts'], 'VectorPCH_NoCarry']
 
 # Flag instructions
-book.add_rule 0x18, ['FlagClearC']
-book.add_rule 0x58, ['FlagClearI']
-book.add_rule 0xb8, ['FlagClearV']
-book.add_rule 0xd8, ['FlagClearD']
+book.add_rule 0x18, ['PollInterrupts', 'FlagClearC']
+book.add_rule 0x58, ['PollInterrupts', 'FlagClearI']
+book.add_rule 0xb8, ['PollInterrupts', 'FlagClearV']
+book.add_rule 0xd8, ['PollInterrupts', 'FlagClearD']
 
-book.add_rule 0x38, ['FlagSetC']
-book.add_rule 0x78, ['FlagSetI']
-book.add_rule 0xf8, ['FlagSetD']
+book.add_rule 0x38, ['PollInterrupts', 'FlagSetC']
+book.add_rule 0x78, ['PollInterrupts', 'FlagSetI']
+book.add_rule 0xf8, ['PollInterrupts', 'FlagSetD']
 
 # Branches
 book.add_rule 0x10, make_branch('BranchClearN')
@@ -304,12 +304,12 @@ book.add_rule 0xd0, make_branch('BranchClearZ')
 book.add_rule 0xf0, make_branch('BranchSetZ')
 
 # Transfer
-book.add_rule 0xaa, [['AddrImpl', 'TransferAX']]
-book.add_rule 0xa8, [['AddrImpl', 'TransferAY']]
-book.add_rule 0xba, [['AddrImpl', 'TransferSX']]
-book.add_rule 0x8a, [['AddrImpl', 'TransferXA']]
-book.add_rule 0x9a, [['AddrImpl', 'TransferXS']]
-book.add_rule 0x98, [['AddrImpl', 'TransferYA']]
+book.add_rule 0xaa, ['PollInterrupts', ['AddrImpl', 'TransferAX']]
+book.add_rule 0xa8, ['PollInterrupts', ['AddrImpl', 'TransferAY']]
+book.add_rule 0xba, ['PollInterrupts', ['AddrImpl', 'TransferSX']]
+book.add_rule 0x8a, ['PollInterrupts', ['AddrImpl', 'TransferXA']]
+book.add_rule 0x9a, ['PollInterrupts', ['AddrImpl', 'TransferXS']]
+book.add_rule 0x98, ['PollInterrupts', ['AddrImpl', 'TransferYA']]
 
 # Store
 book.add_rule 0x85, make_store_zero('SelectSourceA')
@@ -329,7 +329,7 @@ book.add_rule 0x94, make_store_zero_x('SelectSourceY')
 book.add_rule 0x8c, make_store_absolute('SelectSourceY')
 
 # Load
-book.add_rule 0xa9, ['ImmLoadA']
+book.add_rule 0xa9, ['PollInterrupts', 'ImmLoadA']
 book.add_rule 0xa5, make_load_zero('SelectDestA')
 book.add_rule 0xb5, make_load_zero_x('SelectDestA')
 book.add_rule 0xad, make_load_absolute('SelectDestA')
@@ -338,19 +338,19 @@ book.add_rule 0xb9, make_load_absolute_y('SelectDestA')
 book.add_rule 0xa1, make_load_indirect_x('SelectDestA')
 book.add_rule 0xb1, make_load_indirect_y('SelectDestA')
 
-book.add_rule 0xa2, ['ImmLoadX']
+book.add_rule 0xa2, ['PollInterrupts', 'ImmLoadX']
 book.add_rule 0xa6, make_load_zero('SelectDestX')
 book.add_rule 0xb6, make_load_zero_y('SelectDestX')
 book.add_rule 0xae, make_load_absolute('SelectDestX')
 book.add_rule 0xbe, make_load_absolute_y('SelectDestX')
 
-book.add_rule 0xa0, ['ImmLoadY']
+book.add_rule 0xa0, ['PollInterrupts', 'ImmLoadY']
 book.add_rule 0xa4, make_load_zero('SelectDestY')
 book.add_rule 0xb4, make_load_zero_x('SelectDestY')
 book.add_rule 0xac, make_load_absolute('SelectDestY')
 book.add_rule 0xbc, make_load_absolute_x('SelectDestY')
 
-book.add_rule 0xbb, ['AddrAbsLo', 'AddrAbsHiY', 'ReadRegCarry_LAS', 'ReadReg_LAS'];
+book.add_rule 0xbb, ['Nop', 'AddrAbsLo', ['AddrAbsHiY', 'PollInterrupts'], ['ReadRegCarry_LAS', 'PollInterrupts'], 'ReadReg_LAS'];
 
 # Arith
 build_arith_block(book, 0x00, 'SelectDestA', 'OpORA')
@@ -383,10 +383,10 @@ book.add_rule 0x24, make_arith_zero(nil, 'OpBIT')
 book.add_rule 0x2c, make_arith_absolute(nil, 'OpBIT')
 
 # Misc
-book.add_rule 0xe8, ['INX']
-book.add_rule 0xc8, ['INY']
-book.add_rule 0xca, ['DEX']
-book.add_rule 0x88, ['DEY']
+book.add_rule 0xe8, ['PollInterrupts', 'INX']
+book.add_rule 0xc8, ['PollInterrupts', 'INY']
+book.add_rule 0xca, ['PollInterrupts', 'DEX']
+book.add_rule 0x88, ['PollInterrupts', 'DEY']
 
 # Official NOP
 book.add_rule 0xea, make_nop_impl()
@@ -446,11 +446,11 @@ build_extended_rmw_block book, 0xc0, 'OpDCP'
 build_extended_rmw_block book, 0xe0, 'OpISC'
 
 # Store HiAddr
-book.add_rule 0x9e, ['AddrAbsLo', 'AddrAbsHiY', 'AddrCarry_SHX', 'WriteReg_SHX'];
-book.add_rule 0x9c, ['AddrAbsLo', 'AddrAbsHiX', 'AddrCarry_SHY', 'WriteReg_SHY'];
-book.add_rule 0x9f, ['AddrAbsLo', 'AddrAbsHiX', 'AddrCarry_AHX', 'WriteReg_AHX'];
-book.add_rule 0x93, ['AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], 'AddrCarry_AHX', 'WriteReg_AHX'];
-book.add_rule 0x9b, ['AddrAbsLo', 'AddrAbsHiX', 'AddrCarry_AHX', 'WriteReg_TAS'];
+book.add_rule 0x9e, ['Nop', 'AddrAbsLo', 'AddrAbsHiY', ['AddrCarry_SHX', 'PollInterrupts'], 'WriteReg_SHX'];
+book.add_rule 0x9c, ['Nop', 'AddrAbsLo', 'AddrAbsHiX', ['AddrCarry_SHY', 'PollInterrupts'], 'WriteReg_SHY'];
+book.add_rule 0x9f, ['Nop', 'AddrAbsLo', 'AddrAbsHiX', ['AddrCarry_AHX', 'PollInterrupts'], 'WriteReg_AHX'];
+book.add_rule 0x93, ['Nop', 'AddrZero', 'AddrIndirectLo', ['AddrIndirectHi', 'AddrIndirectY'], ['AddrCarry_AHX', 'PollInterrupts'], 'WriteReg_AHX'];
+book.add_rule 0x9b, ['Nop', 'AddrAbsLo', 'AddrAbsHiX', ['AddrCarry_AHX', 'PollInterrupts'], 'WriteReg_TAS'];
 
 # SAX
 book.add_rule 0x87, make_store_ax_zero()

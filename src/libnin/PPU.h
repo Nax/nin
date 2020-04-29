@@ -53,6 +53,7 @@ public:
     void            oamWrite(std::uint8_t value);
 
     void            tick(std::size_t cycles);
+    void            processPixel();
 
 private:
     union Sprite
@@ -156,6 +157,7 @@ private:
     bool            _spriteZeroNext:1;
     bool            _spriteZeroHit:1;
     bool            _oddFrame:1;
+    bool            _dummySkip:1;
     bool            _nmiRace:1;
     bool            _nmiSup:1;
 
@@ -184,6 +186,9 @@ private:
     std::uint8_t    _scanline;
     std::uint8_t    _step;
     std::uint8_t    _oamAddr;
+
+    std::uint32_t   _pixelBuffer;
+    std::uint8_t    _pixelBufferBits;
 };
 
 }

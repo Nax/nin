@@ -275,16 +275,18 @@ void APU::tick(std::size_t cycles)
             frameHalf();
         }
 
-        if (_frameCounter >= maxApuCycle - 1)
+        if (_frameCounter >= _info.specs().apuFrameIrq)
         {
             if (!_mode && !_irqInhibit)
+            {
                 _irq.set(IRQ_APU_FRAME);
+            }
         }
 
         if (_frameCounter == maxApuCycle + 1)
             _frameCounter = 1;
         else
-            _frameCounter++;;
+            _frameCounter++;
 
         /* Load the triangle sample */
         triangleSample = sampleTriangle();
