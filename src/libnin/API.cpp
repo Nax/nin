@@ -150,10 +150,14 @@ NIN_API void ninLoadBiosFDS(NinState* state, const char* path)
 {
     std::FILE* f;
 
+    if (state->info.system() != NIN_SYSTEM_FDS)
+        return;
+
     f = std::fopen(path, "rb");
     if (!f)
         return;
     state->cart.load(CART_PRG_ROM, 1, f);
+    state->mapper.bankPrg8k(5, CART_PRG_ROM, 0);
     std::fclose(f);
 }
 

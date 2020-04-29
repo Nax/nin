@@ -26,61 +26,38 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBNIN_DISK_SYSTEM_H
-#define LIBNIN_DISK_SYSTEM_H 1
+#ifndef LIBNIN_DISK_H
+#define LIBNIN_DISK_H 1
 
-#include <cstdio>
 #include <cstdint>
+#include <cstdio>
 #include <libnin/NonCopyable.h>
 
 namespace libnin
 {
 
-class HardwareInfo;
-class IRQ;
-class DiskSystem : private NonCopyable
+class Disk : private NonCopyable
 {
 public:
-    DiskSystem(const HardwareInfo& info, IRQ& irq);
-    ~DiskSystem();
+    static constexpr const int Gap0 = 3538;
+    static constexpr const int Gap1 = 122;
+    static constexpr const int DiskSizeArchive = 65500;
+    static constexpr const int DiskSize = 0x14000;
 
-    std::uint8_t    regRead(std::uint16_t addr);
-    void            regWrite(std::uint16_t addr, std::uint8_t value);
+    Disk();
+    ~Disk();
 
-    void tick();
+    std::uint8_t read(int side, std::uint32_t addr) const { return _data[(side % _sideCount) * DiskSize + addr]; }
 
-    void loadDisk(FILE* f);
-    void changeSide(std::uint8_t side);
+    void load(std::FILE* file);
 
 private:
-    void loadDiskSide(FILE* f, std::uint8_t side);
-
-    const HardwareInfo& _info;
-    IRQ&                _irq;
+    void loadSide(std::FILE* f, int side);
 
     std::uint8_t*   _data;
-    std::uint8_t*   _dataCurrentDisk;
-
-    std::uint32_t   _headPos;
-    std::uint16_t   _delay;
-    std::uint16_t   _irqReloadValue;
-    std::uint16_t   _irqTimer;
-    std::uint8_t    _extPort;
-    std::uint8_t    _latchRead;
     std::uint8_t    _sideCount;
-
-    std::uint8_t    _motor:1;
-    std::uint8_t    _noScan:1;
-    std::uint8_t    _inData:1;
-    std::uint8_t    _irqEnabledTransfer:1;
-    std::uint8_t    _irqEnabledTimer:1;
-    std::uint8_t    _irqReloadFlag:1;
-    std::uint8_t    _transfered:1;
-    std::uint8_t    _scanning:1;
-    std::uint8_t    _skippedGap:1;
-    std::uint8_t    _endOfDisk:1;
 };
 
-};
+}
 
 #endif

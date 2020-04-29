@@ -31,6 +31,7 @@
 
 #include <cstdint>
 #include <nin/nin.h>
+#include <libnin/Mapper/DiskSystem.h>
 #include <libnin/Mapper/MMC1.h>
 #include <libnin/Mapper/MMC2.h>
 #include <libnin/Mapper/MMC3.h>
@@ -48,11 +49,12 @@ namespace libnin
 
 class Memory;
 class Cart;
+class Disk;
 class IRQ;
 class Mapper : private NonCopyable
 {
 public:
-    Mapper(Memory& memory, Cart& cart, IRQ& irq);
+    Mapper(Memory& memory, Cart& cart, Disk& disk, IRQ& irq);
 
     NinError configure(int mapper, int submapper);
 
@@ -110,6 +112,7 @@ private:
 
     Memory& _memory;
     Cart&   _cart;
+    Disk&   _disk;
     IRQ&    _irq;
 
     HandlerReset        _handleReset;
@@ -129,10 +132,11 @@ private:
 
     union
     {
-        MapperMMC1  _mmc1;
-        MapperMMC2  _mmc2;
-        MapperMMC3  _mmc3;
-        MapperMMC5  _mmc5;
+        MapperMMC1          _mmc1;
+        MapperMMC2          _mmc2;
+        MapperMMC3          _mmc3;
+        MapperMMC5          _mmc5;
+        MapperDiskSystem    _diskSystem;
     };
 };
 
