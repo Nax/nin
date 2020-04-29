@@ -34,7 +34,7 @@ void Disk::load(std::FILE* f)
 void Disk::loadSide(std::FILE* f, int side)
 {
     std::uint8_t* dst;
-    std::uint32_t head;
+    std::uint32_t offset;
     std::uint16_t fileSize;
     std::uint8_t fileCount;
 
@@ -42,34 +42,34 @@ void Disk::loadSide(std::FILE* f, int side)
     std::fseek(f, 16 + side * DiskSizeArchive, SEEK_SET);
 
     /* First, large gap */
-    head = Gap0;
-    dst[head - 1] = 0x80;
+    offset = Gap0;
+    dst[offset - 1] = 0x80;
 
     /* Load block 1 */
-    std::fread(dst + head, 0x38, 1, f);
-    head += 0x3a;
-    head += Gap1;
-    dst[head - 1] = 0x80;
+    std::fread(dst + offset, 0x38, 1, f);
+    offset += 0x3a;
+    offset += Gap1;
+    dst[offset - 1] = 0x80;
 
     /* Load block 2 */
-    std::fread(dst + head, 0x02, 1, f);
-    fileCount = dst[head + 1];
-    head += 0x04;
+    std::fread(dst + offset, 0x02, 1, f);
+    fileCount = dst[offset + 1];
+    offset += 0x04;
 
     for (int i = 0; i < fileCount; ++i)
     {
-        head += Gap1;
-        dst[head - 1] = 0x80;
+        offset += Gap1;
+        dst[offset - 1] = 0x80;
 
         /* Block 3 */
-        std::fread(dst + head, 0x10, 1, f);
-        fileSize = *(std::uint16_t*)(dst + head + 13);
-        head += 0x12;
-        head += Gap1;
-        dst[head - 1] = 0x80;
+        std::fread(dst + offset, 0x10, 1, f);
+        fileSize = *(std::uint16_t*)(dst + offset + 13);
+        offset += 0x12;
+        offset += Gap1;
+        dst[offset - 1] = 0x80;
 
         /* Block 4 */
-        std::fread(dst + head, (std::size_t)fileSize + 1, 1, f);
-        head += (fileSize + 3);
+        std::fread(dst + offset, (std::size_t)fileSize + 1, 1, f);
+        offset += (fileSize + 3);
     }
 }

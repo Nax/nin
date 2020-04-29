@@ -34,10 +34,8 @@
 
 #define IRQ_APU_FRAME       0x01
 #define IRQ_APU_DMC         0x02
-#define IRQ_FDS_TRANSFER    0x04
-#define IRQ_FDS_TIMER       0x08
-#define IRQ_MAPPER1         0x10
-#define IRQ_MAPPER2         0x20
+#define IRQ_MAPPER1         0x04
+#define IRQ_MAPPER2         0x08
 
 namespace libnin
 {

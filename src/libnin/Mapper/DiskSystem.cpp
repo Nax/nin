@@ -51,18 +51,18 @@ std::uint8_t Mapper::handleRead<MapperID::FDS>(std::uint16_t addr)
     {
     case 0x4030: // Disk Status
         value = 0x80;
-        if (_irq.check(IRQ_FDS_TIMER)) value |= 0x01;
+        if (_irq.check(IRQ_MAPPER1)) value |= 0x01;
         if (_diskSystem.transfered)
             value |= 0x02;
         _diskSystem.transfered = 0;
         if (_diskSystem.endOfDisk)
             value |= 0x40;
-        _irq.unset(IRQ_FDS_TRANSFER | IRQ_FDS_TIMER);
+        _irq.unset(IRQ_MAPPER1 | IRQ_MAPPER2);
         break;
     case 0x4031: // Disk Read
         value = _diskSystem.latchRead;
         _diskSystem.transfered = 0;
-        _irq.unset(IRQ_FDS_TRANSFER);
+        _irq.unset(IRQ_MAPPER2);
         break;
     case 0x4032: // Disk Drive Status
         value = 0x40;
@@ -94,14 +94,14 @@ void Mapper::handleWrite<MapperID::FDS>(std::uint16_t addr, std::uint8_t value)
         _diskSystem.irqEnabledTimer = !!(value & 0x02);
         _diskSystem.irqTimer = _diskSystem.irqReloadValue;
         if (!_diskSystem.irqEnabledTimer)
-            _irq.unset(IRQ_FDS_TIMER);
+            _irq.unset(IRQ_MAPPER1);
         break;
     case 0x4023:
         if (!(value & 0x01))
-            _irq.unset(IRQ_FDS_TIMER);
+            _irq.unset(IRQ_MAPPER1);
         break;
     case 0x4024: // Disk write
-        _irq.unset(IRQ_FDS_TRANSFER);
+        _irq.unset(IRQ_MAPPER2);
         _diskSystem.transfered = 0;
         break;
     case 0x4025: // FDS Control
@@ -129,7 +129,7 @@ void Mapper::handleTick<MapperID::FDS>()
             _diskSystem.irqTimer--;
         else
         {
-            _irq.set(IRQ_FDS_TIMER);
+            _irq.set(IRQ_MAPPER1);
             if (_diskSystem.irqReloadFlag)
                 _diskSystem.irqTimer = _diskSystem.irqReloadValue;
             else
@@ -180,7 +180,7 @@ void Mapper::handleTick<MapperID::FDS>()
         _diskSystem.latchRead = tmp;
         if (_diskSystem.irqEnabledTransfer)
         {
-            _irq.set(IRQ_FDS_TRANSFER);
+            _irq.set(IRQ_MAPPER2);
         }
     }
 
