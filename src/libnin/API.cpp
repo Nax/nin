@@ -58,6 +58,9 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
     case NIN_INFO_FRAME_DELAY:
         *dst = state->info.specs().frameDelay;
         break;
+    case NIN_INFO_DISK_SIDE_COUNT:
+        *dst = state->disk.sideCount();
+        break;
     case NIN_INFO_PC:
         *dst = state->cpu.pc();
         break;
@@ -183,4 +186,9 @@ NIN_API void ninDumpNametable(NinState* state, uint8_t* dst, int nametable)
 
     base = (nametable & 0x01) ? 0x400 : 0x000;
     std::memcpy(dst, state->memory.vram + base, 0x400);
+}
+
+NIN_API void ninInsertDisk(NinState* state, int diskSide)
+{
+    state->disk.setSide(diskSide);
 }

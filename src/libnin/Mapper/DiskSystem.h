@@ -14,11 +14,13 @@ struct MapperDiskSystem
     std::uint16_t   irqTimer;
     std::uint8_t    extPort;
     std::uint8_t    latchRead;
+    std::uint8_t    latchWrite;
     std::uint8_t    sideCount;
 
     bool    motor:1;
     bool    noScan:1;
     bool    inData:1;
+    bool    write:1;
     bool    irqEnabledTransfer:1;
     bool    irqEnabledTimer:1;
     bool    irqReloadFlag:1;

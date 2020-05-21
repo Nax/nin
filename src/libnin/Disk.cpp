@@ -4,7 +4,11 @@ using namespace libnin;
 
 Disk::Disk()
 : _data{}
+, _dataSide{}
 , _sideCount{}
+, _side{}
+, _insertClock{}
+, _inserted{}
 {
 
 }
@@ -12,6 +16,24 @@ Disk::Disk()
 Disk::~Disk()
 {
     delete[] _data;
+}
+
+void Disk::tick()
+{
+    if (_insertClock)
+        _insertClock--;
+}
+
+void Disk::setSide(int diskSide)
+{
+    if (diskSide < 0 || diskSide >= _sideCount)
+    {
+        _inserted = false;
+        return;
+    }
+    _side = std::uint8_t(diskSide);
+    _dataSide = _data + std::uintptr_t(DiskSize) * _side;
+    _insertClock = 0x4000;
 }
 
 void Disk::load(std::FILE* f)
@@ -29,6 +51,9 @@ void Disk::load(std::FILE* f)
     {
         loadSide(f, i);
     }
+
+    _dataSide = _data;
+    _inserted = true;
 }
 
 void Disk::loadSide(std::FILE* f, int side)

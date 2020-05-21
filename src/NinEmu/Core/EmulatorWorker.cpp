@@ -32,6 +32,7 @@
 
 EmulatorWorker::EmulatorWorker(QObject* parent)
 : QObject(parent)
+, _info{}
 , _workerState(WorkerState::Idle)
 , _input(0)
 , _audioFrequency(48000)
@@ -61,6 +62,7 @@ bool EmulatorWorker::loadRom(const QString& path)
     NinInt32 frameCycles;
     NinInt32 frameDelay;
     NinInt32 system;
+    NinInt32 diskSideCount;
     bool success;
 
     std::unique_lock<std::mutex> lock(_mutex);
@@ -80,6 +82,7 @@ bool EmulatorWorker::loadRom(const QString& path)
         ninInfoQueryInteger(_state, &frameCycles, NIN_INFO_FRAME_CYCLES);
         ninInfoQueryInteger(_state, &frameDelay, NIN_INFO_FRAME_DELAY);
         ninInfoQueryInteger(_state, &system, NIN_INFO_SYSTEM);
+        ninInfoQueryInteger(_state, &diskSideCount, NIN_INFO_DISK_SIDE_COUNT);
 
         if (system == NIN_SYSTEM_FDS) {
             biosPath = QCoreApplication::applicationDirPath() + "/bios/disksys.rom";
@@ -89,6 +92,7 @@ bool EmulatorWorker::loadRom(const QString& path)
 
         _frameCycles = frameCycles;
         _frameDelay = frameDelay;
+        _info.diskSideCount = diskSideCount;
         _cyc = 0;
         _accumulator = 0;
 
@@ -98,7 +102,7 @@ bool EmulatorWorker::loadRom(const QString& path)
         ninAudioSetFrequency(_state, _audioFrequency);
         _workerState = WorkerState::Starting;
         success = true;
-        emit reset();
+        emit reset(_info);
     }
 
     lock.unlock();
@@ -165,6 +169,13 @@ void EmulatorWorker::stepSingle()
         lock.unlock();
         _cv.notify_one();
     }
+}
+
+void EmulatorWorker::insertDisk(int diskSide)
+{
+    std::unique_lock<std::mutex> lock(_mutex);
+
+    ninInsertDisk(_state, diskSide);
 }
 
 void EmulatorWorker::inputKeyPress(uint8_t key)

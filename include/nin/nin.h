@@ -98,11 +98,12 @@ typedef enum {
     NIN_INFO_CLOCK_RATE,
     NIN_INFO_FRAME_CYCLES,
     NIN_INFO_FRAME_DELAY,
+    NIN_INFO_DISK_SIDE_COUNT,
     NIN_INFO_PC,
     NIN_INFO_REG_A,
     NIN_INFO_REG_X,
     NIN_INFO_REG_Y,
-    NIN_INFO_REG_S
+    NIN_INFO_REG_S,
 } NinInfo;
 
 typedef int32_t NinInt32;
@@ -125,5 +126,7 @@ NIN_API int             ninStepInstruction(NinState* state);
 /* Dump */
 NIN_API void            ninDumpMemory(NinState* state, uint8_t* dst, uint16_t start, size_t len);
 NIN_API void            ninDumpNametable(NinState* state, uint8_t* dst, int nametable);
+
+NIN_API void            ninInsertDisk(NinState* state, int diskSide);
 
 #endif

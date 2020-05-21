@@ -37,6 +37,7 @@
 #include <QObject>
 #include <QString>
 #include <nin/nin.h>
+#include <NinEmu/Core/EmulatorInfo.h>
 
 class EmulatorWorker : public QObject
 {
@@ -54,6 +55,8 @@ public:
     void stepFrame();
     void stepSingle();
 
+    void insertDisk(int disk);
+
     void inputKeyPress(uint8_t key);
     void inputKeyRelease(uint8_t key);
 
@@ -66,7 +69,7 @@ signals:
     void audio(const float* samples);
     void audioEvent(void);
     void update(NinState* state);
-    void reset();
+    void reset(const EmulatorInfo& info);
 
 private:
     void workerMain();
@@ -93,6 +96,8 @@ private:
     using Clock = std::chrono::high_resolution_clock;
     using Duration = std::chrono::nanoseconds;
     using TimePoint = std::chrono::time_point<Clock, Duration>;
+
+    EmulatorInfo                _info;
 
     std::thread                 _thread;
     std::mutex                  _mutex;

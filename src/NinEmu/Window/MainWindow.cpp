@@ -31,7 +31,9 @@
 
 #include <NinEmu/Core/Audio.h>
 #include <NinEmu/Core/EmulatorWorker.h>
+#include <NinEmu/Core/EmulatorInfo.h>
 #include <NinEmu/Core/Settings.h>
+#include <NinEmu/Menu/DiskMenu.h>
 #include <NinEmu/Menu/GraphicsMenu.h>
 #include <NinEmu/UI/RenderWidget.h>
 #include <NinEmu/Window/AudioVisualizerWindow.h>
@@ -70,9 +72,11 @@ MainWindow::MainWindow(QWidget* parent)
     dy = size().height() - _render->size().height();
     resize(256 * scale + dx, 240 * scale + dy);
 
+    connect(_emu, &EmulatorWorker::reset, this, &MainWindow::emulationReset, Qt::DirectConnection);
     connect(_emu, &EmulatorWorker::reset, _audio, &Audio::reset, Qt::DirectConnection);
     connect(_emu, &EmulatorWorker::audio, _audio, &Audio::pushSamples, Qt::DirectConnection);
     connect(_emu, &EmulatorWorker::frame, _render, &RenderWidget::updateTexture, Qt::DirectConnection);
+    connect(_diskMenu, &DiskMenu::insertDisk, _emu, &EmulatorWorker::insertDisk);
 
     setupGamepad();
 }
@@ -152,6 +156,11 @@ void MainWindow::closeEvent(QCloseEvent* event)
     if (!_windowDebugger.isNull())
         _windowDebugger->close();
     QMainWindow::closeEvent(event);
+}
+
+void MainWindow::emulationReset(const EmulatorInfo& info)
+{
+    _diskMenu->setDiskSideCount(info.diskSideCount);
 }
 
 void MainWindow::openFile()
@@ -282,6 +291,9 @@ void MainWindow::createMenus()
         _fileMenu->addAction(_actionOpenRecentFile[i]);
     _fileMenu->addSeparator();
     _fileMenu->addAction(_actionExit);
+
+    _diskMenu = new DiskMenu(this);
+    menuBar()->addMenu(_diskMenu);
 
     _emulationMenu = menuBar()->addMenu(tr("&Emulation"));
     _emulationMenu->addAction(_pauseEmulation);

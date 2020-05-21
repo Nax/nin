@@ -47,7 +47,10 @@ class AudioVisualizerWindow;
 class DebuggerWindow;
 class Settings;
 
+class DiskMenu;
 class GraphicsMenu;
+
+struct EmulatorInfo;
 
 class MainWindow : public QMainWindow
 {
@@ -61,6 +64,8 @@ public:
     virtual void closeEvent(QCloseEvent* event) override;
 
 private slots:
+    void emulationReset(const EmulatorInfo& info);
+
     void openFile();
     void openRecentFile();
 
@@ -72,6 +77,7 @@ private slots:
 private:
     void createActions();
     void createMenus();
+
     void updateRecentFiles();
     void addToRecentFiles(const QString& filename);
     void setupGamepad();
@@ -113,6 +119,7 @@ private:
     QMenu*          _fileMenu;
     QMenu*          _emulationMenu;
     QMenu*          _windowMenu;
+    DiskMenu*       _diskMenu;
     GraphicsMenu*   _graphicsMenu;
 };
 

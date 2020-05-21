@@ -7,7 +7,7 @@ GraphicsMenu::GraphicsMenu(QWidget* parent)
     setTitle(tr("Graphics"));
 
     QAction* actionFullscreen;
-    actionFullscreen = new QAction(tr("Fullscreen"));
+    actionFullscreen = new QAction(tr("Fullscreen"), this);
     actionFullscreen->setCheckable(true);
     actionFullscreen->setShortcut(Qt::ALT + Qt::Key_Return);
     connect(actionFullscreen, &QAction::triggered, this, &GraphicsMenu::fullscreen);
@@ -16,13 +16,13 @@ GraphicsMenu::GraphicsMenu(QWidget* parent)
     addSeparator();
 
     QAction* actionFit;
-    actionFit = new QAction(tr("Fit to window"));
+    actionFit = new QAction(tr("Fit to window"), this);
     actionFit->setCheckable(true);
     connect(actionFit, &QAction::triggered, this, &GraphicsMenu::fit);
     addAction(actionFit);
 
     QAction* actionIntegerScale;
-    actionIntegerScale = new QAction(tr("Integer scaling"));
+    actionIntegerScale = new QAction(tr("Integer scaling"), this);
     actionIntegerScale->setCheckable(true);
     connect(actionIntegerScale, &QAction::triggered, this, &GraphicsMenu::integerScale);
     addAction(actionIntegerScale);

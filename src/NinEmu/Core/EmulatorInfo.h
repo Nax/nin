@@ -26,49 +26,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef LIBNIN_DISK_H
-#define LIBNIN_DISK_H 1
+#ifndef EMULATOR_INFO_H
+#define EMULATOR_INFO_H
 
-#include <cstdint>
-#include <cstdio>
-#include <libnin/NonCopyable.h>
-
-namespace libnin
+struct EmulatorInfo
 {
-
-class Disk : private NonCopyable
-{
-public:
-    static constexpr const int Gap0 = 3538;
-    static constexpr const int Gap1 = 122;
-    static constexpr const int DiskSizeArchive = 65500;
-    static constexpr const int DiskSize = 0x14000;
-
-    Disk();
-    ~Disk();
-
-    std::uint8_t sideCount() const { return _sideCount; }
-    bool inserted() const { return _inserted && !(_insertClock); }
-
-    std::uint8_t    read(std::uint32_t addr) const { return inserted() ? _dataSide[addr] : 0x00; }
-    void            write(std::uint32_t addr, std::uint8_t value) { if (inserted()) { _dataSide[addr] = value; } }
-
-    void tick();
-    void setSide(int diskSide);
-
-    void load(std::FILE* file);
-
-private:
-    void loadSide(std::FILE* f, int side);
-
-    std::uint8_t*   _data;
-    std::uint8_t*   _dataSide;
-    std::uint8_t    _sideCount;
-    std::uint8_t    _side;
-    std::uint16_t   _insertClock;
-    bool            _inserted;
+    int diskSideCount;
 };
-
-}
 
 #endif
