@@ -88,8 +88,8 @@ int main(void)
     suite.add("Blargg Sprite Hit Tests - 07 Screen Bottom", "blargg_sprite_hit_tests/07-screen_bottom.nes",    SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x355c0002); });
     suite.add("Blargg Sprite Hit Tests - 08 Double Height", "blargg_sprite_hit_tests/08-double_height.nes",    SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x2195fb97); });
     suite.add("Blargg Sprite Hit Tests - 09 Timing Basics", "blargg_sprite_hit_tests/09-timing_basics.nes",    SEC_NTSC(1.50f), [](NinState* state) { return matchHash(state, 0xfce52375); });
-    suite.add("Blargg Sprite Hit Tests - 10 Timing Order",  "blargg_sprite_hit_tests/10-timing_order.nes",     SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x24ff7b4e); });
-    suite.add("Blargg Sprite Hit Tests - 11 Edge Timing",   "blargg_sprite_hit_tests/11-edge_timing.nes",      SEC_NTSC(1.00f), [](NinState* state) { return matchHash(state, 0x7f6aa2ed); });
+    suite.add("Blargg Sprite Hit Tests - 10 Timing Order",  "blargg_sprite_hit_tests/10-timing_order.nes",     SEC_NTSC(1.50f), [](NinState* state) { return matchHash(state, 0x24ff7b4e); });
+    suite.add("Blargg Sprite Hit Tests - 11 Edge Timing",   "blargg_sprite_hit_tests/11-edge_timing.nes",      SEC_NTSC(1.50f), [](NinState* state) { return matchHash(state, 0x7f6aa2ed); });
 
     return suite.run();
 }
