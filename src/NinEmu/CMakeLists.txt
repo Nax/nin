@@ -63,8 +63,9 @@ elseif(WIN32)
     get_target_property(OPENAL_DLL OpenAL::AL IMPORTED_LOCATION)
     add_custom_command(
         TARGET nin POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENAL_DLL}" "${CMAKE_BINARY_DIR}/bin"
-        COMMENT "Copy OpenAL DLL"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different "${OPENAL_DLL}" "$<TARGET_FILE_DIR:nin>"
+        COMMAND "${QT_DEPLOY}" "$<TARGET_FILE:nin>" "--no-compiler-runtime" "--no-opengl-sw" "--no-system-d3d-compiler"
+        COMMENT "Copying DLLs"
         VERBATIM
     )
 endif ()
