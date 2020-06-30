@@ -39,36 +39,42 @@ namespace libnin
 class Disk : private NonCopyable
 {
 public:
-    static constexpr const int Gap0 = 3538;
-    static constexpr const int Gap1 = 122;
+    static constexpr const int Gap0            = 3538;
+    static constexpr const int Gap1            = 122;
     static constexpr const int DiskSizeArchive = 65500;
-    static constexpr const int DiskSize = 0x14000;
+    static constexpr const int DiskSize        = 0x14000;
 
     Disk();
     ~Disk();
 
     std::uint8_t sideCount() const { return _sideCount; }
-    bool inserted() const { return _inserted && !(_insertClock); }
+    bool         inserted() const { return _inserted && !(_insertClock); }
 
-    std::uint8_t    read(std::uint32_t addr) const { return inserted() ? _dataSide[addr] : 0x00; }
-    void            write(std::uint32_t addr, std::uint8_t value) { if (inserted()) { _dataSide[addr] = value; } }
+    std::uint8_t read(std::uint32_t addr) const { return inserted() ? _dataSide[addr] : 0x00; }
+    void         write(std::uint32_t addr, std::uint8_t value)
+    {
+        if (inserted())
+        {
+            _dataSide[addr] = value;
+        }
+    }
 
     void tick();
     void setSide(int diskSide);
 
-    void load(std::FILE* file);
+    void load(std::FILE* file, int offset, std::uint8_t sideCount);
 
 private:
-    void loadSide(std::FILE* f, int side);
+    void loadSide(std::FILE* f, int offset, int side);
 
-    std::uint8_t*   _data;
-    std::uint8_t*   _dataSide;
-    std::uint8_t    _sideCount;
-    std::uint8_t    _side;
-    std::uint16_t   _insertClock;
-    bool            _inserted;
+    std::uint8_t* _data;
+    std::uint8_t* _dataSide;
+    std::uint8_t  _sideCount;
+    std::uint8_t  _side;
+    std::uint32_t _insertClock;
+    bool          _inserted;
 };
 
-}
+} // namespace libnin
 
 #endif

@@ -10,7 +10,6 @@ Disk::Disk()
 , _insertClock{}
 , _inserted{}
 {
-
 }
 
 Disk::~Disk()
@@ -31,43 +30,38 @@ void Disk::setSide(int diskSide)
         _inserted = false;
         return;
     }
-    _side = std::uint8_t(diskSide);
-    _dataSide = _data + std::uintptr_t(DiskSize) * _side;
-    _insertClock = 0x4000;
+    _side        = std::uint8_t(diskSide);
+    _dataSide    = _data + std::uintptr_t(DiskSize) * _side;
+    _insertClock = 1000000;
 }
 
-void Disk::load(std::FILE* f)
+void Disk::load(std::FILE* f, int offset, std::uint8_t sideCount)
 {
-    std::uint8_t header[16];
-
-    std::fseek(f, 0, SEEK_SET);
-    std::fread(header, 16, 1, f);
-
-    _sideCount = header[4];
+    _sideCount = sideCount;
     delete[] _data;
     _data = new std::uint8_t[(std::size_t)DiskSize * _sideCount]();
 
     for (std::uint8_t i = 0; i < _sideCount; ++i)
     {
-        loadSide(f, i);
+        loadSide(f, offset, i);
     }
 
     _dataSide = _data;
     _inserted = true;
 }
 
-void Disk::loadSide(std::FILE* f, int side)
+void Disk::loadSide(std::FILE* f, int fileOffset, int side)
 {
     std::uint8_t* dst;
     std::uint32_t offset;
     std::uint16_t fileSize;
-    std::uint8_t fileCount;
+    std::uint8_t  fileCount;
 
     dst = _data + (std::size_t)DiskSize * side;
-    std::fseek(f, 16 + side * DiskSizeArchive, SEEK_SET);
+    std::fseek(f, fileOffset + side * DiskSizeArchive, SEEK_SET);
 
     /* First, large gap */
-    offset = Gap0;
+    offset          = Gap0;
     dst[offset - 1] = 0x80;
 
     /* Load block 1 */

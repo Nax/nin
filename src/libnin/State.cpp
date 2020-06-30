@@ -1,24 +1,24 @@
 #include <cstdio>
 #include <cstring>
-#include <libnin/Util.h>
-#include <libnin/State.h>
 #include <libnin/RomHeader.h>
+#include <libnin/State.h>
+#include <libnin/Util.h>
 
 using namespace libnin;
 
-static const char kHeaderMagicNES[] = { 'N', 'E', 'S', '\x1a' };
-static const char kHeaderMagicFDS[] = { 'F', 'D', 'S', '\x1a' };
+static const char kHeaderMagicNES[] = {'N', 'E', 'S', '\x1a'};
+static const char kHeaderMagicFDS[] = {'F', 'D', 'S', '\x1a'};
 
 static NinError loadRomNES(State& state, const RomHeader& header, std::FILE* f)
 {
-    NinError err;
-    bool nes2{};
+    NinError      err;
+    bool          nes2{};
     std::uint16_t prgRomBankCount;
     std::uint16_t prgRamBankCount;
     std::uint16_t chrRomBankCount;
     std::uint16_t chrRamBankCount;
-    int mapper{};
-    int submapper{};
+    int           mapper{};
+    int           submapper{};
 
     /* Check for the nes2 signature */
     if (header.magicNes2 == 0x2)
@@ -83,15 +83,24 @@ static NinError loadRomNES(State& state, const RomHeader& header, std::FILE* f)
     return NIN_OK;
 }
 
-static NinError loadRomFDS(State& state, const RomHeader& header, std::FILE* f)
+static NinError loadRomFDS(State& state, const std::uint8_t* header, std::FILE* f)
 {
-    UNUSED(header);
+    int sideCount;
 
     state.info.setSystem(NIN_SYSTEM_FDS);
     state.info.setRegion(NIN_REGION_NTSC);
 
     /* Load the disk */
-    state.disk.load(f);
+    if (header)
+    {
+        sideCount = header[4];
+    }
+    else
+    {
+        std::fseek(f, 0, SEEK_END);
+        sideCount = std::ftell(f) / Disk::DiskSizeArchive;
+    }
+    state.disk.load(f, header ? 16 : 0, sideCount);
 
     /* We won't need the ROM from now on */
     std::fclose(f);
@@ -111,8 +120,9 @@ static NinError loadRomFDS(State& state, const RomHeader& header, std::FILE* f)
 
 static NinError loadRom(State& state, const char* path)
 {
-    std::FILE* f;
-    RomHeader header{};
+    std::FILE*   f;
+    std::uint8_t headerRaw[16];
+    RomHeader    header{};
 
     /* Open the ROM */
     f = fopen(path, "rb");
@@ -120,7 +130,8 @@ static NinError loadRom(State& state, const char* path)
         return NIN_ERROR_IO;
 
     /* Read the header */
-    std::fread(&header, sizeof(header), 1, f);
+    std::fread(headerRaw, 16, 1, f);
+    std::memcpy(&header, headerRaw, sizeof(header));
 
     /* Check for the NES signature */
     if (std::memcmp(header.magic, kHeaderMagicNES, 4) == 0)
@@ -128,7 +139,9 @@ static NinError loadRom(State& state, const char* path)
 
     /* Check for the iNES signature */
     if (std::memcmp(header.magic, kHeaderMagicFDS, 4) == 0)
-        return loadRomFDS(state, header, f);
+        return loadRomFDS(state, headerRaw, f);
+    if (std::memcmp(headerRaw, "\x01*NINTENDO-HVC*\x01", 16) == 0)
+        return loadRomFDS(state, nullptr, f);
 
     std::fclose(f);
     return NIN_ERROR_BAD_FILE;
@@ -152,7 +165,6 @@ State::State()
 , busMain{memory, cart, mapper, ppu, apu, input}
 , cpu{memory, irq, nmi, ppu, apu, busMain}
 {
-
 }
 
 State* State::create(NinError& err, const char* path)
@@ -167,4 +179,3 @@ State* State::create(NinError& err, const char* path)
     }
     return s;
 }
-
