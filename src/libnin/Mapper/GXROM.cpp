@@ -30,7 +30,8 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 template <>
 void Mapper::handleWrite<MapperID::GxROM>(std::uint16_t addr, std::uint8_t value)
@@ -46,4 +47,6 @@ template <>
 void Mapper::init<MapperID::GxROM>()
 {
     _handleWrite = &Mapper::handleWrite<MapperID::GxROM>;
+}
+
 }

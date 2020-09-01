@@ -30,7 +30,8 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 static void apply(Mapper& mapper, MapperMMC2& mmc2)
 {
@@ -108,7 +109,9 @@ void Mapper::handleVideoRead<MapperID::MMC2>(std::uint16_t addr)
 template <>
 void Mapper::init<MapperID::MMC2>()
 {
-    _handleReset = &Mapper::handleReset<MapperID::MMC2>;
-    _handleWrite = &Mapper::handleWrite<MapperID::MMC2>;
+    _handleReset     = &Mapper::handleReset<MapperID::MMC2>;
+    _handleWrite     = &Mapper::handleWrite<MapperID::MMC2>;
     _handleVideoRead = &Mapper::handleVideoRead<MapperID::MMC2>;
+}
+
 }

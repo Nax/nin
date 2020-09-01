@@ -27,11 +27,12 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
 #include <libnin/IRQ.h>
+#include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 static void apply(Mapper& mapper, MapperMMC3& mmc3)
 {
@@ -90,7 +91,7 @@ void Mapper::handleWrite<MapperID::MMC3>(std::uint16_t addr, std::uint8_t value)
     switch (addr & 0xe001)
     {
     case 0x8000: // Bank select
-        _mmc3.bankSelect = value & 0x7;
+        _mmc3.bankSelect     = value & 0x7;
         _mmc3.bankModePrgRom = (value >> 6) & 0x01;
         _mmc3.bankModeChrRom = (value >> 7) & 0x01;
         apply(*this, _mmc3);
@@ -138,7 +139,7 @@ void Mapper::handleVideoRead<MapperID::MMC3>(std::uint16_t addr)
             if (_mmc3.irqScanlineCounter == 0 || _mmc3.irqScanlineReload)
             {
                 _mmc3.irqScanlineCounter = _mmc3.irqScanlineReloadValue;
-                _mmc3.irqScanlineReload = 0;
+                _mmc3.irqScanlineReload  = 0;
             }
             else
                 _mmc3.irqScanlineCounter--;
@@ -153,7 +154,9 @@ void Mapper::handleVideoRead<MapperID::MMC3>(std::uint16_t addr)
 template <>
 void Mapper::init<MapperID::MMC3>()
 {
-    _handleReset = &Mapper::handleReset<MapperID::MMC3>;
-    _handleWrite = &Mapper::handleWrite<MapperID::MMC3>;
+    _handleReset     = &Mapper::handleReset<MapperID::MMC3>;
+    _handleWrite     = &Mapper::handleWrite<MapperID::MMC3>;
     _handleVideoRead = &Mapper::handleVideoRead<MapperID::MMC3>;
+}
+
 }

@@ -30,7 +30,8 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 template <>
 void Mapper::handleReset<MapperID::Action52>()
@@ -83,4 +84,6 @@ void Mapper::init<MapperID::Action52>()
 {
     _handleReset = &Mapper::handleReset<MapperID::Action52>;
     _handleWrite = &Mapper::handleWrite<MapperID::Action52>;
+}
+
 }

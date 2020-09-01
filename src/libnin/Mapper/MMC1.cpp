@@ -30,7 +30,8 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 static void mapperBankPrg(Mapper& mapper, MapperMMC1& mmc1)
 {
@@ -96,7 +97,7 @@ static void mapperRegWrite(Mapper& mapper, MapperMMC1& mmc1, std::uint16_t addr,
     {
     case 0x8000:
         /* 0x8000 - 0x9fff */
-        mmc1.mirroring = value & 0x03;
+        mmc1.mirroring   = value & 0x03;
         mmc1.prgBankMode = (value >> 2) & 0x03;
         mmc1.chrBankMode = (value >> 4) & 0x01;
 
@@ -139,8 +140,8 @@ void Mapper::handleWrite<MapperID::MMC1>(std::uint16_t addr, std::uint8_t value)
     if (value & 0x80)
     {
         /* Reset the internal registers */
-        _mmc1.count = 0;
-        _mmc1.shift = 0;
+        _mmc1.count       = 0;
+        _mmc1.shift       = 0;
         _mmc1.prgBankMode = 3;
         mapperBankPrg(*this, _mmc1);
         return;
@@ -165,4 +166,6 @@ void Mapper::init<MapperID::MMC1>()
 {
     _handleReset = &Mapper::handleReset<MapperID::MMC1>;
     _handleWrite = &Mapper::handleWrite<MapperID::MMC1>;
+}
+
 }

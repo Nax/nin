@@ -30,7 +30,8 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 template <>
 void Mapper::handleWrite<MapperID::MMC4>(std::uint16_t addr, std::uint8_t value)
@@ -51,4 +52,6 @@ void Mapper::init<MapperID::MMC4>()
 {
     init<MapperID::MMC2>();
     _handleWrite = &Mapper::handleWrite<MapperID::MMC4>;
+}
+
 }

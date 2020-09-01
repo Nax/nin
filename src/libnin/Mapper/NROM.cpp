@@ -30,10 +30,13 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 template <>
 void Mapper::init<MapperID::NROM>()
 {
     _handleWrite = &Mapper::handleWrite<MapperID::AxROM>;
+}
+
 }

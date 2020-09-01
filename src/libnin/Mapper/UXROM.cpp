@@ -30,7 +30,8 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 template <bool conflicts, int bank, int shift>
 static void applyUxROM(Mapper& mapper, std::uint16_t addr, std::uint8_t value)
@@ -45,11 +46,13 @@ static void applyUxROM(Mapper& mapper, std::uint16_t addr, std::uint8_t value)
     }
 }
 
-#define X(mapper, conflicts, bank, shift)   \
-template <> void Mapper::handleWrite<MapperID::mapper>(std::uint16_t addr, std::uint8_t value) { applyUxROM<conflicts, bank, shift>(*this, addr, value); }  \
-template <> void Mapper::init<MapperID::mapper>() { _handleWrite = &Mapper::handleWrite<MapperID::mapper>; }
+#define X(mapper, conflicts, bank, shift)                                                                                                                      \
+    template <> void Mapper::handleWrite<MapperID::mapper>(std::uint16_t addr, std::uint8_t value) { applyUxROM<conflicts, bank, shift>(*this, addr, value); } \
+    template <> void Mapper::init<MapperID::mapper>() { _handleWrite = &Mapper::handleWrite<MapperID::mapper>; }
 
-X(UxROM,                true,   2, 0);
-X(UxROM_NoConflicts,    false,  2, 0);
-X(UxROM_UN1ROM,         true,   2, 2);
-X(UxROM_UNROM180,       true,   4, 0);
+X(UxROM, true, 2, 0);
+X(UxROM_NoConflicts, false, 2, 0);
+X(UxROM_UN1ROM, true, 2, 2);
+X(UxROM_UNROM180, true, 4, 0);
+
+}

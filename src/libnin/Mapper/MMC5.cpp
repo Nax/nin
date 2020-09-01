@@ -32,7 +32,8 @@
 #include <libnin/Memory.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 static void applyPrg(Mapper& mapper, MapperMMC5& mmc5)
 {
@@ -146,13 +147,12 @@ static void applyChr(Mapper& mapper, MapperMMC5& mmc5)
     }
 }
 
-
 template <>
 void Mapper::handleReset<MapperID::MMC5>()
 {
-    _mmc5 = MapperMMC5{};
-    _mmc5.bankModePrg = 3;
-    _mmc5.bankModeChr = 3;
+    _mmc5                  = MapperMMC5{};
+    _mmc5.bankModePrg      = 3;
+    _mmc5.bankModeChr      = 3;
     _mmc5.bankSelectPrg[4] = 0xff;
     for (int i = 0; i < 12; ++i)
         _mmc5.bankSelectChr[i] = 0xff;
@@ -201,8 +201,8 @@ std::uint8_t Mapper::handleRead<MapperID::MMC5>(std::uint16_t addr)
         break;
     case 0xfffa:
     case 0xfffb:
-        _mmc5.inFrame = false;
-        _mmc5.scanline = 0;
+        _mmc5.inFrame         = false;
+        _mmc5.scanline        = 0;
         _mmc5.scanlinePending = false;
         _irq.unset(IRQ_MAPPER1);
         break;
@@ -217,12 +217,12 @@ void Mapper::handleWrite<MapperID::MMC5>(std::uint16_t addr, std::uint8_t value)
     {
     case 0x2000: // PPUCTRL
         _mmc5.ppuSpriteFlag = !!(value & 0x20);
-        _mmc5.mode8x16 = (_mmc5.ppuRenderFlag && _mmc5.ppuSpriteFlag);
+        _mmc5.mode8x16      = (_mmc5.ppuRenderFlag && _mmc5.ppuSpriteFlag);
         applyChr(*this, _mmc5);
         break;
     case 0x2001: // PPUMASK
         _mmc5.ppuRenderFlag = !!(value & 0x18);
-        _mmc5.mode8x16 = (_mmc5.ppuRenderFlag && _mmc5.ppuSpriteFlag);
+        _mmc5.mode8x16      = (_mmc5.ppuRenderFlag && _mmc5.ppuSpriteFlag);
         applyChr(*this, _mmc5);
         break;
     case 0x5100: // PRG Mode
@@ -289,7 +289,7 @@ void Mapper::handleVideoRead<MapperID::MMC5>(std::uint16_t addr)
 
     if (_mmc5.ppuAddrCount == 0 && addr >= 0x2000 && addr < 0x3000)
     {
-        _mmc5.ppuAddr = addr;
+        _mmc5.ppuAddr      = addr;
         _mmc5.ppuAddrCount = 1;
     }
     else
@@ -303,8 +303,8 @@ void Mapper::handleVideoRead<MapperID::MMC5>(std::uint16_t addr)
             {
                 if (!_mmc5.inFrame)
                 {
-                    _mmc5.inFrame = true;
-                    _mmc5.scanline = 0;
+                    _mmc5.inFrame    = true;
+                    _mmc5.scanline   = 0;
                     _mmc5.fetchCount = 1;
                     _irq.unset(IRQ_MAPPER1);
                 }
@@ -314,8 +314,8 @@ void Mapper::handleVideoRead<MapperID::MMC5>(std::uint16_t addr)
                     _mmc5.fetchCount = 1;
                     if (_mmc5.scanline == 241)
                     {
-                        _mmc5.inFrame = false;
-                        _mmc5.scanline = 0;
+                        _mmc5.inFrame         = false;
+                        _mmc5.scanline        = 0;
                         _mmc5.scanlinePending = false;
                         _irq.unset(IRQ_MAPPER1);
                     }
@@ -392,12 +392,14 @@ std::uint8_t Mapper::handleChrRead<MapperID::MMC5>(int bank, std::uint16_t offse
 template <>
 void Mapper::init<MapperID::MMC5>()
 {
-    _handleReset = &Mapper::handleReset<MapperID::MMC5>;
-    _handleTick = &Mapper::handleTick<MapperID::MMC5>;
-    _handleRead = &Mapper::handleRead<MapperID::MMC5>;
-    _handleWrite = &Mapper::handleWrite<MapperID::MMC5>;
+    _handleReset     = &Mapper::handleReset<MapperID::MMC5>;
+    _handleTick      = &Mapper::handleTick<MapperID::MMC5>;
+    _handleRead      = &Mapper::handleRead<MapperID::MMC5>;
+    _handleWrite     = &Mapper::handleWrite<MapperID::MMC5>;
     _handleVideoRead = &Mapper::handleVideoRead<MapperID::MMC5>;
-    _handleNtRead = &Mapper::handleNtRead<MapperID::MMC5>;
-    _handleNtWrite = &Mapper::handleNtWrite<MapperID::MMC5>;
-    _handleChrRead = &Mapper::handleChrRead<MapperID::MMC5>;
+    _handleNtRead    = &Mapper::handleNtRead<MapperID::MMC5>;
+    _handleNtWrite   = &Mapper::handleNtWrite<MapperID::MMC5>;
+    _handleChrRead   = &Mapper::handleChrRead<MapperID::MMC5>;
+}
+
 }

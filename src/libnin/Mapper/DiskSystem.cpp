@@ -32,7 +32,8 @@
 #include <libnin/Mapper.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 template <>
 void Mapper::handleReset<MapperID::FDS>()
@@ -233,4 +234,6 @@ void Mapper::init<MapperID::FDS>()
     _handleRead  = &Mapper::handleRead<MapperID::FDS>;
     _handleWrite = &Mapper::handleWrite<MapperID::FDS>;
     _handleTick  = &Mapper::handleTick<MapperID::FDS>;
+}
+
 }
