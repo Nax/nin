@@ -1,9 +1,10 @@
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
-#include <libnin/Cart.h>
 #include <libnin/Util.h>
 
-using namespace libnin;
+namespace libnin
+{
 
 Mapper::Mapper(Memory& memory, Cart& cart, Disk& disk, IRQ& irq)
 : _memory{memory}
@@ -24,7 +25,6 @@ Mapper::Mapper(Memory& memory, Cart& cart, Disk& disk, IRQ& irq)
 , _chr{}
 , _nametables{}
 {
-
 }
 
 NinError Mapper::configure(int mapper, int submapper)
@@ -56,7 +56,7 @@ NinError Mapper::configure(int mapper, int submapper)
 std::uint8_t Mapper::read(std::uint16_t addr)
 {
     std::uint8_t value = (this->*_handleRead)(addr);
-    int slot = ((addr - 0x4000) / 0x2000);
+    int          slot  = ((addr - 0x4000) / 0x2000);
 
     return _prg[slot] ? _prg[slot][addr & 0x1fff] : value;
 }
@@ -109,12 +109,12 @@ void Mapper::bankPrg8k(std::uint8_t slot, int domain, std::int16_t bank)
     bank += seg.bankCount;
     if (seg.base)
     {
-        _prg[slot] = seg.base + std::uintptr_t(std::uint16_t(bank) % seg.bankCount) * 0x2000;
+        _prg[slot]          = seg.base + std::uintptr_t(std::uint16_t(bank) % seg.bankCount) * 0x2000;
         _prgWriteFlag[slot] = (domain == CART_PRG_RAM);
     }
     else
     {
-        _prg[slot] = nullptr;
+        _prg[slot]          = nullptr;
         _prgWriteFlag[slot] = false;
     }
 }
@@ -194,31 +194,31 @@ void Mapper::initMatching(MapperID id2)
 template <MapperID id>
 void Mapper::handleReset()
 {
-
 }
 
 template <MapperID id>
 void Mapper::handleTick()
 {
-
 }
 
 template <MapperID id>
 std::uint8_t Mapper::handleRead(std::uint16_t addr)
 {
+    UNUSED(addr);
     return 0x00;
 }
 
 template <MapperID id>
 void Mapper::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
-
+    UNUSED(addr);
+    UNUSED(value);
 }
 
 template <MapperID id>
 void Mapper::handleVideoRead(std::uint16_t addr)
 {
-
+    UNUSED(addr);
 }
 
 template <MapperID id>
@@ -247,3 +247,5 @@ void Mapper::handleChrWrite(int bank, std::uint16_t offset, std::uint8_t value)
         _chr[bank][offset] = value;
     }
 }
+
+} // namespace libnin
