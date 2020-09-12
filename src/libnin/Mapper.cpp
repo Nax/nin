@@ -1,6 +1,32 @@
+/*
+ * Nin, a Nintendo Entertainment System Emulator.
+ *
+ * Copyright (c) 2018-2020 Maxime Bacoux
+ * All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
+ *
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
+ *
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
+ *
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
+#include <libnin/Cart.h>
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
-#include <libnin/Cart.h>
 #include <libnin/Util.h>
 
 using namespace libnin;
@@ -24,7 +50,6 @@ Mapper::Mapper(Memory& memory, Cart& cart, Disk& disk, IRQ& irq)
 , _chr{}
 , _nametables{}
 {
-
 }
 
 NinError Mapper::configure(int mapper, int submapper)
@@ -56,7 +81,7 @@ NinError Mapper::configure(int mapper, int submapper)
 std::uint8_t Mapper::read(std::uint16_t addr)
 {
     std::uint8_t value = (this->*_handleRead)(addr);
-    int slot = ((addr - 0x4000) / 0x2000);
+    int          slot  = ((addr - 0x4000) / 0x2000);
 
     return _prg[slot] ? _prg[slot][addr & 0x1fff] : value;
 }
@@ -109,12 +134,12 @@ void Mapper::bankPrg8k(std::uint8_t slot, int domain, std::int16_t bank)
     bank += seg.bankCount;
     if (seg.base)
     {
-        _prg[slot] = seg.base + std::uintptr_t(std::uint16_t(bank) % seg.bankCount) * 0x2000;
+        _prg[slot]          = seg.base + std::uintptr_t(std::uint16_t(bank) % seg.bankCount) * 0x2000;
         _prgWriteFlag[slot] = (domain == CART_PRG_RAM);
     }
     else
     {
-        _prg[slot] = nullptr;
+        _prg[slot]          = nullptr;
         _prgWriteFlag[slot] = false;
     }
 }
@@ -194,13 +219,11 @@ void Mapper::initMatching(MapperID id2)
 template <MapperID id>
 void Mapper::handleReset()
 {
-
 }
 
 template <MapperID id>
 void Mapper::handleTick()
 {
-
 }
 
 template <MapperID id>
@@ -212,13 +235,11 @@ std::uint8_t Mapper::handleRead(std::uint16_t addr)
 template <MapperID id>
 void Mapper::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
-
 }
 
 template <MapperID id>
 void Mapper::handleVideoRead(std::uint16_t addr)
 {
-
 }
 
 template <MapperID id>

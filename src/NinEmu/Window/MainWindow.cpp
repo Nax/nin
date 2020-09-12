@@ -1,37 +1,35 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 #include <QtWidgets>
 #include <nin/nin.h>
 
 #include <NinEmu/Core/Audio.h>
-#include <NinEmu/Core/EmulatorWorker.h>
 #include <NinEmu/Core/EmulatorInfo.h>
+#include <NinEmu/Core/EmulatorWorker.h>
 #include <NinEmu/Core/Settings.h>
 #include <NinEmu/Menu/DiskMenu.h>
 #include <NinEmu/Menu/GraphicsMenu.h>
@@ -39,8 +37,8 @@
 #include <NinEmu/Window/AudioVisualizerWindow.h>
 #include <NinEmu/Window/DebuggerWindow.h>
 #include <NinEmu/Window/MainWindow.h>
-#include <NinEmu/Window/MemoryWindow.h>
 #include <NinEmu/Window/MemorySearchWindow.h>
+#include <NinEmu/Window/MemoryWindow.h>
 
 #define DEADZONE (0.30)
 
@@ -48,12 +46,12 @@ MainWindow::MainWindow(QWidget* parent)
 : QMainWindow(parent)
 {
     static const int scale = 3;
-    int dx;
-    int dy;
+    int              dx;
+    int              dy;
 
     _settings = new Settings(this);
-    _audio = new Audio(this);
-    _emu = new EmulatorWorker(this);
+    _audio    = new Audio(this);
+    _emu      = new EmulatorWorker(this);
     _emu->setAudioFrequency(48000);
 
     setWindowTitle("Nin " NIN_VERSION);
@@ -318,14 +316,15 @@ void MainWindow::createMenus()
 
 void MainWindow::updateRecentFiles()
 {
-    QSettings settings;
+    QSettings   settings;
     QStringList files;
-    int count;
+    int         count;
 
     files = settings.value("recentFiles").toStringList();
     count = qMin((int)files.size(), (int)MaxRecentFiles);
 
-    for (int i = 0; i < count; ++i) {
+    for (int i = 0; i < count; ++i)
+    {
         QString text = tr("&%1. %2").arg(i + 1).arg(QFileInfo(files[i]).fileName());
         _actionOpenRecentFile[i]->setText(text);
         _actionOpenRecentFile[i]->setData(files[i]);
@@ -335,7 +334,7 @@ void MainWindow::updateRecentFiles()
 
 void MainWindow::addToRecentFiles(const QString& filename)
 {
-    QSettings settings;
+    QSettings   settings;
     QStringList files;
 
     files = settings.value("recentFiles").toStringList();
@@ -351,13 +350,15 @@ void MainWindow::addToRecentFiles(const QString& filename)
 void MainWindow::setupGamepad()
 {
     QList<int> gamepads;
-    for (int i = 0; i < 10000; ++i) {
+    for (int i = 0; i < 10000; ++i)
+    {
         QApplication::processEvents();
         gamepads = QGamepadManager::instance()->connectedGamepads();
         if (!gamepads.isEmpty())
             break;
     }
-    if (gamepads.isEmpty()) {
+    if (gamepads.isEmpty())
+    {
         printf("No gamepad detected.\n");
         fflush(stdout);
         return;

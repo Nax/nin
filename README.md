@@ -36,11 +36,13 @@ Multiple controllers or other kinds of controller are not currently supported.
  * MMC2
  * MMC3
  * MMC4
+ * MMC5
  * UxROM (Standard, 180)
  * CNROM
  * AxROM
  * GxROM
  * Color Dreams
+ * Action 52
 
 MMC3 support is still experimental.
 
@@ -61,7 +63,10 @@ Under windows, MSVC 2017 and 2019 are the prefered toolchains.
 
 ## License
 
-Nin is distributed under the [BSD 2-Clause License](LICENSE).
+Nin is [dual licensed](LICENSE) under the follwing licenses:
+
+ * The [GNU General Public License Version 2](LICENSE-GPLv2.txt)
+ * A commercial license, upon request
 
 ## Author
 

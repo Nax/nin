@@ -1,47 +1,45 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <NinEmu/UI/DisassemblerWidget.h>
 #include <QFontDatabase>
 #include <QScrollBar>
-#include <NinEmu/UI/DisassemblerWidget.h>
 
-#define A_IMPL      0
-#define A_IZX       1
-#define A_Z         2
-#define A_IMM       3
-#define A_A         4
-#define A_REL       5
-#define A_IZY       6
-#define A_ZX        7
-#define A_AY        8
-#define A_AX        9
-#define A_IJMP      10
-#define A_ZY        11
+#define A_IMPL 0
+#define A_IZX  1
+#define A_Z    2
+#define A_IMM  3
+#define A_A    4
+#define A_REL  5
+#define A_IZY  6
+#define A_ZX   7
+#define A_AY   8
+#define A_AX   9
+#define A_IJMP 10
+#define A_ZY   11
 
 struct InstrDescription
 {
@@ -51,38 +49,38 @@ struct InstrDescription
 
 static const InstrDescription kInstructions[256] = {
     // 0x00
-    {"BRK ",    A_IMPL},
-    {"ORA ",    A_IZX},
-    {"STP*",    A_IMPL},
-    {"SLO*",    A_IZX},
-    {"NOP*",    A_Z},
-    {"ORA ",    A_Z},
-    {"ASL ",    A_Z},
-    {"SLO*",    A_Z},
-    {"PHP ",    A_IMPL},
-    {"ORA ",    A_IMM},
-    {"ASL ",    A_IMPL},
-    {"ANC*",    A_IMM},
-    {"NOP*",    A_A},
-    {"ORA ",    A_A},
-    {"ASL ",    A_A},
-    {"SLO*",    A_A},
-    {"BPL ",    A_REL},
-    {"ORA ",    A_IZY},
-    {"STP*",    A_IMM},
-    {"SLO*",    A_IZY},
-    {"NOP*",    A_ZX},
-    {"ORA ",    A_ZX},
-    {"ASL ",    A_ZX},
-    {"SLO*",    A_ZX},
-    {"CLC ",    A_IMPL},
-    {"ORA ",    A_AY},
-    {"NOP*",    A_IMPL},
-    {"SLO*",    A_AY},
-    {"NOP*",    A_AX},
-    {"ORA ",    A_AX},
-    {"ASL ",    A_AX},
-    {"SLO*",    A_AX},
+    {"BRK ", A_IMPL},
+    {"ORA ", A_IZX},
+    {"STP*", A_IMPL},
+    {"SLO*", A_IZX},
+    {"NOP*", A_Z},
+    {"ORA ", A_Z},
+    {"ASL ", A_Z},
+    {"SLO*", A_Z},
+    {"PHP ", A_IMPL},
+    {"ORA ", A_IMM},
+    {"ASL ", A_IMPL},
+    {"ANC*", A_IMM},
+    {"NOP*", A_A},
+    {"ORA ", A_A},
+    {"ASL ", A_A},
+    {"SLO*", A_A},
+    {"BPL ", A_REL},
+    {"ORA ", A_IZY},
+    {"STP*", A_IMM},
+    {"SLO*", A_IZY},
+    {"NOP*", A_ZX},
+    {"ORA ", A_ZX},
+    {"ASL ", A_ZX},
+    {"SLO*", A_ZX},
+    {"CLC ", A_IMPL},
+    {"ORA ", A_AY},
+    {"NOP*", A_IMPL},
+    {"SLO*", A_AY},
+    {"NOP*", A_AX},
+    {"ORA ", A_AX},
+    {"ASL ", A_AX},
+    {"SLO*", A_AX},
 
     // 0x20
     {"JSR ", A_A},
@@ -153,174 +151,174 @@ static const InstrDescription kInstructions[256] = {
     {"SRE*", A_AX},
 
     // 0x60
-    { "RTS ", A_IMPL },
-    { "ADC ", A_IZX },
-    { "STP*", A_IMPL },
-    { "RRA*", A_IZX },
-    { "NOP*", A_Z },
-    { "ADC ", A_Z },
-    { "ROR ", A_Z },
-    { "RRA*", A_Z },
-    { "PLA ", A_IMPL },
-    { "ADC ", A_IMM },
-    { "ROR ", A_IMPL },
-    { "ARR*", A_IMM },
-    { "JMP ", A_IJMP },
-    { "ADC ", A_A },
-    { "ROR ", A_A },
-    { "RRA*", A_A },
-    { "BVS ", A_REL },
-    { "ADC ", A_IZY },
-    { "STP*", A_IMPL },
-    { "RRA*", A_IZY },
-    { "NOP*", A_ZX },
-    { "ADC ", A_ZX },
-    { "ROR ", A_ZX },
-    { "RRA*", A_ZX },
-    { "SEI ", A_IMPL },
-    { "ADC ", A_AY },
-    { "NOP*", A_IMPL },
-    { "RRA*", A_AY },
-    { "NOP*", A_AX },
-    { "ADC ", A_AX },
-    { "ROR ", A_AX },
-    { "RRA*", A_AX },
+    {"RTS ", A_IMPL},
+    {"ADC ", A_IZX},
+    {"STP*", A_IMPL},
+    {"RRA*", A_IZX},
+    {"NOP*", A_Z},
+    {"ADC ", A_Z},
+    {"ROR ", A_Z},
+    {"RRA*", A_Z},
+    {"PLA ", A_IMPL},
+    {"ADC ", A_IMM},
+    {"ROR ", A_IMPL},
+    {"ARR*", A_IMM},
+    {"JMP ", A_IJMP},
+    {"ADC ", A_A},
+    {"ROR ", A_A},
+    {"RRA*", A_A},
+    {"BVS ", A_REL},
+    {"ADC ", A_IZY},
+    {"STP*", A_IMPL},
+    {"RRA*", A_IZY},
+    {"NOP*", A_ZX},
+    {"ADC ", A_ZX},
+    {"ROR ", A_ZX},
+    {"RRA*", A_ZX},
+    {"SEI ", A_IMPL},
+    {"ADC ", A_AY},
+    {"NOP*", A_IMPL},
+    {"RRA*", A_AY},
+    {"NOP*", A_AX},
+    {"ADC ", A_AX},
+    {"ROR ", A_AX},
+    {"RRA*", A_AX},
 
     // 0x80
-    { "NOP*", A_IMM },
-    { "STA ", A_IZX },
-    { "NOP*", A_IMM },
-    { "SAX*", A_IZX },
-    { "STY ", A_Z },
-    { "STA ", A_Z },
-    { "STX ", A_Z },
-    { "SAX*", A_Z },
-    { "DEY ", A_IMPL },
-    { "NOP*", A_IMM },
-    { "TXA ", A_IMPL },
-    { "XAA*", A_IMM },
-    { "STY ", A_A },
-    { "STA ", A_A },
-    { "STX ", A_A },
-    { "SAX*", A_A },
-    { "BCC ", A_REL },
-    { "STA ", A_IZY },
-    { "STP*", A_IMPL },
-    { "AHX*", A_IZY },
-    { "STY ", A_ZX },
-    { "STA ", A_ZX },
-    { "STX ", A_ZY },
-    { "SAX*", A_ZY },
-    { "TYA ", A_IMPL },
-    { "STA ", A_AY },
-    { "TXS ", A_IMPL },
-    { "TAS*", A_AY },
-    { "SHY*", A_AX },
-    { "STA ", A_AX },
-    { "SHX*", A_AY },
-    { "AHX*", A_AY },
+    {"NOP*", A_IMM},
+    {"STA ", A_IZX},
+    {"NOP*", A_IMM},
+    {"SAX*", A_IZX},
+    {"STY ", A_Z},
+    {"STA ", A_Z},
+    {"STX ", A_Z},
+    {"SAX*", A_Z},
+    {"DEY ", A_IMPL},
+    {"NOP*", A_IMM},
+    {"TXA ", A_IMPL},
+    {"XAA*", A_IMM},
+    {"STY ", A_A},
+    {"STA ", A_A},
+    {"STX ", A_A},
+    {"SAX*", A_A},
+    {"BCC ", A_REL},
+    {"STA ", A_IZY},
+    {"STP*", A_IMPL},
+    {"AHX*", A_IZY},
+    {"STY ", A_ZX},
+    {"STA ", A_ZX},
+    {"STX ", A_ZY},
+    {"SAX*", A_ZY},
+    {"TYA ", A_IMPL},
+    {"STA ", A_AY},
+    {"TXS ", A_IMPL},
+    {"TAS*", A_AY},
+    {"SHY*", A_AX},
+    {"STA ", A_AX},
+    {"SHX*", A_AY},
+    {"AHX*", A_AY},
 
     // 0xA0
-    { "LDY ", A_IMM },
-    { "LDA ", A_IZX },
-    { "LDX ", A_IMM },
-    { "LAX*", A_IZX },
-    { "LDY ", A_Z },
-    { "LDA ", A_Z },
-    { "LDX ", A_Z },
-    { "LAX*", A_Z },
-    { "TAY ", A_IMPL },
-    { "LDA ", A_IMM },
-    { "TAX ", A_IMPL },
-    { "LAX*", A_IMM },
-    { "LDY ", A_A },
-    { "LDA ", A_A },
-    { "LDX ", A_A },
-    { "LAX*", A_A },
-    { "BCS ", A_REL },
-    { "LDA ", A_IZY },
-    { "STP*", A_IMPL },
-    { "LAX*", A_IZY },
-    { "LDY ", A_ZX },
-    { "LDA ", A_ZX },
-    { "LDX ", A_ZY },
-    { "LAX*", A_ZY },
-    { "CLV ", A_IMPL },
-    { "LDA ", A_AY },
-    { "TSX ", A_IMPL },
-    { "LAS*", A_AY },
-    { "LDY ", A_AX },
-    { "LDA ", A_AX },
-    { "LDX ", A_AY },
-    { "LAX*", A_AY },
+    {"LDY ", A_IMM},
+    {"LDA ", A_IZX},
+    {"LDX ", A_IMM},
+    {"LAX*", A_IZX},
+    {"LDY ", A_Z},
+    {"LDA ", A_Z},
+    {"LDX ", A_Z},
+    {"LAX*", A_Z},
+    {"TAY ", A_IMPL},
+    {"LDA ", A_IMM},
+    {"TAX ", A_IMPL},
+    {"LAX*", A_IMM},
+    {"LDY ", A_A},
+    {"LDA ", A_A},
+    {"LDX ", A_A},
+    {"LAX*", A_A},
+    {"BCS ", A_REL},
+    {"LDA ", A_IZY},
+    {"STP*", A_IMPL},
+    {"LAX*", A_IZY},
+    {"LDY ", A_ZX},
+    {"LDA ", A_ZX},
+    {"LDX ", A_ZY},
+    {"LAX*", A_ZY},
+    {"CLV ", A_IMPL},
+    {"LDA ", A_AY},
+    {"TSX ", A_IMPL},
+    {"LAS*", A_AY},
+    {"LDY ", A_AX},
+    {"LDA ", A_AX},
+    {"LDX ", A_AY},
+    {"LAX*", A_AY},
 
     // 0xC0
-    { "CPY ", A_IMM },
-    { "CMP ", A_IZX },
-    { "NOP*", A_IMM },
-    { "DCP*", A_IZX },
-    { "CPY ", A_Z },
-    { "CMP ", A_Z },
-    { "DEC ", A_Z },
-    { "DCP*", A_Z },
-    { "INY ", A_IMPL },
-    { "CMP ", A_IMM },
-    { "DEX ", A_IMPL },
-    { "AXS*", A_IMM },
-    { "CPY ", A_A },
-    { "CMP ", A_A },
-    { "DEC ", A_A },
-    { "DCP*", A_A },
-    { "BNE ", A_REL },
-    { "CMP ", A_IZY },
-    { "STP*", A_IMPL },
-    { "DCP*", A_IZY },
-    { "NOP*", A_ZX },
-    { "CMP ", A_ZX },
-    { "DEC ", A_ZX },
-    { "DCP*", A_ZX },
-    { "CLD ", A_IMPL },
-    { "CMP ", A_AY },
-    { "NOP*", A_IMPL },
-    { "DCP*", A_AY },
-    { "NOP*", A_AX },
-    { "CMP ", A_AX },
-    { "DEC ", A_AX },
-    { "DCP*", A_AX },
+    {"CPY ", A_IMM},
+    {"CMP ", A_IZX},
+    {"NOP*", A_IMM},
+    {"DCP*", A_IZX},
+    {"CPY ", A_Z},
+    {"CMP ", A_Z},
+    {"DEC ", A_Z},
+    {"DCP*", A_Z},
+    {"INY ", A_IMPL},
+    {"CMP ", A_IMM},
+    {"DEX ", A_IMPL},
+    {"AXS*", A_IMM},
+    {"CPY ", A_A},
+    {"CMP ", A_A},
+    {"DEC ", A_A},
+    {"DCP*", A_A},
+    {"BNE ", A_REL},
+    {"CMP ", A_IZY},
+    {"STP*", A_IMPL},
+    {"DCP*", A_IZY},
+    {"NOP*", A_ZX},
+    {"CMP ", A_ZX},
+    {"DEC ", A_ZX},
+    {"DCP*", A_ZX},
+    {"CLD ", A_IMPL},
+    {"CMP ", A_AY},
+    {"NOP*", A_IMPL},
+    {"DCP*", A_AY},
+    {"NOP*", A_AX},
+    {"CMP ", A_AX},
+    {"DEC ", A_AX},
+    {"DCP*", A_AX},
 
     // 0xE0
-    { "CPX ", A_IMM },
-    { "SBC ", A_IZX },
-    { "NOP*", A_IMM },
-    { "ISC*", A_IZX },
-    { "CPX ", A_Z },
-    { "SBC ", A_Z },
-    { "INC ", A_Z },
-    { "ISC*", A_Z },
-    { "INX ", A_IMPL },
-    { "SBC ", A_IMM },
-    { "NOP ", A_IMPL },
-    { "SBC*", A_IMM },
-    { "CPX ", A_A },
-    { "SBC ", A_A },
-    { "INC ", A_A },
-    { "ISC*", A_A },
-    { "BEQ ", A_REL },
-    { "SBC ", A_IZY },
-    { "STP*", A_IMPL },
-    { "ISC*", A_IZY },
-    { "NOP*", A_ZX },
-    { "SBC ", A_ZX },
-    { "INC ", A_ZX },
-    { "ISC*", A_ZX },
-    { "SED ", A_IMPL },
-    { "SBC ", A_AY },
-    { "NOP*", A_IMPL },
-    { "ISC*", A_AY },
-    { "NOP*", A_AX },
-    { "SBC ", A_AX },
-    { "INC ", A_AX },
-    { "ISC*", A_AX },
+    {"CPX ", A_IMM},
+    {"SBC ", A_IZX},
+    {"NOP*", A_IMM},
+    {"ISC*", A_IZX},
+    {"CPX ", A_Z},
+    {"SBC ", A_Z},
+    {"INC ", A_Z},
+    {"ISC*", A_Z},
+    {"INX ", A_IMPL},
+    {"SBC ", A_IMM},
+    {"NOP ", A_IMPL},
+    {"SBC*", A_IMM},
+    {"CPX ", A_A},
+    {"SBC ", A_A},
+    {"INC ", A_A},
+    {"ISC*", A_A},
+    {"BEQ ", A_REL},
+    {"SBC ", A_IZY},
+    {"STP*", A_IMPL},
+    {"ISC*", A_IZY},
+    {"NOP*", A_ZX},
+    {"SBC ", A_ZX},
+    {"INC ", A_ZX},
+    {"ISC*", A_ZX},
+    {"SED ", A_IMPL},
+    {"SBC ", A_AY},
+    {"NOP*", A_IMPL},
+    {"ISC*", A_AY},
+    {"NOP*", A_AX},
+    {"SBC ", A_AX},
+    {"INC ", A_AX},
+    {"ISC*", A_AX},
 };
 
 DisassemblerWidget::DisassemblerWidget(QWidget* parent)
@@ -349,7 +347,7 @@ void DisassemblerWidget::paintEvent(QPaintEvent* event)
 {
     QPainter painter(_viewport);
     uint16_t addr;
-    char tmp[7];
+    char     tmp[7];
 
     int lineCount = size().height() / 16;
 
@@ -392,9 +390,9 @@ void DisassemblerWidget::disassemble(uint16_t pc, const uint8_t* data, std::size
 std::uint8_t DisassemblerWidget::disassembleInstr(DisasmInstr& instr, uint16_t pc, const uint8_t* data)
 {
     const InstrDescription* desc;
-    char tmp[32];
+    char                    tmp[32];
 
-    instr.addr = pc;
+    instr.addr   = pc;
     instr.raw[0] = data[0];
     instr.raw[1] = data[1];
     instr.raw[2] = data[2];
