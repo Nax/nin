@@ -1,25 +1,50 @@
-#include <cstdio>
-#include <thread>
-#include <nin/nin.h>
+/*
+ * Nin, a Nintendo Entertainment System Emulator.
+ *
+ * Copyright (c) 2018-2020 Maxime Bacoux
+ * All rights reserved.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
+ *
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
+ *
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
+ *
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+ */
+
 #include "TestSuite.h"
+#include <cstdio>
+#include <nin/nin.h>
+#include <thread>
 
 TestSuite::TestSuite()
 {
-
 }
 
 void TestSuite::add(const char* name, const char* path, std::size_t cycles, Pred pred)
 {
-    _tests.push_back({ name, path, cycles, pred, TestState::Pending });
+    _tests.push_back({name, path, cycles, pred, TestState::Pending});
 }
 
 int TestSuite::run()
 {
-    unsigned int                maxThreads;
-    std::vector<std::thread>    threads;
+    unsigned int             maxThreads;
+    std::vector<std::thread> threads;
 
-    int passed = 0;
-    bool done = false;
+    int      passed         = 0;
+    bool     done           = false;
     unsigned currentTestIdx = 0;
 
     maxThreads = std::thread::hardware_concurrency();
@@ -109,7 +134,7 @@ void TestSuite::run_thread()
             {
                 if (_tests[i].state == TestState::Pending)
                 {
-                    t = _tests.data() + i;
+                    t        = _tests.data() + i;
                     t->state = TestState::Running;
                     break;
                 }

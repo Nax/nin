@@ -1,40 +1,38 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
+#include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <cmath>
-#include <libnin/PPU.h>
 #include <libnin/BusVideo.h>
 #include <libnin/HardwareInfo.h>
 #include <libnin/Mapper.h>
 #include <libnin/Memory.h>
 #include <libnin/NMI.h>
+#include <libnin/PPU.h>
 #include <libnin/Video.h>
 
 using namespace libnin;
@@ -42,24 +40,264 @@ using namespace libnin;
 static constexpr std::uint8_t bitrev8(std::uint8_t v)
 {
     alignas(64) constexpr const std::uint8_t kLookup[] =
-    {
-        0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0, 0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0,
-        0x08, 0x88, 0x48, 0xc8, 0x28, 0xa8, 0x68, 0xe8, 0x18, 0x98, 0x58, 0xd8, 0x38, 0xb8, 0x78, 0xf8,
-        0x04, 0x84, 0x44, 0xc4, 0x24, 0xa4, 0x64, 0xe4, 0x14, 0x94, 0x54, 0xd4, 0x34, 0xb4, 0x74, 0xf4,
-        0x0c, 0x8c, 0x4c, 0xcc, 0x2c, 0xac, 0x6c, 0xec, 0x1c, 0x9c, 0x5c, 0xdc, 0x3c, 0xbc, 0x7c, 0xfc,
-        0x02, 0x82, 0x42, 0xc2, 0x22, 0xa2, 0x62, 0xe2, 0x12, 0x92, 0x52, 0xd2, 0x32, 0xb2, 0x72, 0xf2,
-        0x0a, 0x8a, 0x4a, 0xca, 0x2a, 0xaa, 0x6a, 0xea, 0x1a, 0x9a, 0x5a, 0xda, 0x3a, 0xba, 0x7a, 0xfa,
-        0x06, 0x86, 0x46, 0xc6, 0x26, 0xa6, 0x66, 0xe6, 0x16, 0x96, 0x56, 0xd6, 0x36, 0xb6, 0x76, 0xf6,
-        0x0e, 0x8e, 0x4e, 0xce, 0x2e, 0xae, 0x6e, 0xee, 0x1e, 0x9e, 0x5e, 0xde, 0x3e, 0xbe, 0x7e, 0xfe,
-        0x01, 0x81, 0x41, 0xc1, 0x21, 0xa1, 0x61, 0xe1, 0x11, 0x91, 0x51, 0xd1, 0x31, 0xb1, 0x71, 0xf1,
-        0x09, 0x89, 0x49, 0xc9, 0x29, 0xa9, 0x69, 0xe9, 0x19, 0x99, 0x59, 0xd9, 0x39, 0xb9, 0x79, 0xf9,
-        0x05, 0x85, 0x45, 0xc5, 0x25, 0xa5, 0x65, 0xe5, 0x15, 0x95, 0x55, 0xd5, 0x35, 0xb5, 0x75, 0xf5,
-        0x0d, 0x8d, 0x4d, 0xcd, 0x2d, 0xad, 0x6d, 0xed, 0x1d, 0x9d, 0x5d, 0xdd, 0x3d, 0xbd, 0x7d, 0xfd,
-        0x03, 0x83, 0x43, 0xc3, 0x23, 0xa3, 0x63, 0xe3, 0x13, 0x93, 0x53, 0xd3, 0x33, 0xb3, 0x73, 0xf3,
-        0x0b, 0x8b, 0x4b, 0xcb, 0x2b, 0xab, 0x6b, 0xeb, 0x1b, 0x9b, 0x5b, 0xdb, 0x3b, 0xbb, 0x7b, 0xfb,
-        0x07, 0x87, 0x47, 0xc7, 0x27, 0xa7, 0x67, 0xe7, 0x17, 0x97, 0x57, 0xd7, 0x37, 0xb7, 0x77, 0xf7,
-        0x0f, 0x8f, 0x4f, 0xcf, 0x2f, 0xaf, 0x6f, 0xef, 0x1f, 0x9f, 0x5f, 0xdf, 0x3f, 0xbf, 0x7f, 0xff,
-    };
+        {
+            0x00,
+            0x80,
+            0x40,
+            0xc0,
+            0x20,
+            0xa0,
+            0x60,
+            0xe0,
+            0x10,
+            0x90,
+            0x50,
+            0xd0,
+            0x30,
+            0xb0,
+            0x70,
+            0xf0,
+            0x08,
+            0x88,
+            0x48,
+            0xc8,
+            0x28,
+            0xa8,
+            0x68,
+            0xe8,
+            0x18,
+            0x98,
+            0x58,
+            0xd8,
+            0x38,
+            0xb8,
+            0x78,
+            0xf8,
+            0x04,
+            0x84,
+            0x44,
+            0xc4,
+            0x24,
+            0xa4,
+            0x64,
+            0xe4,
+            0x14,
+            0x94,
+            0x54,
+            0xd4,
+            0x34,
+            0xb4,
+            0x74,
+            0xf4,
+            0x0c,
+            0x8c,
+            0x4c,
+            0xcc,
+            0x2c,
+            0xac,
+            0x6c,
+            0xec,
+            0x1c,
+            0x9c,
+            0x5c,
+            0xdc,
+            0x3c,
+            0xbc,
+            0x7c,
+            0xfc,
+            0x02,
+            0x82,
+            0x42,
+            0xc2,
+            0x22,
+            0xa2,
+            0x62,
+            0xe2,
+            0x12,
+            0x92,
+            0x52,
+            0xd2,
+            0x32,
+            0xb2,
+            0x72,
+            0xf2,
+            0x0a,
+            0x8a,
+            0x4a,
+            0xca,
+            0x2a,
+            0xaa,
+            0x6a,
+            0xea,
+            0x1a,
+            0x9a,
+            0x5a,
+            0xda,
+            0x3a,
+            0xba,
+            0x7a,
+            0xfa,
+            0x06,
+            0x86,
+            0x46,
+            0xc6,
+            0x26,
+            0xa6,
+            0x66,
+            0xe6,
+            0x16,
+            0x96,
+            0x56,
+            0xd6,
+            0x36,
+            0xb6,
+            0x76,
+            0xf6,
+            0x0e,
+            0x8e,
+            0x4e,
+            0xce,
+            0x2e,
+            0xae,
+            0x6e,
+            0xee,
+            0x1e,
+            0x9e,
+            0x5e,
+            0xde,
+            0x3e,
+            0xbe,
+            0x7e,
+            0xfe,
+            0x01,
+            0x81,
+            0x41,
+            0xc1,
+            0x21,
+            0xa1,
+            0x61,
+            0xe1,
+            0x11,
+            0x91,
+            0x51,
+            0xd1,
+            0x31,
+            0xb1,
+            0x71,
+            0xf1,
+            0x09,
+            0x89,
+            0x49,
+            0xc9,
+            0x29,
+            0xa9,
+            0x69,
+            0xe9,
+            0x19,
+            0x99,
+            0x59,
+            0xd9,
+            0x39,
+            0xb9,
+            0x79,
+            0xf9,
+            0x05,
+            0x85,
+            0x45,
+            0xc5,
+            0x25,
+            0xa5,
+            0x65,
+            0xe5,
+            0x15,
+            0x95,
+            0x55,
+            0xd5,
+            0x35,
+            0xb5,
+            0x75,
+            0xf5,
+            0x0d,
+            0x8d,
+            0x4d,
+            0xcd,
+            0x2d,
+            0xad,
+            0x6d,
+            0xed,
+            0x1d,
+            0x9d,
+            0x5d,
+            0xdd,
+            0x3d,
+            0xbd,
+            0x7d,
+            0xfd,
+            0x03,
+            0x83,
+            0x43,
+            0xc3,
+            0x23,
+            0xa3,
+            0x63,
+            0xe3,
+            0x13,
+            0x93,
+            0x53,
+            0xd3,
+            0x33,
+            0xb3,
+            0x73,
+            0xf3,
+            0x0b,
+            0x8b,
+            0x4b,
+            0xcb,
+            0x2b,
+            0xab,
+            0x6b,
+            0xeb,
+            0x1b,
+            0x9b,
+            0x5b,
+            0xdb,
+            0x3b,
+            0xbb,
+            0x7b,
+            0xfb,
+            0x07,
+            0x87,
+            0x47,
+            0xc7,
+            0x27,
+            0xa7,
+            0x67,
+            0xe7,
+            0x17,
+            0x97,
+            0x57,
+            0xd7,
+            0x37,
+            0xb7,
+            0x77,
+            0xf7,
+            0x0f,
+            0x8f,
+            0x4f,
+            0xcf,
+            0x2f,
+            0xaf,
+            0x6f,
+            0xef,
+            0x1f,
+            0x9f,
+            0x5f,
+            0xdf,
+            0x3f,
+            0xbf,
+            0x7f,
+            0xff,
+        };
 
     return kLookup[v];
 }
@@ -156,7 +394,6 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _pixelBuffer{}
 , _pixelBufferBits{}
 {
-
 }
 
 std::uint8_t PPU::regRead(std::uint16_t reg)
@@ -193,12 +430,12 @@ std::uint8_t PPU::regRead(std::uint16_t reg)
     case 0x07: // PPUDATA
         if ((_v & 0x3f00) == 0x3f00)
         {
-            value = _busVideo.read(_v);
+            value    = _busVideo.read(_v);
             _readBuf = _busVideo.read(_v & 0x2fff);
         }
         else
         {
-            value = _readBuf;
+            value    = _readBuf;
             _readBuf = _busVideo.read(_v);
         }
         _v += _flags.incrementY ? 32 : 1;
@@ -217,10 +454,10 @@ void PPU::regWrite(std::uint16_t reg, std::uint8_t value)
         _t &= ~0x0c00;
         _t |= ((value & 0x03) << 10);
 
-        _flags.incrementY = !!(value & 0x04);
-        _flags.altSpritePattern = !!(value & 0x08);
+        _flags.incrementY           = !!(value & 0x04);
+        _flags.altSpritePattern     = !!(value & 0x08);
         _flags.altBackgroundPattern = !!(value & 0x10);
-        _flags.largeSprites = !!(value & 0x20);
+        _flags.largeSprites         = !!(value & 0x20);
 
         if (value & 0x80)
             _nmi.set(NMI_OUTPUT);
@@ -228,15 +465,15 @@ void PPU::regWrite(std::uint16_t reg, std::uint8_t value)
             _nmi.unset(NMI_OUTPUT);
         break;
     case 0x01:
-        _flags.grayscale = !!(value & 0x01);
+        _flags.grayscale            = !!(value & 0x01);
         _flags.backgroundEnableLeft = !!(value & 0x02);
-        _flags.spriteEnableLeft = !!(value & 0x04);
-        _flags.backgroundEnable = !!(value & 0x08);
-        _flags.spriteEnable = !!(value & 0x10);
-        _flags.emphasisRed = !!(value & 0x20);
-        _flags.emphasisGreen = !!(value & 0x40);
-        _flags.emphasisBlue = !!(value & 0x80);
-        _flags.rendering = (_flags.backgroundEnable || _flags.spriteEnable);
+        _flags.spriteEnableLeft     = !!(value & 0x04);
+        _flags.backgroundEnable     = !!(value & 0x08);
+        _flags.spriteEnable         = !!(value & 0x10);
+        _flags.emphasisRed          = !!(value & 0x20);
+        _flags.emphasisGreen        = !!(value & 0x40);
+        _flags.emphasisBlue         = !!(value & 0x80);
+        _flags.rendering            = (_flags.backgroundEnable || _flags.spriteEnable);
         break;
     case 0x02:
         break;
@@ -335,9 +572,9 @@ PPU::Handler PPU::handleVBlank0()
 PPU::Handler PPU::handleVBlank1()
 {
     //if (!_nmiSup)
-        _nmi.set(NMI_OCCURED);
+    _nmi.set(NMI_OCCURED);
     _nmiRace = false;
-    _nmiSup = false;
+    _nmiSup  = false;
     _video.swap();
     _clockVideo = 0;
     return wait(341 * 20 - 1, (Handler)&PPU::handlePreScan);
@@ -346,9 +583,9 @@ PPU::Handler PPU::handleVBlank1()
 PPU::Handler PPU::handlePreScan()
 {
     _nmi.unset(NMI_OCCURED);
-    _prescan = true;
+    _prescan        = true;
     _spriteZeroNext = false;
-    _spriteZeroHit = false;
+    _spriteZeroHit  = false;
     for (int i = 0; i < 8; ++i)
     {
         _shiftSpriteHi[i] = 0x00;
@@ -520,7 +757,7 @@ PPU::Handler PPU::handleNextHiBG1()
     if (_step)
         return &PPU::handleNextDummy0;
     _step = 1;
-    return  &PPU::handleNextNT0;
+    return &PPU::handleNextNT0;
 }
 
 PPU::Handler PPU::handleNextDummy0()
@@ -546,9 +783,9 @@ PPU::Handler PPU::handleNextDummy3()
 
     if (_prescan)
     {
-        _prescan = false;
+        _prescan  = false;
         _scanline = 0;
-        _step = 0;
+        _step     = 0;
         _oddFrame = !_oddFrame;
         return _dummySkip ? &PPU::handleScanNT0 : &PPU::handleScan;
     }
@@ -563,7 +800,7 @@ PPU::Handler PPU::handleNextDummy3()
 
 PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
 {
-    _clock = cycles - 1;
+    _clock    = cycles - 1;
     _handler2 = next;
 
     return &PPU::handleWait;
@@ -612,9 +849,9 @@ void PPU::fetchHiBG()
 void PPU::spriteEvaluation()
 {
     std::uint16_t y;
-    std::uint8_t spriteHeight;
+    std::uint8_t  spriteHeight;
 
-    _oam2Count = 0;
+    _oam2Count      = 0;
     _spriteZeroNext = false;
 
     std::memset(_oam2, 0xff, 32);
@@ -648,8 +885,8 @@ void PPU::spriteFetch()
 
     for (i = 0; i < _oam2Count; ++i)
     {
-        y = _scanline - _oam2[i].y;
-        tile = _oam2[i].tile;
+        y         = _scanline - _oam2[i].y;
+        tile      = _oam2[i].tile;
         nametable = 0;
 
         if (_oam2[i].yFlip)
@@ -676,24 +913,23 @@ void PPU::spriteFetch()
 
         addr = nametable | (tile << 4) | y;
 
-        _shiftSpriteX[i] = _oam2[i].x;
+        _shiftSpriteX[i]    = _oam2[i].x;
         _shiftSpriteAttr[i] = _oam2[i].raw[2];
-        _shiftSpriteLo[i] = _busVideo.read(addr | 0x00);
-        _shiftSpriteHi[i] = _busVideo.read(addr | 0x08);
+        _shiftSpriteLo[i]   = _busVideo.read(addr | 0x00);
+        _shiftSpriteHi[i]   = _busVideo.read(addr | 0x08);
     }
 
     for (; i < 8; ++i)
     {
-        _shiftSpriteX[i] = 0;
+        _shiftSpriteX[i]    = 0;
         _shiftSpriteAttr[i] = 0;
-        _shiftSpriteLo[i] = 0;
-        _shiftSpriteHi[i] = 0;
+        _shiftSpriteLo[i]   = 0;
+        _shiftSpriteHi[i]   = 0;
 
         _mapper.videoRead(0x1000);
         _mapper.videoRead(0x1000);
     }
 }
-
 
 void PPU::emitPixel()
 {
@@ -754,8 +990,8 @@ std::uint8_t PPU::pixelSprite(std::uint8_t bg)
 {
     std::uint16_t scanX;
     std::uint16_t spriteX;
-    std::uint8_t pattern;
-    std::uint8_t shift;
+    std::uint8_t  pattern;
+    std::uint8_t  shift;
 
     scanX = _step * 8 + _x2;
 

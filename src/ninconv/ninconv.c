@@ -1,46 +1,44 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <string.h>
-#include <stdio.h>
-#include <stdint.h>
-#include <locale.h>
 #include "ninconv.h"
+#include <locale.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 
 #if defined(WIN32) || defined(_WIN32)
-# define OS_WIN32 1
-# include "dirent.h"
-# include <direct.h>
+#define OS_WIN32 1
+#include "dirent.h"
+#include <direct.h>
 #else
-# define OS_UNIX 1
-# include <dirent.h>
-# include <sys/types.h>
-# include <sys/stat.h>
+#define OS_UNIX 1
+#include <dirent.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #endif
 
 static const NinDbGame kDatabase[] = {
@@ -102,16 +100,16 @@ static void writeHeader(FILE* f, const NinDbGame* game)
 {
     uint8_t header[16];
 
-    header[ 0] = 'N';
-    header[ 1] = 'E';
-    header[ 2] = 'S';
-    header[ 3] = 0x1a;
-    header[ 4] = (game->prgRomSize / 0x4000) & 0xff;
-    header[ 5] = (game->chrRomSize / 0x2000) & 0xff;
-    header[ 6] = (game->mirror ? 0x01 : 0x00) | (game->battery ? 0x02 : 0x00) | ((game->mapper & 0xf) << 4);
-    header[ 7] = 0x08 | (game->mapper & 0xf0);
-    header[ 8] = ((game->mapper & 0xf00) >> 8);
-    header[ 9] = (((game->prgRomSize / 0x4000) >> 8) & 0x0f) | ((((game->chrRomSize / 0x2000) >> 8) & 0xf) << 4);
+    header[0]  = 'N';
+    header[1]  = 'E';
+    header[2]  = 'S';
+    header[3]  = 0x1a;
+    header[4]  = (game->prgRomSize / 0x4000) & 0xff;
+    header[5]  = (game->chrRomSize / 0x2000) & 0xff;
+    header[6]  = (game->mirror ? 0x01 : 0x00) | (game->battery ? 0x02 : 0x00) | ((game->mapper & 0xf) << 4);
+    header[7]  = 0x08 | (game->mapper & 0xf0);
+    header[8]  = ((game->mapper & 0xf00) >> 8);
+    header[9]  = (((game->prgRomSize / 0x4000) >> 8) & 0x0f) | ((((game->chrRomSize / 0x2000) >> 8) & 0xf) << 4);
     header[10] = (log2i(game->prgRamSize / 64)) << (game->battery ? 4 : 0);
     header[11] = (log2i(game->chrRamSize / 64));
     header[12] = game->region;
@@ -124,7 +122,7 @@ static void writeHeader(FILE* f, const NinDbGame* game)
 
 static void copyGame(FILE* out, FILE* f)
 {
-    char buffer[4096];
+    char   buffer[4096];
     size_t len;
 
     for (;;)
@@ -138,10 +136,10 @@ static void copyGame(FILE* out, FILE* f)
 
 static void convertGame(const char* path, const char* outDir)
 {
-    FILE* f;
-    FILE* out;
+    FILE*            f;
+    FILE*            out;
     const NinDbGame* game;
-    char buffer[2048];
+    char             buffer[2048];
 
     f = fopen(path, "rb");
     if (!f)
@@ -168,10 +166,10 @@ static void convertGame(const char* path, const char* outDir)
 
 static int massConv(const char* inDir, const char* outDir)
 {
-    DIR* input;
+    DIR*           input;
     struct dirent* ent;
-    struct stat dummy;
-    char buffer[2048];
+    struct stat    dummy;
+    char           buffer[2048];
 
     input = opendir(inDir);
     if (!input)

@@ -1,29 +1,27 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 #ifndef LIBNIN_PPU_H
@@ -31,8 +29,8 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <libnin/NonCopyable.h>
 #include <libnin/MemberStateHelper.h>
+#include <libnin/NonCopyable.h>
 
 namespace libnin
 {
@@ -48,12 +46,12 @@ class PPU : private NonCopyable
 public:
     PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mapper& mapper, Video& video);
 
-    std::uint8_t    regRead(std::uint16_t reg);
-    void            regWrite(std::uint16_t reg, std::uint8_t value);
-    void            oamWrite(std::uint8_t value);
+    std::uint8_t regRead(std::uint16_t reg);
+    void         regWrite(std::uint16_t reg, std::uint8_t value);
+    void         oamWrite(std::uint8_t value);
 
-    void            tick(std::size_t cycles);
-    void            processPixel();
+    void tick(std::size_t cycles);
+    void processPixel();
 
 private:
     union Sprite
@@ -74,19 +72,19 @@ private:
 
     struct Flags
     {
-        bool incrementY:1;
-        bool altSpritePattern:1;
-        bool altBackgroundPattern:1;
-        bool largeSprites:1;
-        bool backgroundEnable:1;
-        bool backgroundEnableLeft:1;
-        bool spriteEnable:1;
-        bool spriteEnableLeft:1;
-        bool rendering:1;
-        bool grayscale:1;
-        bool emphasisRed:1;
-        bool emphasisGreen:1;
-        bool emphasisBlue:1;
+        bool incrementY : 1;
+        bool altSpritePattern : 1;
+        bool altBackgroundPattern : 1;
+        bool largeSprites : 1;
+        bool backgroundEnable : 1;
+        bool backgroundEnableLeft : 1;
+        bool spriteEnable : 1;
+        bool spriteEnableLeft : 1;
+        bool rendering : 1;
+        bool grayscale : 1;
+        bool emphasisRed : 1;
+        bool emphasisGreen : 1;
+        bool emphasisBlue : 1;
     };
 
     using Handler = MemberStateHelper<PPU>;
@@ -132,65 +130,65 @@ private:
     void spriteEvaluation();
     void spriteFetch();
 
-    void            emitPixel();
-    std::uint8_t    pixelBackground();
-    std::uint8_t    pixelSprite(std::uint8_t bg);
+    void         emitPixel();
+    std::uint8_t pixelBackground();
+    std::uint8_t pixelSprite(std::uint8_t bg);
 
     void shiftReload();
 
-    HardwareInfo&   _info;
-    Memory&         _memory;
-    NMI&            _nmi;
-    BusVideo&       _busVideo;
-    Mapper&         _mapper;
-    Video&          _video;
+    HardwareInfo& _info;
+    Memory&       _memory;
+    NMI&          _nmi;
+    BusVideo&     _busVideo;
+    Mapper&       _mapper;
+    Video&        _video;
 
-    Handler         _handler;
-    Handler         _handler2;
+    Handler _handler;
+    Handler _handler2;
 
-    std::uint16_t   _v;
-    std::uint16_t   _t;
-    std::uint8_t    _x;
-    std::uint8_t    _x2;
-    bool            _w:1;
-    bool            _prescan:1;
-    bool            _spriteZeroNext:1;
-    bool            _spriteZeroHit:1;
-    bool            _oddFrame:1;
-    bool            _dummySkip:1;
-    bool            _nmiRace:1;
-    bool            _nmiSup:1;
+    std::uint16_t _v;
+    std::uint16_t _t;
+    std::uint8_t  _x;
+    std::uint8_t  _x2;
+    bool          _w : 1;
+    bool          _prescan : 1;
+    bool          _spriteZeroNext : 1;
+    bool          _spriteZeroHit : 1;
+    bool          _oddFrame : 1;
+    bool          _dummySkip : 1;
+    bool          _nmiRace : 1;
+    bool          _nmiSup : 1;
 
-    Flags           _flags;
-    Sprite          _oam2[8];
-    std::uint8_t    _oam2Count;
+    Flags        _flags;
+    Sprite       _oam2[8];
+    std::uint8_t _oam2Count;
 
-    std::uint8_t    _readBuf;
-    std::uint8_t    _latchNT;
-    std::uint8_t    _latchAT;
-    std::uint8_t    _latchLoBG;
-    std::uint8_t    _latchHiBG;
+    std::uint8_t _readBuf;
+    std::uint8_t _latchNT;
+    std::uint8_t _latchAT;
+    std::uint8_t _latchLoBG;
+    std::uint8_t _latchHiBG;
 
-    std::uint16_t   _shiftPatternLo;
-    std::uint16_t   _shiftPatternHi;
-    std::uint16_t   _shiftPaletteLo;
-    std::uint16_t   _shiftPaletteHi;
+    std::uint16_t _shiftPatternLo;
+    std::uint16_t _shiftPatternHi;
+    std::uint16_t _shiftPaletteLo;
+    std::uint16_t _shiftPaletteHi;
 
-    std::uint8_t    _shiftSpriteX[8];
-    std::uint8_t    _shiftSpriteAttr[8];
-    std::uint8_t    _shiftSpriteLo[8];
-    std::uint8_t    _shiftSpriteHi[8];
+    std::uint8_t _shiftSpriteX[8];
+    std::uint8_t _shiftSpriteAttr[8];
+    std::uint8_t _shiftSpriteLo[8];
+    std::uint8_t _shiftSpriteHi[8];
 
-    std::uint32_t   _clock;
-    std::uint32_t   _clockVideo;
-    std::uint8_t    _scanline;
-    std::uint8_t    _step;
-    std::uint8_t    _oamAddr;
+    std::uint32_t _clock;
+    std::uint32_t _clockVideo;
+    std::uint8_t  _scanline;
+    std::uint8_t  _step;
+    std::uint8_t  _oamAddr;
 
-    std::uint32_t   _pixelBuffer;
-    std::uint8_t    _pixelBufferBits;
+    std::uint32_t _pixelBuffer;
+    std::uint8_t  _pixelBufferBits;
 };
 
-}
+} // namespace libnin
 
 #endif

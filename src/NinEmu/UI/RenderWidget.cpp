@@ -1,33 +1,31 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <cmath>
 #include <NinEmu/UI/RenderWidget.h>
+#include <cmath>
 
 RenderWidget::RenderWidget(QWidget* parent)
 : QOpenGLWidget{parent}
@@ -45,12 +43,11 @@ RenderWidget::RenderWidget(QWidget* parent)
 
 RenderWidget::~RenderWidget()
 {
-
 }
 
 void RenderWidget::initializeGL()
 {
-    static const char black[4] = { 0x00, 0x00, 0x00, 0x00 };
+    static const char black[4] = {0x00, 0x00, 0x00, 0x00};
 
     makeCurrent();
     glEnable(GL_TEXTURE_2D);
@@ -137,8 +134,8 @@ void RenderWidget::updateTexture(const char* texture)
 
 void RenderWidget::computeViewBox()
 {
-    int w;
-    int h;
+    int   w;
+    int   h;
     float imageW;
     float imageH;
     float xRatio;
@@ -161,14 +158,14 @@ void RenderWidget::computeViewBox()
     if (_fit)
     {
         _xMin = -1.f;
-        _xMax =  1.f;
+        _xMax = 1.f;
         _yMin = -1.f;
-        _yMax =  1.f;
+        _yMax = 1.f;
     }
     else
     {
-        w = size().width();
-        h = size().height();
+        w      = size().width();
+        h      = size().height();
         imageW = ((256.f - 2 * _xOverscan) * _pixelAspectRatio);
         imageH = (240.f - 2 * _yOverscan);
         xRatio = (float)w / imageW;
@@ -176,20 +173,20 @@ void RenderWidget::computeViewBox()
 
         if (yRatio > xRatio)
         {
-            r = xRatio / yRatio;
-            _xMin = -1.f;
-            _xMax =  1.f;
-            _yMin = -r;
-            _yMax =  r;
+            r         = xRatio / yRatio;
+            _xMin     = -1.f;
+            _xMax     = 1.f;
+            _yMin     = -r;
+            _yMax     = r;
             amplitude = xRatio;
         }
         else
         {
-            r = yRatio / xRatio;
-            _xMin = -r;
-            _xMax =  r;
-            _yMin = -1.f;
-            _yMax =  1.f;
+            r         = yRatio / xRatio;
+            _xMin     = -r;
+            _xMax     = r;
+            _yMin     = -1.f;
+            _yMax     = 1.f;
             amplitude = yRatio;
         }
 

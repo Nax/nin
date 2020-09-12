@@ -1,33 +1,31 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <nin/nin.h>
 #include <NinEmu/Core/Audio.h>
+#include <nin/nin.h>
 
 #define TOLERANCE (0.0001)
 
@@ -36,7 +34,7 @@ Audio::Audio(QObject* parent)
 {
     ALCint nativeFrequency;
 
-    _device = alcOpenDevice(nullptr);
+    _device  = alcOpenDevice(nullptr);
     _context = alcCreateContext(_device, nullptr);
     alcMakeContextCurrent(_context);
 
@@ -64,9 +62,9 @@ uint32_t Audio::frequency() const
 
 void Audio::reset()
 {
-    static const float kSilence[NIN_AUDIO_SAMPLE_SIZE] = { 0.f };
+    static const float kSilence[NIN_AUDIO_SAMPLE_SIZE] = {0.f};
 
-    ALint attr;
+    ALint  attr;
     ALuint buffer;
 
     alSourceStop(_source);
@@ -91,9 +89,9 @@ void Audio::reset()
 
 void Audio::pushSamples(const float* samples)
 {
-    float tmp[NIN_AUDIO_SAMPLE_SIZE + 1];
-    ALuint buffer;
-    ALint attr;
+    float   tmp[NIN_AUDIO_SAMPLE_SIZE + 1];
+    ALuint  buffer;
+    ALint   attr;
     ALsizei len;
 
     len = NIN_AUDIO_SAMPLE_SIZE;
@@ -151,12 +149,12 @@ static double lerp(double a, double b, double coeff)
 
 void Audio::adjustDrift()
 {
-    ALint currentBufferOffset;
+    ALint       currentBufferOffset;
     std::size_t queuedSamples;
-    double newDrift;
+    double      newDrift;
 
     alGetSourcei(_source, AL_SAMPLE_OFFSET, &currentBufferOffset);
-    queuedSamples = NIN_AUDIO_SAMPLE_SIZE * (kBufferCount - _buffers.size()) - currentBufferOffset;
-    newDrift = (double)queuedSamples / (double)((kBufferCount / 2) * NIN_AUDIO_SAMPLE_SIZE);
+    queuedSamples  = NIN_AUDIO_SAMPLE_SIZE * (kBufferCount - _buffers.size()) - currentBufferOffset;
+    newDrift       = (double)queuedSamples / (double)((kBufferCount / 2) * NIN_AUDIO_SAMPLE_SIZE);
     _playbackDrift = lerp(_playbackDrift, newDrift, 1e-5);
 }

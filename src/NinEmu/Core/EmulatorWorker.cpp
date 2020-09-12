@@ -1,34 +1,32 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <stdio.h>
-#include <QtCore>
 #include <NinEmu/Core/EmulatorWorker.h>
+#include <QtCore>
+#include <stdio.h>
 
 EmulatorWorker::EmulatorWorker(QObject* parent)
 : QObject(parent)
@@ -56,14 +54,14 @@ EmulatorWorker::~EmulatorWorker()
 bool EmulatorWorker::loadRom(const QString& path)
 {
     QByteArray raw;
-    QString saveFile;
-    QString biosPath;
-    NinError err;
-    NinInt32 frameCycles;
-    NinInt32 frameDelay;
-    NinInt32 system;
-    NinInt32 diskSideCount;
-    bool success;
+    QString    saveFile;
+    QString    biosPath;
+    NinError   err;
+    NinInt32   frameCycles;
+    NinInt32   frameDelay;
+    NinInt32   system;
+    NinInt32   diskSideCount;
+    bool       success;
 
     std::unique_lock<std::mutex> lock(_mutex);
 
@@ -75,7 +73,7 @@ bool EmulatorWorker::loadRom(const QString& path)
         printf("Error loading rom (%d)\n", (int)err);
         fflush(stdout);
         _workerState = WorkerState::Idle;
-        success = false;
+        success      = false;
     }
     else
     {
@@ -84,24 +82,25 @@ bool EmulatorWorker::loadRom(const QString& path)
         ninInfoQueryInteger(_state, &system, NIN_INFO_SYSTEM);
         ninInfoQueryInteger(_state, &diskSideCount, NIN_INFO_DISK_SIDE_COUNT);
 
-        if (system == NIN_SYSTEM_FDS) {
+        if (system == NIN_SYSTEM_FDS)
+        {
             biosPath = QCoreApplication::applicationDirPath() + "/bios/disksys.rom";
-            raw = biosPath.toUtf8();
+            raw      = biosPath.toUtf8();
             ninLoadBiosFDS(_state, raw.data());
         }
 
-        _frameCycles = frameCycles;
-        _frameDelay = frameDelay;
+        _frameCycles        = frameCycles;
+        _frameDelay         = frameDelay;
         _info.diskSideCount = diskSideCount;
-        _cyc = 0;
-        _accumulator = 0;
+        _cyc                = 0;
+        _accumulator        = 0;
 
         raw = getSaveLocation("nes", path).toUtf8();
         ninSetSaveFile(_state, raw.data());
         ninAudioSetCallback(_state, &audioCallback, this);
         ninAudioSetFrequency(_state, _audioFrequency);
         _workerState = WorkerState::Starting;
-        success = true;
+        success      = true;
         emit reset(_info);
     }
 
@@ -196,25 +195,25 @@ void EmulatorWorker::setAudioFrequency(uint32_t freq)
 void EmulatorWorker::syncAudio()
 {
     std::unique_lock<std::mutex> lock(_audioMutex);
-    emit audio(_audioBuffer);
+    emit                         audio(_audioBuffer);
 }
 
 void EmulatorWorker::workerMain()
 {
     TimePoint prev;
     TimePoint now;
-    uint64_t dt;
-    uint64_t delay;
+    uint64_t  dt;
+    uint64_t  delay;
 
     std::unique_lock<std::mutex> lock(_mutex);
 
-    prev = Clock::now();
+    prev         = Clock::now();
     _accumulator = 0;
 
     for (;;)
     {
-        now = Clock::now();
-        dt = (now - prev).count();
+        now  = Clock::now();
+        dt   = (now - prev).count();
         prev = now;
 
         switch (_workerState)
@@ -226,8 +225,8 @@ void EmulatorWorker::workerMain()
         case WorkerState::Starting:
             workerUpdate();
             _accumulator = 0;
-            now = Clock::now();
-            prev = now;
+            now          = Clock::now();
+            prev         = now;
             _workerState = WorkerState::Running;
             break;
         case WorkerState::Running:
@@ -306,14 +305,14 @@ void EmulatorWorker::closeRomRaw()
 QString EmulatorWorker::getSaveLocation(const QString& prefix, const QString& name)
 {
     QFileInfo info(name);
-    QString ninDir;
-    QString saveDir;
-    QString saveName;
-    QString savePath;
+    QString   ninDir;
+    QString   saveDir;
+    QString   saveName;
+    QString   savePath;
 
-    ninDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+    ninDir   = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     saveName = info.completeBaseName() + ".sav";
-    saveDir = ninDir + "/saves/" + prefix;
+    saveDir  = ninDir + "/saves/" + prefix;
     savePath = saveDir + "/" + saveName;
 
     QDir dir(saveDir);

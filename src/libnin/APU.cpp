@@ -1,43 +1,39 @@
 /*
- * BSD 2 - Clause License
+ * Nin, a Nintendo Entertainment System Emulator.
  *
- * Copyright(c) 2019, Maxime Bacoux
+ * Copyright (c) 2018-2020 Maxime Bacoux
  * All rights reserved.
  *
- * Redistributionand use in sourceand binary forms, with or without
- * modification, are permitted provided that the following conditions are met :
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * Version 2, as published by the Free Software Foundation.
  *
- * 1. Redistributions of source code must retain the above copyright notice, this
- * list of conditionsand the following disclaimer.
+ * Alternatively, this program can be licensed under a commercial license
+ * upon request.
  *
- * 2. Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditionsand the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
+ * When using the program under the GNU General Public License Version 2 license,
+ * the following apply:
  *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED.IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *  1. This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *  2. You should have received a copy of the GNU General Public License
+ *     along with this program; if not, write to the Free Software
+ *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
 #include <libnin/APU.h>
 #include <libnin/Audio.h>
+#include <libnin/HardwareInfo.h>
 #include <libnin/IRQ.h>
 #include <libnin/Mapper.h>
-#include <libnin/HardwareInfo.h>
 
 using namespace libnin;
 
 static constexpr const std::uint8_t kTriangleSequence[32] = {
-    15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0,
-    0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-};
+    15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
 
 static constexpr const std::uint8_t kPulseSequence[] = {
     0x02, /* 0 1 0 0 0 0 0 0 */
@@ -47,9 +43,7 @@ static constexpr const std::uint8_t kPulseSequence[] = {
 };
 
 static constexpr const std::uint8_t kLengthCounterLookup[32] = {
-    10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14,
-    12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30
-};
+    10, 254, 20, 2, 40, 4, 80, 6, 160, 8, 60, 10, 14, 12, 26, 14, 12, 16, 24, 18, 48, 20, 96, 22, 192, 24, 72, 26, 16, 28, 32, 30};
 
 APU::APU(const HardwareInfo& info, IRQ& irq, Mapper& mapper, Audio& audio)
 : _info(info)
@@ -66,7 +60,7 @@ APU::APU(const HardwareInfo& info, IRQ& irq, Mapper& mapper, Audio& audio)
 , _resetClock{}
 {
     _noise.feedback = 1;
-    _dmc.address = 0x8000;
+    _dmc.address    = 0x8000;
 }
 
 std::uint8_t APU::regRead(std::uint16_t reg)
@@ -80,12 +74,12 @@ std::uint8_t APU::regRead(std::uint16_t reg)
         break;
 
     case 0x15:
-        if (_pulse[0].length)                   value |= 0x01;
-        if (_pulse[1].length)                   value |= 0x02;
-        if (_triangle.length)                   value |= 0x04;
-        if (_noise.length)                      value |= 0x08;
-        if (_dmc.enabled)                       value |= 0x10;
-        if (_irq.check(IRQ_APU_FRAME))          value |= 0x40;
+        if (_pulse[0].length) value |= 0x01;
+        if (_pulse[1].length) value |= 0x02;
+        if (_triangle.length) value |= 0x04;
+        if (_noise.length) value |= 0x08;
+        if (_dmc.enabled) value |= 0x10;
+        if (_irq.check(IRQ_APU_FRAME)) value |= 0x40;
         _irq.unset(IRQ_APU_FRAME);
         break;
     }
@@ -109,7 +103,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
         _pulse[i].sweepEnable = !!(value & 0x80);
         _pulse[i].sweepPeriod = (value >> 4) & 0x07;
         _pulse[i].sweepNegate = !!(value & 0x08);
-        _pulse[i].sweepShift = value & 0x07;
+        _pulse[i].sweepShift  = value & 0x07;
         _pulse[i].sweepReload = 1;
         pulseUpdateTarget(i);
         break;
@@ -152,7 +146,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
         loadEnvelope(_noise.envelope, value);
         break;
     case 0xe: // Noise Timer
-        _noise.mode = !!(value & 0x80);
+        _noise.mode        = !!(value & 0x80);
         _noise.timerPeriod = _info.specs().apuNoisePeriod[value & 0xf];
         break;
     case 0xf: // Noise Length
@@ -161,8 +155,8 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
         _noise.envelope.start = 1;
         break;
     case 0x10: // DMC Config
-        _dmc.irqEnable = !!(value & 0x80);
-        _dmc.loop = !!(value & 0x40);
+        _dmc.irqEnable   = !!(value & 0x80);
+        _dmc.loop        = !!(value & 0x40);
         _dmc.timerPeriod = _info.specs().apuDmcPeriod[value & 0xf];
         break;
     case 0x11: // DMC Load
@@ -180,14 +174,14 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
         else
         {
             _pulse[0].enabled = 0;
-            _pulse[0].length = 0;
+            _pulse[0].length  = 0;
         }
         if (value & 0x02)
             _pulse[1].enabled = 1;
         else
         {
             _pulse[1].enabled = 0;
-            _pulse[1].length = 0;
+            _pulse[1].length  = 0;
         }
         if (value & 0x04)
         {
@@ -196,7 +190,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
         else
         {
             _triangle.enabled = 0;
-            _triangle.length = 0;
+            _triangle.length  = 0;
         }
         if (value & 0x08)
         {
@@ -205,7 +199,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
         else
         {
             _noise.enabled = 0;
-            _noise.length = 0;
+            _noise.length  = 0;
         }
         if (value & 0x10)
         {
@@ -217,7 +211,7 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
         }
         break;
     case 0x17:
-        _mode = !!(value & 0x80);
+        _mode       = !!(value & 0x80);
         _irqInhibit = !!(value & 0x40);
         if (_irqInhibit)
         {
@@ -235,12 +229,12 @@ void APU::regWrite(std::uint16_t reg, std::uint8_t value)
 
 void APU::tick(std::size_t cycles)
 {
-    float sample;
+    float   sample;
     uint8_t triangleSample;
     uint8_t pulseSample[2];
     uint8_t noiseSample;
     uint8_t dmcSample;
-    size_t maxApuCycle;
+    size_t  maxApuCycle;
 
     maxApuCycle = _info.specs().apuFrameCycles[3 + _mode];
     while (cycles--)
@@ -261,16 +255,12 @@ void APU::tick(std::size_t cycles)
             tickDMC();
         }
 
-        if (_frameCounter == _info.specs().apuFrameCycles[0]
-            || _frameCounter == _info.specs().apuFrameCycles[1]
-            || _frameCounter == _info.specs().apuFrameCycles[2]
-            || _frameCounter == maxApuCycle)
+        if (_frameCounter == _info.specs().apuFrameCycles[0] || _frameCounter == _info.specs().apuFrameCycles[1] || _frameCounter == _info.specs().apuFrameCycles[2] || _frameCounter == maxApuCycle)
         {
             frameQuarter();
         }
 
-        if (_frameCounter == _info.specs().apuFrameCycles[1]
-            || _frameCounter == maxApuCycle)
+        if (_frameCounter == _info.specs().apuFrameCycles[1] || _frameCounter == maxApuCycle)
         {
             frameHalf();
         }
@@ -292,8 +282,8 @@ void APU::tick(std::size_t cycles)
         triangleSample = sampleTriangle();
         pulseSample[0] = samplePulse(0);
         pulseSample[1] = samplePulse(1);
-        noiseSample = sampleNoise();
-        dmcSample = sampleDMC();
+        noiseSample    = sampleNoise();
+        dmcSample      = sampleDMC();
 
         /* Emit the sample */
         sample = mix(triangleSample, pulseSample[0], pulseSample[1], noiseSample, dmcSample);
@@ -344,8 +334,8 @@ void APU::tickNoise()
     else
     {
         _noise.timerValue = _noise.timerPeriod;
-        mask = _noise.mode ? 0x40 : 0x02;
-        tmp = (!!(_noise.feedback & 0x01)) ^ (!!(_noise.feedback & mask));
+        mask              = _noise.mode ? 0x40 : 0x02;
+        tmp               = (!!(_noise.feedback & 0x01)) ^ (!!(_noise.feedback & mask));
         _noise.feedback >>= 1;
         _noise.feedback |= (tmp << 14);
     }
@@ -378,7 +368,7 @@ void APU::tickDMC()
     {
         _dmc.length--;
         _dmc.sampleBuffer = dmcMemoryRead(_dmc.address);
-        _dmc.bitCount = 8;
+        _dmc.bitCount     = 8;
         _dmc.address++;
     }
 }
@@ -408,7 +398,7 @@ void APU::frameHalfPulse(int n)
     }
     if (ch.sweepValue == 0 || ch.sweepReload)
     {
-        ch.sweepValue = ch.sweepPeriod;
+        ch.sweepValue  = ch.sweepPeriod;
         ch.sweepReload = 0;
     }
     else
@@ -502,17 +492,17 @@ float APU::mix(uint8_t triangle, uint8_t pulse1, uint8_t pulse2, uint8_t noise, 
 
 void APU::loadEnvelope(Envelope& ev, uint8_t value)
 {
-    ev.halt = !!(value & 0x20);
+    ev.halt     = !!(value & 0x20);
     ev.constant = !!(value & 0x10);
-    ev.volume = value & 0xf;
+    ev.volume   = value & 0xf;
 }
 
 void APU::tickEnvelope(Envelope& ev)
 {
     if (ev.start)
     {
-        ev.start = 0;
-        ev.decay = 15;
+        ev.start   = 0;
+        ev.decay   = 15;
         ev.divider = ev.volume;
     }
     else
