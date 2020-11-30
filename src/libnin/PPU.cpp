@@ -37,6 +37,8 @@
 
 using namespace libnin;
 
+int gDebugClock = 0;
+
 static constexpr std::uint8_t bitrev8(std::uint8_t v)
 {
     alignas(64) constexpr const std::uint8_t kLookup[] =
@@ -571,13 +573,13 @@ PPU::Handler PPU::handleVBlank0()
 
 PPU::Handler PPU::handleVBlank1()
 {
-    //if (!_nmiSup)
-    _nmi.set(NMI_OCCURED);
+    if (!_nmiSup)
+        _nmi.set(NMI_OCCURED);
     _nmiRace = false;
     _nmiSup  = false;
     _video.swap();
     _clockVideo = 0;
-    return wait(341 * 20 - 1, (Handler)&PPU::handlePreScan);
+    return wait(341 * 20 - 1, &PPU::handlePreScan);
 }
 
 PPU::Handler PPU::handlePreScan()
@@ -704,45 +706,45 @@ PPU::Handler PPU::handleScanSpriteEval()
         spriteEvaluation();
         spriteFetch();
     }
-    return wait(63, (Handler)&PPU::handleNextNT0);
+    return wait(63, &PPU::handleNextNT0);
 }
 
 PPU::Handler PPU::handleNextNT0()
 {
-    return (Handler)&PPU::handleNextNT1;
+    return &PPU::handleNextNT1;
 }
 
 PPU::Handler PPU::handleNextNT1()
 {
     fetchNT();
-    return (Handler)&PPU::handleNextAT0;
+    return &PPU::handleNextAT0;
 }
 
 PPU::Handler PPU::handleNextAT0()
 {
-    return (Handler)&PPU::handleNextAT1;
+    return &PPU::handleNextAT1;
 }
 
 PPU::Handler PPU::handleNextAT1()
 {
     fetchAT();
-    return (Handler)&PPU::handleNextLoBG0;
+    return &PPU::handleNextLoBG0;
 }
 
 PPU::Handler PPU::handleNextLoBG0()
 {
-    return (Handler)&PPU::handleNextLoBG1;
+    return &PPU::handleNextLoBG1;
 }
 
 PPU::Handler PPU::handleNextLoBG1()
 {
     fetchLoBG();
-    return (Handler)&PPU::handleNextHiBG0;
+    return &PPU::handleNextHiBG0;
 }
 
 PPU::Handler PPU::handleNextHiBG0()
 {
-    return (Handler)&PPU::handleNextHiBG1;
+    return &PPU::handleNextHiBG1;
 }
 
 PPU::Handler PPU::handleNextHiBG1()
