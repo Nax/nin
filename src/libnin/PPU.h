@@ -92,6 +92,9 @@ private:
     Handler handleWait();
     Handler handleVBlank0();
     Handler handleVBlank1();
+    Handler handleVBlank2();
+    Handler handleVBlank3();
+    Handler handleVBlank4();
 
     Handler handlePreScan();
     Handler handlePreScanReloadX();
@@ -157,6 +160,7 @@ private:
     bool          _oddFrame : 1;
     bool          _dummySkip : 1;
     bool          _nmiRace : 1;
+    bool          _nmiRace2 : 1;
     bool          _nmiSup : 1;
 
     Flags        _flags;

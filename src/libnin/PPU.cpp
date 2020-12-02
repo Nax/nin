@@ -411,11 +411,11 @@ std::uint8_t PPU::regRead(std::uint16_t reg)
     case 0x01:
         break;
     case 0x02: // PPUSTATUS
-        if (_nmiRace)
+        if (_nmiRace || _nmiRace2)
             _nmiSup = true;
         if (_spriteZeroHit)
             value |= 0x40;
-        if (_nmi.check(NMI_OCCURED))
+        if (_nmi.check(NMI_OCCURED) && !_nmiRace)
             value |= 0x80;
         _nmi.unset(NMI_OCCURED);
         _w = false;
@@ -464,7 +464,11 @@ void PPU::regWrite(std::uint16_t reg, std::uint8_t value)
         if (value & 0x80)
             _nmi.set(NMI_OUTPUT);
         else
+        {
             _nmi.unset(NMI_OUTPUT);
+            if (_nmiRace || _nmiRace2)
+                _nmi.ack();
+        }
         break;
     case 0x01:
         _flags.grayscale            = !!(value & 0x01);
@@ -567,19 +571,36 @@ PPU::Handler PPU::handleWait()
 
 PPU::Handler PPU::handleVBlank0()
 {
+    /* 2 Cycles before NMI - Prepare VBL cancelling */
     _nmiRace = true;
+    _nmi.set(NMI_OCCURED);
+    _video.swap();
+    _clockVideo = 0;
     return &PPU::handleVBlank1;
 }
 
 PPU::Handler PPU::handleVBlank1()
 {
-    if (!_nmiSup)
-        _nmi.set(NMI_OCCURED);
-    _nmiRace = false;
-    _nmiSup  = false;
-    _video.swap();
-    _clockVideo = 0;
-    return wait(341 * 20 - 1, &PPU::handlePreScan);
+    _nmiRace  = false;
+    _nmiRace2 = true;
+    return &PPU::handleVBlank2;
+}
+
+PPU::Handler PPU::handleVBlank2()
+{
+    return &PPU::handleVBlank3;
+}
+
+PPU::Handler PPU::handleVBlank3()
+{
+    if (_nmiSup)
+    {
+        _nmi.unset(NMI_OCCURED);
+        _nmi.ack();
+        _nmiSup = false;
+    }
+    _nmiRace2 = false;
+    return wait(341 * 20 - 3, &PPU::handlePreScan);
 }
 
 PPU::Handler PPU::handlePreScan()
@@ -594,7 +615,7 @@ PPU::Handler PPU::handlePreScan()
         _shiftSpriteLo[i] = 0x00;
     }
     _step = 0;
-    return wait(255, (Handler)&PPU::handlePreScanReloadX);
+    return wait(256, (Handler)&PPU::handlePreScanReloadX);
 }
 
 PPU::Handler PPU::handlePreScanReloadX()
@@ -797,7 +818,7 @@ PPU::Handler PPU::handleNextDummy3()
         return &PPU::handleScan;
     }
     _scanline = 0;
-    return wait(341, &PPU::handleVBlank0);
+    return wait(340, &PPU::handleVBlank0);
 }
 
 PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
