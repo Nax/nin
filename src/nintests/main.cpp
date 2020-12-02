@@ -117,5 +117,14 @@ int main(void)
     suite.add("Blargg Sprite Hit Tests - 10 Timing Order", "blargg_sprite_hit_tests/10-timing_order.nes", SEC_NTSC(1.50f), [](NinState* state) { return matchHash(state, 0x24ff7b4e); });
     suite.add("Blargg Sprite Hit Tests - 11 Edge Timing", "blargg_sprite_hit_tests/11-edge_timing.nes", SEC_NTSC(1.50f), [](NinState* state) { return matchHash(state, 0x7f6aa2ed); });
 
+    /* Blargg VBL NMI Timing */
+    suite.add("Blargg VBL NMI Timing - 1 Frame Basics", "blargg_vbl_nmi_timing/1-frame_basics.nes", SEC_NTSC(3.00f), [](NinState* state) { return matchHash(state, 0xa11f46bb); });
+    suite.add("Blargg VBL NMI Timing - 2 VBL Timing", "blargg_vbl_nmi_timing/2-vbl_timing.nes", SEC_NTSC(3.00f), [](NinState* state) { return matchHash(state, 0x9a79f4b7); });
+    suite.add("Blargg VBL NMI Timing - 3 Even/Odd Frames", "blargg_vbl_nmi_timing/3-even_odd_frames.nes", SEC_NTSC(2.00f), [](NinState* state) { return matchHash(state, 0x2e123d7c); });
+    suite.add("Blargg VBL NMI Timing - 4 VBL Clear Timing", "blargg_vbl_nmi_timing/4-vbl_clear_timing.nes", SEC_NTSC(2.00f), [](NinState* state) { return matchHash(state, 0x3c3ca36c); });
+    suite.add("Blargg VBL NMI Timing - 5 NMI Suppression", "blargg_vbl_nmi_timing/5-nmi_suppression.nes", SEC_NTSC(3.00f), [](NinState* state) { return matchHash(state, 0x10c406ee); });
+    suite.add("Blargg VBL NMI Timing - 6 NMI Disable", "blargg_vbl_nmi_timing/6-nmi_disable.nes", SEC_NTSC(2.00f), [](NinState* state) { return matchHash(state, 0xe4716bdc); });
+    suite.add("Blargg VBL NMI Timing - 7 NMI Timing", "blargg_vbl_nmi_timing/7-nmi_timing.nes", SEC_NTSC(2.00f), [](NinState* state) { return matchHash(state, 0x90bdf687); });
+
     return suite.run();
 }

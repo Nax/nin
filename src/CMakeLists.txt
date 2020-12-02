@@ -66,6 +66,7 @@ add_subdirectory(libnin)
 add_subdirectory(ninperf)
 add_subdirectory(ninconv)
 add_subdirectory(nintests)
+add_subdirectory(ninhash)
 add_subdirectory(NinEmu)
 
 # Install
