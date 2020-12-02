@@ -37,6 +37,8 @@
 
 using namespace libnin;
 
+#define NMI_OFF 3
+
 int gDebugClock = 0;
 
 static constexpr std::uint8_t bitrev8(std::uint8_t v)
@@ -461,7 +463,7 @@ void PPU::regWrite(std::uint16_t reg, std::uint8_t value)
         _flags.altBackgroundPattern = !!(value & 0x10);
         _flags.largeSprites         = !!(value & 0x20);
 
-        if (value & 0x80)
+        if (value & 0x80 && !_nmiRace3)
             _nmi.set(NMI_OUTPUT);
         else
         {
@@ -600,12 +602,20 @@ PPU::Handler PPU::handleVBlank3()
         _nmiSup = false;
     }
     _nmiRace2 = false;
-    return wait(341 * 20 - 3, &PPU::handlePreScan);
+    return wait(341 * 20 - 4, &PPU::handlePreScan0);
 }
 
-PPU::Handler PPU::handlePreScan()
+PPU::Handler PPU::handlePreScan0()
 {
+    _nmiRace3 = true;
+    return &PPU::handlePreScan1;
+}
+
+PPU::Handler PPU::handlePreScan1()
+{
+    _nmiRace3 = false;
     _nmi.unset(NMI_OCCURED);
+
     _prescan        = true;
     _spriteZeroNext = false;
     _spriteZeroHit  = false;
@@ -615,7 +625,7 @@ PPU::Handler PPU::handlePreScan()
         _shiftSpriteLo[i] = 0x00;
     }
     _step = 0;
-    return wait(256, (Handler)&PPU::handlePreScanReloadX);
+    return wait(257 - NMI_OFF, (Handler)&PPU::handlePreScanReloadX);
 }
 
 PPU::Handler PPU::handlePreScanReloadX()
@@ -790,13 +800,13 @@ PPU::Handler PPU::handleNextDummy0()
 
 PPU::Handler PPU::handleNextDummy1()
 {
-    _dummySkip = (_oddFrame && _flags.backgroundEnable);
     fetchNT();
     return &PPU::handleNextDummy2;
 }
 
 PPU::Handler PPU::handleNextDummy2()
 {
+    _dummySkip = (_oddFrame && _flags.backgroundEnable);
     return &PPU::handleNextDummy3;
 }
 
@@ -818,7 +828,7 @@ PPU::Handler PPU::handleNextDummy3()
         return &PPU::handleScan;
     }
     _scanline = 0;
-    return wait(340, &PPU::handleVBlank0);
+    return wait(339 + NMI_OFF, &PPU::handleVBlank0);
 }
 
 PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)

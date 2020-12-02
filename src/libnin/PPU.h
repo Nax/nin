@@ -94,9 +94,9 @@ private:
     Handler handleVBlank1();
     Handler handleVBlank2();
     Handler handleVBlank3();
-    Handler handleVBlank4();
 
-    Handler handlePreScan();
+    Handler handlePreScan0();
+    Handler handlePreScan1();
     Handler handlePreScanReloadX();
     Handler handlePreScanReloadY();
     Handler handleScan();
@@ -161,6 +161,7 @@ private:
     bool          _dummySkip : 1;
     bool          _nmiRace : 1;
     bool          _nmiRace2 : 1;
+    bool          _nmiRace3 : 1;
     bool          _nmiSup : 1;
 
     Flags        _flags;
