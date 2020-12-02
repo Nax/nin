@@ -32,6 +32,7 @@
 #include <libnin/Mapper/Action52.h>
 #include <libnin/Mapper/CNROM.h>
 #include <libnin/Mapper/ColorDreams.h>
+#include <libnin/Mapper/DXROM.h>
 #include <libnin/Mapper/DiskSystem.h>
 #include <libnin/Mapper/GXROM.h>
 #include <libnin/Mapper/MMC1.h>
@@ -59,6 +60,7 @@ public:
     Mapper            mapper;
     MapperAXROM       axrom;
     MapperCNROM       cnrom;
+    MapperDXROM       dxrom;
     MapperGXROM       gxrom;
     MapperUXROM       uxrom;
     MapperMMC1        mmc1;

@@ -24,37 +24,24 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIBNIN_MAPPER_ID_H
-#define LIBNIN_MAPPER_ID_H
+#ifndef LIBNIN_MAPPER_DXROM_H
+#define LIBNIN_MAPPER_DXROM_H 1
+
+#include <cstdint>
+#include <libnin/Mapper.h>
 
 namespace libnin
 {
 
-enum class MapperID
+class MapperDXROM : public Mapper
 {
-    Bad     = -2,
-    Unknown = -1,
-    NROM    = 0,
-    MMC1,
-    MMC2,
-    MMC3,
-    MMC4,
-    MMC5,
-    AxROM,
-    AxROM_Conflicts,
-    CNROM,
-    DxROM,
-    GxROM,
-    UxROM,
-    UxROM_NoConflicts,
-    UxROM_UN1ROM,
-    UxROM_UNROM180,
-    ColorDreams,
-    Action52,
-    FDS
-};
+public:
+    void handleInit();
+    void handleWrite(std::uint16_t addr, std::uint8_t value);
 
-MapperID getMapperID(int mapper, int submapper);
+private:
+    std::uint8_t _bankSelect : 3;
+};
 
 } // namespace libnin
 

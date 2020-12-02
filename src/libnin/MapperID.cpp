@@ -64,6 +64,8 @@ MapperID libnin::getMapperID(int mapper, int submapper)
         return MapperID::UxROM_UN1ROM;
     case 180:
         return MapperID::UxROM_UNROM180;
+    case 206:
+        return MapperID::DxROM;
     case 228:
         return MapperID::Action52;
     default:
