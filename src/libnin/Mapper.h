@@ -28,7 +28,6 @@
 #define LIBNIN_MAPPER_H 1
 
 #include <cstdint>
-#include <libnin/Mapper/DiskSystem.h>
 #include <libnin/MapperID.h>
 #include <libnin/NonCopyable.h>
 #include <nin/nin.h>
@@ -85,17 +84,6 @@ public:
     void bankChr8k(std::int16_t bank);
 
 protected:
-    void         handleInit();
-    void         handleTick();
-    std::uint8_t handleRead(std::uint16_t addr);
-    void         handleWrite(std::uint16_t addr, std::uint8_t value);
-    void         handleVideoRead(std::uint16_t addr);
-    std::uint8_t handleNtRead(int nametable, std::uint16_t offset);
-    void         handleNtWrite(int nametable, std::uint16_t offset, std::uint8_t value);
-    std::uint8_t handleChrRead(int bank, std::uint16_t offset);
-    void         handleChrWrite(int bank, std::uint16_t offset, std::uint8_t value);
-
-private:
     using HandlerInit      = void (*)(Mapper*);
     using HandlerTick      = void (*)(Mapper*);
     using HandlerRead      = std::uint8_t (*)(Mapper*, std::uint16_t);
@@ -105,6 +93,16 @@ private:
     using HandlerNtWrite   = void (*)(Mapper*, int, std::uint16_t, std::uint8_t);
     using HandlerChrRead   = std::uint8_t (*)(Mapper*, int, std::uint16_t);
     using HandlerChrWrite  = void (*)(Mapper*, int, std::uint16_t, std::uint8_t);
+
+    void         handleInit();
+    void         handleTick();
+    std::uint8_t handleRead(std::uint16_t addr);
+    void         handleWrite(std::uint16_t addr, std::uint8_t value);
+    void         handleVideoRead(std::uint16_t addr);
+    std::uint8_t handleNtRead(int nametable, std::uint16_t offset);
+    void         handleNtWrite(int nametable, std::uint16_t offset, std::uint8_t value);
+    std::uint8_t handleChrRead(int bank, std::uint16_t offset);
+    void         handleChrWrite(int bank, std::uint16_t offset, std::uint8_t value);
 
     Memory& _memory;
     Cart&   _cart;

@@ -24,32 +24,22 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <libnin/Cart.h>
+#ifndef LIBNIN_MAPPER_AXROM_H
+#define LIBNIN_MAPPER_AXROM_H 1
+
+#include <cstdint>
 #include <libnin/Mapper.h>
-#include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleWrite<MapperID::MMC4>(std::uint16_t addr, std::uint8_t value)
+class MapperAXROM : public Mapper
 {
-    switch (addr & 0xf000)
-    {
-    case 0xa000: // PRG ROM bank
-        bankPrg16k(2, CART_PRG_ROM, value & 0xf);
-        break;
-    default:
-        handleWrite<MapperID::MMC2>(addr, value);
-        break;
-    }
-}
+public:
+    void handleWrite(std::uint16_t addr, std::uint8_t value);
+    void handleWrite_Conflicts(std::uint16_t addr, std::uint8_t value);
+};
 
-template <>
-void Mapper::init<MapperID::MMC4>()
-{
-    init<MapperID::MMC2>();
-    _handleWrite = &Mapper::handleWrite<MapperID::MMC4>;
-}
+} // namespace libnin
 
-}
+#endif

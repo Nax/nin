@@ -24,27 +24,21 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <libnin/Cart.h>
-#include <libnin/Mapper.h>
-#include <libnin/Util.h>
+#ifndef LIBNIN_MAPPER_MMC4_H
+#define LIBNIN_MAPPER_MMC4_H 1
+
+#include <cstdint>
+#include <libnin/Mapper/MMC2.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleWrite<MapperID::GxROM>(std::uint16_t addr, std::uint8_t value)
+class MapperMMC4 : public MapperMMC2
 {
-    if (addr >= 0x8000)
-    {
-        bankPrg32k(2, CART_PRG_ROM, (value >> 4) & 0x3);
-        bankChr8k(value & 0x3);
-    }
-}
+public:
+    void handleWrite(std::uint16_t addr, std::uint8_t value);
+};
 
-template <>
-void Mapper::init<MapperID::GxROM>()
-{
-    _handleWrite = &Mapper::handleWrite<MapperID::GxROM>;
-}
+} // namespace libnin
 
-}
+#endif

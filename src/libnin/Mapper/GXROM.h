@@ -24,17 +24,21 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <libnin/Cart.h>
+#ifndef LIBNIN_MAPPER_GXROM_H
+#define LIBNIN_MAPPER_GXROM_H 1
+
+#include <cstdint>
 #include <libnin/Mapper.h>
-#include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::init<MapperID::NROM>()
+class MapperGXROM : public Mapper
 {
-    _handleWrite = &Mapper::handleWrite<MapperID::AxROM>;
-}
+public:
+    void handleWrite(std::uint16_t addr, std::uint8_t value);
+};
 
-}
+} // namespace libnin
+
+#endif

@@ -28,36 +28,51 @@
 #define LIBNIN_MAPPER_MMC5_H 1
 
 #include <cstdint>
+#include <libnin/Mapper.h>
 
 namespace libnin
 {
 
-struct MapperMMC5
+class MapperMMC5 : public Mapper
 {
-    std::uint8_t  bankModePrg : 2;
-    std::uint8_t  bankModeChr : 2;
-    std::uint8_t  bankSelectPrg[5];
-    std::uint8_t  bankSelectChr[12];
-    std::uint8_t  nametable;
-    std::uint8_t  fillNT;
-    std::uint8_t  fillAT;
-    std::uint8_t  mul[2];
-    std::uint8_t* chr2[8];
+public:
+    void         handleInit();
+    void         handleTick();
+    std::uint8_t handleRead(std::uint16_t addr);
+    void         handleWrite(std::uint16_t addr, std::uint8_t value);
+    void         handleVideoRead(std::uint16_t addr);
+    std::uint8_t handleNtRead(int nametable, std::uint16_t off);
+    void         handleNtWrite(int nametable, std::uint16_t off, std::uint8_t value);
+    std::uint8_t handleChrRead(int bank, std::uint16_t offset);
 
-    std::uint16_t ppuAddr;
-    std::uint8_t  ppuAddrCount;
-    std::uint8_t  ppuIdleCount;
-    std::uint8_t  fetchCount;
-    std::uint8_t  scanline;
-    std::uint8_t  scanlineTarget;
+private:
+    void applyPrg();
+    void applyChr();
 
-    bool ppuReading : 1;
-    bool ppuSpriteFlag : 1;
-    bool ppuRenderFlag : 1;
-    bool mode8x16 : 1;
-    bool inFrame : 1;
-    bool scanlineEnabled : 1;
-    bool scanlinePending : 1;
+    std::uint8_t  _bankModePrg : 2;
+    std::uint8_t  _bankModeChr : 2;
+    std::uint8_t  _bankSelectPrg[5];
+    std::uint8_t  _bankSelectChr[12];
+    std::uint8_t  _nametable;
+    std::uint8_t  _fillNT;
+    std::uint8_t  _fillAT;
+    std::uint8_t  _mul[2];
+    std::uint8_t* _chr2[8];
+
+    std::uint16_t _ppuAddr;
+    std::uint8_t  _ppuAddrCount;
+    std::uint8_t  _ppuIdleCount;
+    std::uint8_t  _fetchCount;
+    std::uint8_t  _scanline;
+    std::uint8_t  _scanlineTarget;
+
+    bool _ppuReading : 1;
+    bool _ppuSpriteFlag : 1;
+    bool _ppuRenderFlag : 1;
+    bool _mode8x16 : 1;
+    bool _inFrame : 1;
+    bool _scanlineEnabled : 1;
+    bool _scanlinePending : 1;
 };
 
 } // namespace libnin

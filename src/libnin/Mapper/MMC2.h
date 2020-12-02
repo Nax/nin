@@ -28,18 +28,27 @@
 #define LIBNIN_MAPPER_MMC2_H 1
 
 #include <cstdint>
+#include <libnin/Mapper.h>
 
 namespace libnin
 {
 
-struct MapperMMC2
+class MapperMMC2 : public Mapper
 {
-    std::uint8_t bankLatch0Lo;
-    std::uint8_t bankLatch0Hi;
-    std::uint8_t bankLatch1Lo;
-    std::uint8_t bankLatch1Hi;
-    std::uint8_t latch0 : 1;
-    std::uint8_t latch1 : 1;
+public:
+    void handleInit();
+    void handleWrite(std::uint16_t addr, std::uint8_t value);
+    void handleVideoRead(std::uint16_t addr);
+
+private:
+    void applyChr();
+
+    std::uint8_t _bankLatch0Lo;
+    std::uint8_t _bankLatch0Hi;
+    std::uint8_t _bankLatch1Lo;
+    std::uint8_t _bankLatch1Hi;
+    std::uint8_t _latch0 : 1;
+    std::uint8_t _latch1 : 1;
 };
 
 } // namespace libnin

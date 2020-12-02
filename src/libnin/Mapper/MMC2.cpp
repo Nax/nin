@@ -25,30 +25,29 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/MMC2.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-static void apply(Mapper& mapper, MapperMMC2& mmc2)
+void MapperMMC2::handleInit()
 {
-    mapper.bankChr4k(0, mmc2.latch0 ? mmc2.bankLatch0Hi : mmc2.bankLatch0Lo);
-    mapper.bankChr4k(1, mmc2.latch1 ? mmc2.bankLatch1Hi : mmc2.bankLatch1Lo);
-}
-
-template <>
-void Mapper::handleReset<MapperID::MMC2>()
-{
-    _mmc2 = MapperMMC2{};
+    _bankLatch0Lo = 0;
+    _bankLatch0Hi = 0;
+    _bankLatch1Lo = 0;
+    _bankLatch1Hi = 0;
+    _latch0       = 0;
+    _latch1       = 0;
 
     bankPrg8k(3, CART_PRG_ROM, -3);
     bankPrg8k(4, CART_PRG_ROM, -2);
     bankPrg8k(5, CART_PRG_ROM, -1);
+
+    applyChr();
 }
 
-template <>
-void Mapper::handleWrite<MapperID::MMC2>(std::uint16_t addr, std::uint8_t value)
+void MapperMMC2::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     switch (addr & 0xf000)
     {
@@ -56,20 +55,20 @@ void Mapper::handleWrite<MapperID::MMC2>(std::uint16_t addr, std::uint8_t value)
         bankPrg8k(2, CART_PRG_ROM, value & 0xf);
         break;
     case 0xb000:
-        _mmc2.bankLatch0Lo = value & 0x1f;
-        apply(*this, _mmc2);
+        _bankLatch0Lo = value & 0x1f;
+        applyChr();
         break;
     case 0xc000:
-        _mmc2.bankLatch0Hi = value & 0x1f;
-        apply(*this, _mmc2);
+        _bankLatch0Hi = value & 0x1f;
+        applyChr();
         break;
     case 0xd000:
-        _mmc2.bankLatch1Lo = value & 0x1f;
-        apply(*this, _mmc2);
+        _bankLatch1Lo = value & 0x1f;
+        applyChr();
         break;
     case 0xe000:
-        _mmc2.bankLatch1Hi = value & 0x1f;
-        apply(*this, _mmc2);
+        _bankLatch1Hi = value & 0x1f;
+        applyChr();
         break;
     case 0xf000:
         if (value & 0x1)
@@ -79,37 +78,34 @@ void Mapper::handleWrite<MapperID::MMC2>(std::uint16_t addr, std::uint8_t value)
     }
 }
 
-template <>
-void Mapper::handleVideoRead<MapperID::MMC2>(std::uint16_t addr)
+void MapperMMC2::handleVideoRead(std::uint16_t addr)
 {
     if (addr == 0x0fd8)
     {
-        _mmc2.latch0 = 0;
-        apply(*this, _mmc2);
+        _latch0 = 0;
+        applyChr();
     }
     else if (addr == 0x0fe8)
     {
-        _mmc2.latch0 = 1;
-        apply(*this, _mmc2);
+        _latch0 = 1;
+        applyChr();
     }
     else if (addr >= 0x1fd8 && addr <= 0x1fdf)
     {
-        _mmc2.latch1 = 0;
-        apply(*this, _mmc2);
+        _latch1 = 0;
+        applyChr();
     }
     else if (addr >= 0x1fe8 && addr <= 0x1fef)
     {
-        _mmc2.latch1 = 1;
-        apply(*this, _mmc2);
+        _latch1 = 1;
+        applyChr();
     }
 }
 
-template <>
-void Mapper::init<MapperID::MMC2>()
+void MapperMMC2::applyChr()
 {
-    _handleReset     = &Mapper::handleReset<MapperID::MMC2>;
-    _handleWrite     = &Mapper::handleWrite<MapperID::MMC2>;
-    _handleVideoRead = &Mapper::handleVideoRead<MapperID::MMC2>;
+    bankChr4k(0, _latch0 ? _bankLatch0Hi : _bankLatch0Lo);
+    bankChr4k(1, _latch1 ? _bankLatch1Hi : _bankLatch1Lo);
 }
 
-}
+} // namespace libnin

@@ -25,25 +25,43 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/UXROM.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleWrite<MapperID::CNROM>(std::uint16_t addr, std::uint8_t value)
+template <bool conflicts, int bank, int shift>
+static void applyUxROM(MapperUXROM& mapper, std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
-        bankChr8k(value & 0x03);
+        if (conflicts)
+        {
+            value &= mapper.bank(((addr - 0x8000) / 0x2000) + 2)[addr & 0x1fff];
+        }
+        mapper.bankPrg16k(bank, CART_PRG_ROM, value >> shift);
     }
 }
 
-template <>
-void Mapper::init<MapperID::CNROM>()
+void MapperUXROM::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
-    _handleWrite = &Mapper::handleWrite<MapperID::CNROM>;
+    applyUxROM<true, 2, 0>(*this, addr, value);
 }
 
+void MapperUXROM::handleWrite_NoConflicts(std::uint16_t addr, std::uint8_t value)
+{
+    applyUxROM<false, 2, 0>(*this, addr, value);
 }
+
+void MapperUXROM::handleWrite_UN1ROM(std::uint16_t addr, std::uint8_t value)
+{
+    applyUxROM<true, 2, 2>(*this, addr, value);
+}
+
+void MapperUXROM::handleWrite_UNROM180(std::uint16_t addr, std::uint8_t value)
+{
+    applyUxROM<true, 4, 0>(*this, addr, value);
+}
+
+} // namespace libnin

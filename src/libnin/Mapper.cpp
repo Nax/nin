@@ -26,7 +26,18 @@
 
 #include <libnin/Cart.h>
 #include <libnin/Mapper.h>
+#include <libnin/Mapper/AXROM.h>
+#include <libnin/Mapper/Action52.h>
+#include <libnin/Mapper/CNROM.h>
+#include <libnin/Mapper/ColorDreams.h>
+#include <libnin/Mapper/DiskSystem.h>
+#include <libnin/Mapper/GXROM.h>
 #include <libnin/Mapper/MMC1.h>
+#include <libnin/Mapper/MMC2.h>
+#include <libnin/Mapper/MMC3.h>
+#include <libnin/Mapper/MMC4.h>
+#include <libnin/Mapper/MMC5.h>
+#include <libnin/Mapper/UXROM.h>
 #include <libnin/Memory.h>
 #include <libnin/Util.h>
 
@@ -42,6 +53,8 @@
         _handlerChrRead   = [](Mapper* m, int bank, std::uint16_t offset) { return ((T*)m)->handleChrRead(bank, offset); };                               \
         _handlerChrWrite  = [](Mapper* m, int bank, std::uint16_t offset, std::uint8_t value) { ((T*)m)->handleChrWrite(bank, offset, value); };          \
     }
+
+#define OVERRIDE_HANDLER_WRITE(T, name) _handlerWrite = [](Mapper* m, std::uint16_t addr, std::uint8_t value) { ((T*)m)->name(addr, value); }
 
 namespace libnin
 {
@@ -87,8 +100,64 @@ NinError Mapper::configure(int mapper, int submapper)
     {
     case MapperID::NROM:
         break;
+    case MapperID::AxROM:
+    case MapperID::AxROM_Conflicts:
+        CONFIGURE_HANDLERS(MapperAXROM);
+        break;
+    case MapperID::CNROM:
+        CONFIGURE_HANDLERS(MapperCNROM);
+        break;
+    case MapperID::GxROM:
+        CONFIGURE_HANDLERS(MapperGXROM);
+        break;
+    case MapperID::UxROM:
+    case MapperID::UxROM_NoConflicts:
+    case MapperID::UxROM_UN1ROM:
+    case MapperID::UxROM_UNROM180:
+        CONFIGURE_HANDLERS(MapperUXROM);
+        break;
     case MapperID::MMC1:
         CONFIGURE_HANDLERS(MapperMMC1);
+        break;
+    case MapperID::MMC2:
+        CONFIGURE_HANDLERS(MapperMMC2);
+        break;
+    case MapperID::MMC3:
+        CONFIGURE_HANDLERS(MapperMMC3);
+        break;
+    case MapperID::MMC4:
+        CONFIGURE_HANDLERS(MapperMMC4);
+        break;
+    case MapperID::MMC5:
+        CONFIGURE_HANDLERS(MapperMMC5);
+        break;
+    case MapperID::Action52:
+        CONFIGURE_HANDLERS(MapperAction52);
+        break;
+    case MapperID::ColorDreams:
+        CONFIGURE_HANDLERS(MapperColorDreams);
+        break;
+    case MapperID::FDS:
+        CONFIGURE_HANDLERS(MapperDiskSystem);
+        break;
+    }
+
+    /* Variants */
+    switch (mapperID)
+    {
+    case MapperID::AxROM_Conflicts:
+        OVERRIDE_HANDLER_WRITE(MapperAXROM, handleWrite_Conflicts);
+        break;
+    case MapperID::UxROM_NoConflicts:
+        OVERRIDE_HANDLER_WRITE(MapperUXROM, handleWrite_NoConflicts);
+        break;
+    case MapperID::UxROM_UN1ROM:
+        OVERRIDE_HANDLER_WRITE(MapperUXROM, handleWrite_UN1ROM);
+        break;
+    case MapperID::UxROM_UNROM180:
+        OVERRIDE_HANDLER_WRITE(MapperUXROM, handleWrite_UNROM180);
+        break;
+    default:
         break;
     }
 
