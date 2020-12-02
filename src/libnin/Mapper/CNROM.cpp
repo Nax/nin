@@ -25,14 +25,13 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/CNROM.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleWrite<MapperID::CNROM>(std::uint16_t addr, std::uint8_t value)
+void MapperCNROM::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
@@ -40,10 +39,4 @@ void Mapper::handleWrite<MapperID::CNROM>(std::uint16_t addr, std::uint8_t value
     }
 }
 
-template <>
-void Mapper::init<MapperID::CNROM>()
-{
-    _handleWrite = &Mapper::handleWrite<MapperID::CNROM>;
-}
-
-}
+} // namespace libnin

@@ -25,51 +25,130 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/MMC1.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-static void mapperBankPrg(Mapper& mapper, MapperMMC1& mmc1)
+void MapperMMC1::handleInit()
 {
-    switch (mmc1.prgBankMode)
+    _shift       = 0;
+    _count       = 0;
+    _mirroring   = 0;
+    _prgBankMode = 0;
+    _chrBankMode = 0;
+    _chrBank0    = 0;
+    _chrBank1    = 0;
+    _prgBank     = 0;
+
+    applyMirror();
+    applyPrg();
+    applyChr();
+}
+
+void MapperMMC1::handleWrite(std::uint16_t addr, std::uint8_t value)
+{
+    std::uint8_t shift;
+
+    if (!(addr & 0x8000))
+        return;
+
+    if (value & 0x80)
+    {
+        /* Reset the internal registers */
+        _count       = 0;
+        _shift       = 0;
+        _prgBankMode = 3;
+        applyPrg();
+        return;
+    }
+
+    shift = (((value & 1) << 4) | (_shift >> 1));
+    if (_count < 4)
+    {
+        _shift = shift;
+        _count++;
+        return;
+    }
+
+    /* Serial write completed, apply the effect */
+    _shift = 0;
+    _count = 0;
+    regWrite(addr, shift);
+}
+
+void MapperMMC1::regWrite(std::uint16_t addr, std::uint8_t value)
+{
+    switch (addr & 0xe000)
+    {
+    case 0x8000:
+        /* 0x8000 - 0x9fff */
+        _mirroring   = value & 0x03;
+        _prgBankMode = (value >> 2) & 0x03;
+        _chrBankMode = (value >> 4) & 0x01;
+
+        applyMirror();
+        applyPrg();
+        applyChr();
+        break;
+    case 0xa000:
+        /* 0xa000 - 0xbfff */
+        _chrBank0 = value;
+        applyChr();
+        break;
+    case 0xc000:
+        /* 0xc000 - 0xdfff */
+        _chrBank1 = value;
+        applyChr();
+        break;
+    case 0xe000:
+        /* 0xe000 - 0xffff */
+        _prgBank = value & 0xf;
+        applyPrg();
+        break;
+    }
+}
+
+void MapperMMC1::applyPrg()
+{
+    switch (_prgBankMode)
     {
     case 0:
     case 1:
-        mapper.bankPrg16k(2, CART_PRG_ROM, (mmc1.prgBank & 0xfe) | 0);
-        mapper.bankPrg16k(4, CART_PRG_ROM, (mmc1.prgBank & 0xfe) | 1);
+        bankPrg16k(2, CART_PRG_ROM, (_prgBank & 0xfe) | 0);
+        bankPrg16k(4, CART_PRG_ROM, (_prgBank & 0xfe) | 1);
         break;
     case 2:
-        mapper.bankPrg16k(2, CART_PRG_ROM, 0);
-        mapper.bankPrg16k(4, CART_PRG_ROM, mmc1.prgBank & 0xff);
+        bankPrg16k(2, CART_PRG_ROM, 0);
+        bankPrg16k(4, CART_PRG_ROM, _prgBank & 0xff);
         break;
     case 3:
-        mapper.bankPrg16k(2, CART_PRG_ROM, mmc1.prgBank & 0xff);
-        mapper.bankPrg16k(4, CART_PRG_ROM, -1);
+        bankPrg16k(2, CART_PRG_ROM, _prgBank & 0xff);
+        bankPrg16k(4, CART_PRG_ROM, -1);
         break;
     }
 }
 
-static void mapperBankChr(Mapper& mapper, MapperMMC1& mmc1)
+void MapperMMC1::applyChr()
 {
-    if (mmc1.chrBankMode)
+    if (_chrBankMode)
     {
-        mapper.bankChr4k(0, mmc1.chrBank0);
-        mapper.bankChr4k(1, mmc1.chrBank1);
+        bankChr4k(0, _chrBank0);
+        bankChr4k(1, _chrBank1);
     }
     else
     {
-        mapper.bankChr4k(0, mmc1.chrBank0 & ~(0x01));
-        mapper.bankChr4k(1, mmc1.chrBank0 | 0x01);
+        bankChr4k(0, _chrBank0 & ~(0x01));
+        bankChr4k(1, _chrBank0 | 0x01);
     }
 }
 
-static void mapperMirror(Mapper& mapper, MapperMMC1& mmc1)
+void MapperMMC1::applyMirror()
 {
     int mirrorMode;
 
-    switch (mmc1.mirroring)
+    switch (_mirroring)
     {
     case 0x00:
         mirrorMode = NIN_MIRROR_A;
@@ -86,84 +165,7 @@ static void mapperMirror(Mapper& mapper, MapperMMC1& mmc1)
     default:
         UNREACHABLE();
     }
-    mapper.mirror(mirrorMode);
+    mirror(mirrorMode);
 }
 
-static void mapperRegWrite(Mapper& mapper, MapperMMC1& mmc1, std::uint16_t addr, std::uint8_t value)
-{
-    switch (addr & 0xe000)
-    {
-    case 0x8000:
-        /* 0x8000 - 0x9fff */
-        mmc1.mirroring   = value & 0x03;
-        mmc1.prgBankMode = (value >> 2) & 0x03;
-        mmc1.chrBankMode = (value >> 4) & 0x01;
-
-        mapperMirror(mapper, mmc1);
-        mapperBankPrg(mapper, mmc1);
-        mapperBankChr(mapper, mmc1);
-        break;
-    case 0xa000:
-        /* 0xa000 - 0xbfff */
-        mmc1.chrBank0 = value;
-        mapperBankChr(mapper, mmc1);
-        break;
-    case 0xc000:
-        /* 0xc000 - 0xdfff */
-        mmc1.chrBank1 = value;
-        mapperBankChr(mapper, mmc1);
-        break;
-    case 0xe000:
-        /* 0xe000 - 0xffff */
-        mmc1.prgBank = value & 0xf;
-        mapperBankPrg(mapper, mmc1);
-        break;
-    }
-}
-
-template <>
-void Mapper::handleReset<MapperID::MMC1>()
-{
-    _mmc1 = MapperMMC1{};
-}
-
-template <>
-void Mapper::handleWrite<MapperID::MMC1>(std::uint16_t addr, std::uint8_t value)
-{
-    std::uint8_t shift;
-
-    if (!(addr & 0x8000))
-        return;
-
-    if (value & 0x80)
-    {
-        /* Reset the internal registers */
-        _mmc1.count       = 0;
-        _mmc1.shift       = 0;
-        _mmc1.prgBankMode = 3;
-        mapperBankPrg(*this, _mmc1);
-        return;
-    }
-
-    shift = (((value & 1) << 4) | (_mmc1.shift >> 1));
-    if (_mmc1.count < 4)
-    {
-        _mmc1.shift = shift;
-        _mmc1.count++;
-        return;
-    }
-
-    /* Serial write completed, apply the effect */
-    _mmc1.shift = 0;
-    _mmc1.count = 0;
-    mapperRegWrite(*this, _mmc1, addr, shift);
-}
-
-template <>
-void Mapper::init<MapperID::MMC1>()
-{
-    _handleReset = &Mapper::handleReset<MapperID::MMC1>;
-    _handleWrite = &Mapper::handleWrite<MapperID::MMC1>;
-}
-
-}
+} // namespace libnin

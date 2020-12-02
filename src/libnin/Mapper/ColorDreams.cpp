@@ -25,14 +25,13 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/ColorDreams.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleWrite<MapperID::ColorDreams>(std::uint16_t addr, std::uint8_t value)
+void MapperColorDreams::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
@@ -41,10 +40,4 @@ void Mapper::handleWrite<MapperID::ColorDreams>(std::uint16_t addr, std::uint8_t
     }
 }
 
-template <>
-void Mapper::init<MapperID::ColorDreams>()
-{
-    _handleWrite = &Mapper::handleWrite<MapperID::ColorDreams>;
-}
-
-}
+} // namespace libnin

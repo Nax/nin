@@ -25,21 +25,19 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/Action52.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleReset<MapperID::Action52>()
+void MapperAction52::handleInit()
 {
     bankPrg32k(2, CART_PRG_ROM, 0);
     bankChr8k(0);
 }
 
-template <>
-void Mapper::handleWrite<MapperID::Action52>(std::uint16_t addr, std::uint8_t value)
+void MapperAction52::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     std::uint16_t prgBank;
     std::uint16_t chrBank;
@@ -77,11 +75,4 @@ void Mapper::handleWrite<MapperID::Action52>(std::uint16_t addr, std::uint8_t va
     }
 }
 
-template <>
-void Mapper::init<MapperID::Action52>()
-{
-    _handleReset = &Mapper::handleReset<MapperID::Action52>;
-    _handleWrite = &Mapper::handleWrite<MapperID::Action52>;
-}
-
-}
+} // namespace libnin

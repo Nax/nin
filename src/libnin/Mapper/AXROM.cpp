@@ -25,14 +25,13 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/AXROM.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleWrite<MapperID::AxROM>(std::uint16_t addr, std::uint8_t value)
+void MapperAXROM::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
@@ -41,8 +40,7 @@ void Mapper::handleWrite<MapperID::AxROM>(std::uint16_t addr, std::uint8_t value
     }
 }
 
-template <>
-void Mapper::handleWrite<MapperID::AxROM_Conflicts>(std::uint16_t addr, std::uint8_t value)
+void MapperAXROM::handleWrite_Conflicts(std::uint16_t addr, std::uint8_t value)
 {
     if (addr >= 0x8000)
     {
@@ -52,16 +50,4 @@ void Mapper::handleWrite<MapperID::AxROM_Conflicts>(std::uint16_t addr, std::uin
     }
 }
 
-template <>
-void Mapper::init<MapperID::AxROM>()
-{
-    _handleWrite = &Mapper::handleWrite<MapperID::AxROM>;
-}
-
-template <>
-void Mapper::init<MapperID::AxROM_Conflicts>()
-{
-    _handleWrite = &Mapper::handleWrite<MapperID::AxROM_Conflicts>;
-}
-
-}
+} // namespace libnin

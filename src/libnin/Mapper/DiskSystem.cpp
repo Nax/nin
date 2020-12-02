@@ -27,22 +27,141 @@
 #include <libnin/Cart.h>
 #include <libnin/Disk.h>
 #include <libnin/IRQ.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/DiskSystem.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleReset<MapperID::FDS>()
+void MapperDiskSystem::handleInit()
 {
-    _diskSystem = MapperDiskSystem{};
+    _headPos            = 0;
+    _delay              = 0;
+    _irqReloadValue     = 0;
+    _irqTimer           = 0;
+    _extPort            = 0;
+    _latchRead          = 0;
+    _latchWrite         = 0;
+    _sideCount          = 0;
+    _motor              = false;
+    _noScan             = false;
+    _inData             = false;
+    _write              = false;
+    _irqEnabledTransfer = false;
+    _irqEnabledTimer    = false;
+    _irqReloadFlag      = false;
+    _transfered         = false;
+    _scanning           = false;
+    _skippedGap         = false;
+    _endOfDisk          = false;
+    _transmitCRC        = false;
+
     bankPrg32k(1, CART_PRG_RAM, 0);
     bankPrg8k(5, CART_PRG_ROM, 0);
 }
 
-template <>
-std::uint8_t Mapper::handleRead<MapperID::FDS>(std::uint16_t addr)
+void MapperDiskSystem::handleTick()
+{
+    std::uint8_t tmp;
+    int          skip{};
+
+    _disk.tick();
+    if (_irqEnabledTimer)
+    {
+        if (_irqTimer)
+            _irqTimer--;
+        else
+        {
+            _irq.set(IRQ_MAPPER1);
+            if (_irqReloadFlag)
+                _irqTimer = _irqReloadValue;
+            else
+                _irqEnabledTimer = 0;
+        }
+    }
+
+    if (!_motor)
+    {
+        _scanning  = 0;
+        _endOfDisk = 1;
+        return;
+    }
+    else if (_noScan && !_scanning)
+    {
+        return;
+    }
+    else if (_endOfDisk)
+    {
+        _endOfDisk  = 0;
+        _delay      = 10000;
+        _headPos    = 0;
+        _skippedGap = 0;
+        return;
+    }
+    else if (_delay)
+    {
+        _delay--;
+        return;
+    }
+
+    _scanning = 1;
+
+    if (!_write)
+    {
+        /* Read */
+        tmp = _disk.read(_headPos);
+
+        if (!_inData)
+        {
+            _skippedGap = 0;
+        }
+        else if (tmp && !_skippedGap)
+        {
+            _skippedGap = 1;
+            skip        = 1;
+        }
+
+        if (_skippedGap && !skip)
+        {
+            _transfered = 1;
+            _latchRead  = tmp;
+            if (_irqEnabledTransfer)
+            {
+                _irq.set(IRQ_MAPPER2);
+            }
+        }
+    }
+    else
+    {
+        /* Write */
+        if (!_transmitCRC)
+        {
+            _transfered = 1;
+            if (_irqEnabledTransfer)
+            {
+                _irq.set(IRQ_MAPPER2);
+            }
+        }
+        if (!_inData)
+            tmp = 0x00;
+        else
+            tmp = _latchWrite;
+        _disk.write(_headPos, tmp);
+        _skippedGap = 0;
+    }
+
+    _headPos++;
+    if (_headPos >= Disk::DiskSize)
+    {
+        _motor = 0;
+    }
+    else
+    {
+        _delay = 149;
+    }
+}
+
+std::uint8_t MapperDiskSystem::handleRead(std::uint16_t addr)
 {
     std::uint8_t value{};
 
@@ -51,16 +170,16 @@ std::uint8_t Mapper::handleRead<MapperID::FDS>(std::uint16_t addr)
     case 0x4030: // Disk Status
         value = 0x80;
         if (_irq.check(IRQ_MAPPER1)) value |= 0x01;
-        if (_diskSystem.transfered)
+        if (_transfered)
             value |= 0x02;
-        _diskSystem.transfered = 0;
-        if (_diskSystem.endOfDisk)
+        _transfered = 0;
+        if (_endOfDisk)
             value |= 0x40;
         _irq.unset(IRQ_MAPPER1 | IRQ_MAPPER2);
         break;
     case 0x4031: // Disk Read
-        value                  = _diskSystem.latchRead;
-        _diskSystem.transfered = 0;
+        value       = _latchRead;
+        _transfered = 0;
         _irq.unset(IRQ_MAPPER2);
         break;
     case 0x4032: // Disk Drive Status
@@ -69,7 +188,7 @@ std::uint8_t Mapper::handleRead<MapperID::FDS>(std::uint16_t addr)
             value |= 0x00;
         else
             value |= 0x07;
-        if (!_diskSystem.scanning)
+        if (!_scanning)
             value |= 0x02;
         break;
     case 0x4033: // Ext Read
@@ -79,24 +198,23 @@ std::uint8_t Mapper::handleRead<MapperID::FDS>(std::uint16_t addr)
     return value;
 }
 
-template <>
-void Mapper::handleWrite<MapperID::FDS>(std::uint16_t addr, std::uint8_t value)
+void MapperDiskSystem::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     switch (addr)
     {
     case 0x4020:
-        _diskSystem.irqReloadValue &= 0xff00;
-        _diskSystem.irqReloadValue |= value;
+        _irqReloadValue &= 0xff00;
+        _irqReloadValue |= value;
         break;
     case 0x4021:
-        _diskSystem.irqReloadValue &= 0x00ff;
-        _diskSystem.irqReloadValue |= ((uint16_t)value << 8);
+        _irqReloadValue &= 0x00ff;
+        _irqReloadValue |= ((uint16_t)value << 8);
         break;
     case 0x4022:
-        _diskSystem.irqReloadFlag   = !!(value & 0x01);
-        _diskSystem.irqEnabledTimer = !!(value & 0x02);
-        _diskSystem.irqTimer        = _diskSystem.irqReloadValue;
-        if (!_diskSystem.irqEnabledTimer)
+        _irqReloadFlag   = !!(value & 0x01);
+        _irqEnabledTimer = !!(value & 0x02);
+        _irqTimer        = _irqReloadValue;
+        if (!_irqEnabledTimer)
             _irq.unset(IRQ_MAPPER1);
         break;
     case 0x4023:
@@ -105,133 +223,22 @@ void Mapper::handleWrite<MapperID::FDS>(std::uint16_t addr, std::uint8_t value)
         break;
     case 0x4024: // Disk write
         _irq.unset(IRQ_MAPPER2);
-        _diskSystem.transfered = 0;
-        _diskSystem.latchWrite = value;
+        _transfered = 0;
+        _latchWrite = value;
         break;
     case 0x4025: // FDS Control
-        _diskSystem.motor              = !!(value & 0x01);
-        _diskSystem.noScan             = !!(value & 0x02);
-        _diskSystem.write              = !(value & 0x04);
-        _diskSystem.transmitCRC        = !!(value & 0x10);
-        _diskSystem.inData             = !!(value & 0x40);
-        _diskSystem.irqEnabledTransfer = !!(value & 0x80);
+        _motor              = !!(value & 0x01);
+        _noScan             = !!(value & 0x02);
+        _write              = !(value & 0x04);
+        _transmitCRC        = !!(value & 0x10);
+        _inData             = !!(value & 0x40);
+        _irqEnabledTransfer = !!(value & 0x80);
         mirror((value & 0x08) ? NIN_MIRROR_V : NIN_MIRROR_H);
         break;
     case 0x4026: // External
-        _diskSystem.extPort = value;
+        _extPort = value;
         break;
     }
 }
 
-template <>
-void Mapper::handleTick<MapperID::FDS>()
-{
-    std::uint8_t tmp;
-    int          skip{};
-
-    _disk.tick();
-    if (_diskSystem.irqEnabledTimer)
-    {
-        if (_diskSystem.irqTimer)
-            _diskSystem.irqTimer--;
-        else
-        {
-            _irq.set(IRQ_MAPPER1);
-            if (_diskSystem.irqReloadFlag)
-                _diskSystem.irqTimer = _diskSystem.irqReloadValue;
-            else
-                _diskSystem.irqEnabledTimer = 0;
-        }
-    }
-
-    if (!_diskSystem.motor)
-    {
-        _diskSystem.scanning  = 0;
-        _diskSystem.endOfDisk = 1;
-        return;
-    }
-    else if (_diskSystem.noScan && !_diskSystem.scanning)
-    {
-        return;
-    }
-    else if (_diskSystem.endOfDisk)
-    {
-        _diskSystem.endOfDisk  = 0;
-        _diskSystem.delay      = 10000;
-        _diskSystem.headPos    = 0;
-        _diskSystem.skippedGap = 0;
-        return;
-    }
-    else if (_diskSystem.delay)
-    {
-        _diskSystem.delay--;
-        return;
-    }
-
-    _diskSystem.scanning = 1;
-
-    if (!_diskSystem.write)
-    {
-        /* Read */
-        tmp = _disk.read(_diskSystem.headPos);
-
-        if (!_diskSystem.inData)
-        {
-            _diskSystem.skippedGap = 0;
-        }
-        else if (tmp && !_diskSystem.skippedGap)
-        {
-            _diskSystem.skippedGap = 1;
-            skip                   = 1;
-        }
-
-        if (_diskSystem.skippedGap && !skip)
-        {
-            _diskSystem.transfered = 1;
-            _diskSystem.latchRead  = tmp;
-            if (_diskSystem.irqEnabledTransfer)
-            {
-                _irq.set(IRQ_MAPPER2);
-            }
-        }
-    }
-    else
-    {
-        /* Write */
-        if (!_diskSystem.transmitCRC)
-        {
-            _diskSystem.transfered = 1;
-            if (_diskSystem.irqEnabledTransfer)
-            {
-                _irq.set(IRQ_MAPPER2);
-            }
-        }
-        if (!_diskSystem.inData)
-            tmp = 0x00;
-        else
-            tmp = _diskSystem.latchWrite;
-        _disk.write(_diskSystem.headPos, tmp);
-        _diskSystem.skippedGap = 0;
-    }
-
-    _diskSystem.headPos++;
-    if (_diskSystem.headPos >= Disk::DiskSize)
-    {
-        _diskSystem.motor = 0;
-    }
-    else
-    {
-        _diskSystem.delay = 149;
-    }
-}
-
-template <>
-void Mapper::init<MapperID::FDS>()
-{
-    _handleReset = &Mapper::handleReset<MapperID::FDS>;
-    _handleRead  = &Mapper::handleRead<MapperID::FDS>;
-    _handleWrite = &Mapper::handleWrite<MapperID::FDS>;
-    _handleTick  = &Mapper::handleTick<MapperID::FDS>;
-}
-
-}
+} // namespace libnin

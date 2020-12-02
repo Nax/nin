@@ -50,8 +50,7 @@ enum class MapperID
     UxROM_UNROM180,
     ColorDreams,
     Action52,
-    FDS,
-    MAX
+    FDS
 };
 
 MapperID getMapperID(int mapper, int submapper);

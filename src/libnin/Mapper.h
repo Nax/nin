@@ -28,11 +28,6 @@
 #define LIBNIN_MAPPER_H 1
 
 #include <cstdint>
-#include <libnin/Mapper/DiskSystem.h>
-#include <libnin/Mapper/MMC1.h>
-#include <libnin/Mapper/MMC2.h>
-#include <libnin/Mapper/MMC3.h>
-#include <libnin/Mapper/MMC5.h>
 #include <libnin/MapperID.h>
 #include <libnin/NonCopyable.h>
 #include <nin/nin.h>
@@ -51,6 +46,9 @@ class Disk;
 class IRQ;
 class Mapper : private NonCopyable
 {
+    template <typename T>
+    friend struct HandlerHelper;
+
 public:
     Mapper(Memory& memory, Cart& cart, Disk& disk, IRQ& irq);
 
@@ -61,18 +59,18 @@ public:
     std::uint8_t*       chr(int slot) { return _chr[slot]; }
     const std::uint8_t* chr(int slot) const { return _chr[slot]; }
 
-    void reset() { (this->*_handleReset)(); }
-    void tick() { (this->*_handleTick)(); }
+    void reset() { _handlerInit(this); }
+    void tick() { _handlerTick(this); }
 
     std::uint8_t read(std::uint16_t addr);
     void         write(std::uint16_t addr, std::uint8_t value);
-    std::uint8_t ntRead(int bank, std::uint16_t addr) { return (this->*_handleNtRead)(bank, addr); }
-    void         ntWrite(int bank, std::uint16_t addr, std::uint8_t value) { (this->*_handleNtWrite)(bank, addr, value); }
-    std::uint8_t chrRead(int bank, std::uint16_t addr) { return (this->*_handleChrRead)(bank, addr); }
-    void         chrWrite(int bank, std::uint16_t addr, std::uint8_t value) { (this->*_handleChrWrite)(bank, addr, value); }
+    std::uint8_t ntRead(int bank, std::uint16_t addr) { return _handlerNtRead(this, bank, addr); }
+    void         ntWrite(int bank, std::uint16_t addr, std::uint8_t value) { _handlerNtWrite(this, bank, addr, value); }
+    std::uint8_t chrRead(int bank, std::uint16_t addr) { return _handlerChrRead(this, bank, addr); }
+    void         chrWrite(int bank, std::uint16_t addr, std::uint8_t value) { _handlerChrWrite(this, bank, addr, value); }
 
-    void videoRead(std::uint16_t addr) { (this->*_handleVideoRead)(addr); }
-    void writePassive(std::uint16_t addr, std::uint8_t value) { (this->*_handleWrite)(addr, value); }
+    void videoRead(std::uint16_t addr) { _handlerVideoRead(this, addr); }
+    void writePassive(std::uint16_t addr, std::uint8_t value) { _handlerWrite(this, addr, value); }
 
     void mirror(int mirrorMode);
 
@@ -85,57 +83,46 @@ public:
     void bankChr4k(std::uint8_t slot, std::int16_t bank);
     void bankChr8k(std::int16_t bank);
 
-private:
-    using HandlerReset     = void (Mapper::*)(void);
-    using HandlerTick      = void (Mapper::*)(void);
-    using HandlerRead      = std::uint8_t (Mapper::*)(std::uint16_t);
-    using HandlerWrite     = void (Mapper::*)(std::uint16_t, std::uint8_t);
-    using HandlerVideoRead = void (Mapper::*)(std::uint16_t);
-    using HandlerNtRead    = std::uint8_t (Mapper::*)(int, std::uint16_t);
-    using HandlerNtWrite   = void (Mapper::*)(int, std::uint16_t, std::uint8_t);
-    using HandlerChrRead   = std::uint8_t (Mapper::*)(int, std::uint16_t);
-    using HandlerChrWrite  = void (Mapper::*)(int, std::uint16_t, std::uint8_t);
+protected:
+    using HandlerInit      = void (*)(Mapper*);
+    using HandlerTick      = void (*)(Mapper*);
+    using HandlerRead      = std::uint8_t (*)(Mapper*, std::uint16_t);
+    using HandlerWrite     = void (*)(Mapper*, std::uint16_t, std::uint8_t);
+    using HandlerVideoRead = void (*)(Mapper*, std::uint16_t);
+    using HandlerNtRead    = std::uint8_t (*)(Mapper*, int, std::uint16_t);
+    using HandlerNtWrite   = void (*)(Mapper*, int, std::uint16_t, std::uint8_t);
+    using HandlerChrRead   = std::uint8_t (*)(Mapper*, int, std::uint16_t);
+    using HandlerChrWrite  = void (*)(Mapper*, int, std::uint16_t, std::uint8_t);
 
-    template <MapperID> void         initMatching(MapperID mapper);
-    template <MapperID> void         init();
-    template <MapperID> void         handleReset();
-    template <MapperID> void         handleTick();
-    template <MapperID> std::uint8_t handleRead(std::uint16_t addr);
-    template <MapperID> void         handleWrite(std::uint16_t addr, std::uint8_t value);
-    template <MapperID> void         handleVideoRead(std::uint16_t addr);
-    template <MapperID> std::uint8_t handleNtRead(int nametable, std::uint16_t offset);
-    template <MapperID> void         handleNtWrite(int nametable, std::uint16_t offset, std::uint8_t value);
-    template <MapperID> std::uint8_t handleChrRead(int bank, std::uint16_t offset);
-    template <MapperID> void         handleChrWrite(int bank, std::uint16_t offset, std::uint8_t value);
+    void         handleInit();
+    void         handleTick();
+    std::uint8_t handleRead(std::uint16_t addr);
+    void         handleWrite(std::uint16_t addr, std::uint8_t value);
+    void         handleVideoRead(std::uint16_t addr);
+    std::uint8_t handleNtRead(int nametable, std::uint16_t offset);
+    void         handleNtWrite(int nametable, std::uint16_t offset, std::uint8_t value);
+    std::uint8_t handleChrRead(int bank, std::uint16_t offset);
+    void         handleChrWrite(int bank, std::uint16_t offset, std::uint8_t value);
 
     Memory& _memory;
     Cart&   _cart;
     Disk&   _disk;
     IRQ&    _irq;
 
-    HandlerReset     _handleReset;
-    HandlerTick      _handleTick;
-    HandlerRead      _handleRead;
-    HandlerWrite     _handleWrite;
-    HandlerVideoRead _handleVideoRead;
-    HandlerNtRead    _handleNtRead;
-    HandlerNtWrite   _handleNtWrite;
-    HandlerChrRead   _handleChrRead;
-    HandlerChrWrite  _handleChrWrite;
+    HandlerInit      _handlerInit;
+    HandlerTick      _handlerTick;
+    HandlerRead      _handlerRead;
+    HandlerWrite     _handlerWrite;
+    HandlerVideoRead _handlerVideoRead;
+    HandlerNtRead    _handlerNtRead;
+    HandlerNtWrite   _handlerNtWrite;
+    HandlerChrRead   _handlerChrRead;
+    HandlerChrWrite  _handlerChrWrite;
 
     std::uint8_t* _prg[6];
     bool          _prgWriteFlag[6];
     std::uint8_t* _chr[8];
     std::uint8_t* _nametables[4];
-
-    union
-    {
-        MapperMMC1       _mmc1;
-        MapperMMC2       _mmc2;
-        MapperMMC3       _mmc3;
-        MapperMMC5       _mmc5;
-        MapperDiskSystem _diskSystem;
-    };
 };
 
 } // namespace libnin

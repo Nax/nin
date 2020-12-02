@@ -28,33 +28,41 @@
 #define LIBNIN_MAPPER_DISK_SYSTEM_H 1
 
 #include <cstdint>
+#include <libnin/Mapper.h>
 
 namespace libnin
 {
 
-struct MapperDiskSystem
+class MapperDiskSystem : public Mapper
 {
-    std::uint32_t headPos;
-    std::uint16_t delay;
-    std::uint16_t irqReloadValue;
-    std::uint16_t irqTimer;
-    std::uint8_t  extPort;
-    std::uint8_t  latchRead;
-    std::uint8_t  latchWrite;
-    std::uint8_t  sideCount;
+public:
+    void         handleInit();
+    void         handleTick();
+    std::uint8_t handleRead(std::uint16_t addr);
+    void         handleWrite(std::uint16_t addr, std::uint8_t value);
 
-    bool motor : 1;
-    bool noScan : 1;
-    bool inData : 1;
-    bool write : 1;
-    bool irqEnabledTransfer : 1;
-    bool irqEnabledTimer : 1;
-    bool irqReloadFlag : 1;
-    bool transfered : 1;
-    bool scanning : 1;
-    bool skippedGap : 1;
-    bool endOfDisk : 1;
-    bool transmitCRC : 1;
+private:
+    std::uint32_t _headPos;
+    std::uint16_t _delay;
+    std::uint16_t _irqReloadValue;
+    std::uint16_t _irqTimer;
+    std::uint8_t  _extPort;
+    std::uint8_t  _latchRead;
+    std::uint8_t  _latchWrite;
+    std::uint8_t  _sideCount;
+
+    bool _motor : 1;
+    bool _noScan : 1;
+    bool _inData : 1;
+    bool _write : 1;
+    bool _irqEnabledTransfer : 1;
+    bool _irqEnabledTimer : 1;
+    bool _irqReloadFlag : 1;
+    bool _transfered : 1;
+    bool _scanning : 1;
+    bool _skippedGap : 1;
+    bool _endOfDisk : 1;
+    bool _transmitCRC : 1;
 };
 
 } // namespace libnin

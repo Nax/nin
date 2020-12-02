@@ -25,14 +25,13 @@
  */
 
 #include <libnin/Cart.h>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/MMC4.h>
 #include <libnin/Util.h>
 
 namespace libnin
 {
 
-template <>
-void Mapper::handleWrite<MapperID::MMC4>(std::uint16_t addr, std::uint8_t value)
+void MapperMMC4::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     switch (addr & 0xf000)
     {
@@ -40,16 +39,9 @@ void Mapper::handleWrite<MapperID::MMC4>(std::uint16_t addr, std::uint8_t value)
         bankPrg16k(2, CART_PRG_ROM, value & 0xf);
         break;
     default:
-        handleWrite<MapperID::MMC2>(addr, value);
+        MapperMMC2::handleWrite(addr, value);
         break;
     }
 }
 
-template <>
-void Mapper::init<MapperID::MMC4>()
-{
-    init<MapperID::MMC2>();
-    _handleWrite = &Mapper::handleWrite<MapperID::MMC4>;
-}
-
-}
+} // namespace libnin

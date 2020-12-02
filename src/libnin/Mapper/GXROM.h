@@ -24,44 +24,21 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#include <libnin/Cart.h>
-#include <libnin/Mapper/UXROM.h>
-#include <libnin/Util.h>
+#ifndef LIBNIN_MAPPER_GXROM_H
+#define LIBNIN_MAPPER_GXROM_H 1
+
+#include <cstdint>
+#include <libnin/Mapper.h>
 
 namespace libnin
 {
 
-template <bool conflicts, int bank, int shift>
-static void applyUxROM(MapperUXROM& mapper, std::uint16_t addr, std::uint8_t value)
+class MapperGXROM : public Mapper
 {
-    if (addr >= 0x8000)
-    {
-        if (conflicts)
-        {
-            value &= mapper.bank(((addr - 0x8000) / 0x2000) + 2)[addr & 0x1fff];
-        }
-        mapper.bankPrg16k(bank, CART_PRG_ROM, value >> shift);
-    }
-}
-
-void MapperUXROM::handleWrite(std::uint16_t addr, std::uint8_t value)
-{
-    applyUxROM<true, 2, 0>(*this, addr, value);
-}
-
-void MapperUXROM::handleWrite_NoConflicts(std::uint16_t addr, std::uint8_t value)
-{
-    applyUxROM<false, 2, 0>(*this, addr, value);
-}
-
-void MapperUXROM::handleWrite_UN1ROM(std::uint16_t addr, std::uint8_t value)
-{
-    applyUxROM<true, 2, 2>(*this, addr, value);
-}
-
-void MapperUXROM::handleWrite_UNROM180(std::uint16_t addr, std::uint8_t value)
-{
-    applyUxROM<true, 4, 0>(*this, addr, value);
-}
+public:
+    void handleWrite(std::uint16_t addr, std::uint8_t value);
+};
 
 } // namespace libnin
+
+#endif
