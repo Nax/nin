@@ -126,5 +126,17 @@ int main(void)
     suite.add("Blargg VBL NMI Timing - 6 NMI Disable", "blargg_vbl_nmi_timing/6-nmi_disable.nes", SEC_NTSC(2.00f), [](NinState* state) { return matchHash(state, 0xe4716bdc); });
     suite.add("Blargg VBL NMI Timing - 7 NMI Timing", "blargg_vbl_nmi_timing/7-nmi_timing.nes", SEC_NTSC(2.00f), [](NinState* state) { return matchHash(state, 0x90bdf687); });
 
+    /* Blargg PPU VBL/NMI */
+    suite.add("Blargg PPU VBL/NMI - 01 VBL Basics", "blargg_ppu_vbl_nmi/01-vbl_basics.nes", SEC_NTSC(2.50f), [](NinState* state) { return matchHash(state, 0x00e1584a); });
+    suite.add("Blargg PPU VBL/NMI - 02 VBL Set Time", "blargg_ppu_vbl_nmi/02-vbl_set_time.nes", SEC_NTSC(3.00f), [](NinState* state) { return matchHash(state, 0x06ee352e); });
+    suite.add("Blargg PPU VBL/NMI - 03 VBL Clear Time", "blargg_ppu_vbl_nmi/03-vbl_clear_time.nes", SEC_NTSC(3.00f), [](NinState* state) { return matchHash(state, 0xfafe1935); });
+    suite.add("Blargg PPU VBL/NMI - 04 NMI Control", "blargg_ppu_vbl_nmi/04-nmi_control.nes", SEC_NTSC(2.50f), [](NinState* state) { return matchHash(state, 0x4977c566); });
+    suite.add("Blargg PPU VBL/NMI - 05 NMI Timing", "blargg_ppu_vbl_nmi/05-nmi_timing.nes", SEC_NTSC(3.50f), [](NinState* state) { return matchHash(state, 0xfaa58c51); });
+    suite.add("Blargg PPU VBL/NMI - 06 Suppression", "blargg_ppu_vbl_nmi/06-suppression.nes", SEC_NTSC(4.00f), [](NinState* state) { return matchHash(state, 0xe23dbd3e); });
+    suite.add("Blargg PPU VBL/NMI - 07 NMI ON Timing", "blargg_ppu_vbl_nmi/07-nmi_on_timing.nes", SEC_NTSC(3.50f), [](NinState* state) { return matchHash(state, 0x40ed2f23); });
+    suite.add("Blargg PPU VBL/NMI - 08 NMI OFF Timing", "blargg_ppu_vbl_nmi/08-nmi_off_timing.nes", SEC_NTSC(4.00f), [](NinState* state) { return matchHash(state, 0xa4fe769e); });
+    suite.add("Blargg PPU VBL/NMI - 09 Even/Odd Frames", "blargg_ppu_vbl_nmi/09-even_odd_frames.nes", SEC_NTSC(2.50f), [](NinState* state) { return matchHash(state, 0xbc57013a); });
+    suite.add("Blargg PPU VBL/NMI - 10 Even/Odd Timing", "blargg_ppu_vbl_nmi/10-even_odd_timing.nes", SEC_NTSC(2.50f), [](NinState* state) { return matchHash(state, 0x0f4abf9d); });
+
     return suite.run();
 }
