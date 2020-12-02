@@ -193,6 +193,8 @@ State::State()
 {
 }
 
+State::~State() {}
+
 State* State::create(NinError& err, const char* path)
 {
     State* s = new State;

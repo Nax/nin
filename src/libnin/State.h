@@ -39,6 +39,7 @@
 #include <libnin/IRQ.h>
 #include <libnin/Input.h>
 #include <libnin/Mapper.h>
+#include <libnin/MapperVariant.h>
 #include <libnin/Memory.h>
 #include <libnin/NMI.h>
 #include <libnin/NonCopyable.h>
@@ -69,6 +70,7 @@ class State : private NonCopyable
 {
 public:
     State();
+    ~State();
 
     static State* create(NinError& err, const char* path);
 
@@ -81,13 +83,18 @@ public:
     IRQ          irq;
     NMI          nmi;
     Video        video;
-    Mapper       mapper;
-    BusVideo     busVideo;
-    Audio        audio;
-    APU          apu;
-    PPU          ppu;
-    BusMain      busMain;
-    CPU          cpu;
+    union
+    {
+        Mapper        mapper;
+        MapperVariant mapperVariant;
+    };
+
+    BusVideo busVideo;
+    Audio    audio;
+    APU      apu;
+    PPU      ppu;
+    BusMain  busMain;
+    CPU      cpu;
 };
 
 } // namespace libnin

@@ -26,8 +26,22 @@
 
 #include <libnin/Cart.h>
 #include <libnin/Mapper.h>
+#include <libnin/Mapper/MMC1.h>
 #include <libnin/Memory.h>
 #include <libnin/Util.h>
+
+#define CONFIGURE_HANDLERS(T)                                                                                                                             \
+    {                                                                                                                                                     \
+        _handlerInit      = [](Mapper* m) { ((T*)m)->handleInit(); };                                                                                     \
+        _handlerTick      = [](Mapper* m) { ((T*)m)->handleTick(); };                                                                                     \
+        _handlerRead      = [](Mapper* m, std::uint16_t addr) { return ((T*)m)->handleRead(addr); };                                                      \
+        _handlerWrite     = [](Mapper* m, std::uint16_t addr, std::uint8_t value) { ((T*)m)->handleWrite(addr, value); };                                 \
+        _handlerVideoRead = [](Mapper* m, std::uint16_t addr) { ((T*)m)->handleVideoRead(addr); };                                                        \
+        _handlerNtRead    = [](Mapper* m, int nametable, std::uint16_t offset) { return ((T*)m)->handleNtRead(nametable, offset); };                      \
+        _handlerNtWrite   = [](Mapper* m, int nametable, std::uint16_t offset, std::uint8_t value) { ((T*)m)->handleNtWrite(nametable, offset, value); }; \
+        _handlerChrRead   = [](Mapper* m, int bank, std::uint16_t offset) { return ((T*)m)->handleChrRead(bank, offset); };                               \
+        _handlerChrWrite  = [](Mapper* m, int bank, std::uint16_t offset, std::uint8_t value) { ((T*)m)->handleChrWrite(bank, offset, value); };          \
+    }
 
 namespace libnin
 {
@@ -37,15 +51,6 @@ Mapper::Mapper(Memory& memory, Cart& cart, Disk& disk, IRQ& irq)
 , _cart{cart}
 , _disk{disk}
 , _irq{irq}
-, _handleReset{&Mapper::handleReset<MapperID::NROM>}
-, _handleTick{&Mapper::handleTick<MapperID::NROM>}
-, _handleRead{&Mapper::handleRead<MapperID::NROM>}
-, _handleWrite{&Mapper::handleWrite<MapperID::NROM>}
-, _handleVideoRead{&Mapper::handleVideoRead<MapperID::NROM>}
-, _handleNtRead{&Mapper::handleNtRead<MapperID::NROM>}
-, _handleNtWrite{&Mapper::handleNtWrite<MapperID::NROM>}
-, _handleChrRead{&Mapper::handleChrRead<MapperID::NROM>}
-, _handleChrWrite{&Mapper::handleChrWrite<MapperID::NROM>}
 , _prg{}
 , _prgWriteFlag{}
 , _chr{}
@@ -75,13 +80,24 @@ NinError Mapper::configure(int mapper, int submapper)
     bankPrg8k(3, CART_PRG_ROM, 1);
     bankPrg8k(4, CART_PRG_ROM, -2);
     bankPrg8k(5, CART_PRG_ROM, -1);
-    initMatching<MapperID(0)>(mapperID);
+
+    CONFIGURE_HANDLERS(Mapper);
+
+    switch (mapperID)
+    {
+    case MapperID::NROM:
+        break;
+    case MapperID::MMC1:
+        CONFIGURE_HANDLERS(MapperMMC1);
+        break;
+    }
+
     return NIN_OK;
 }
 
 std::uint8_t Mapper::read(std::uint16_t addr)
 {
-    std::uint8_t value = (this->*_handleRead)(addr);
+    std::uint8_t value = _handlerRead(this, addr);
     int          slot  = ((addr - 0x4000) / 0x2000);
 
     return _prg[slot] ? _prg[slot][addr & 0x1fff] : value;
@@ -95,7 +111,7 @@ void Mapper::write(std::uint16_t addr, std::uint8_t value)
     {
         _prg[slot][addr & 0x1fff] = value;
     }
-    (this->*_handleWrite)(addr, value);
+    _handlerWrite(this, addr, value);
 }
 
 void Mapper::mirror(int mirrorMode)
@@ -202,70 +218,46 @@ void Mapper::bankChr8k(std::int16_t bank)
     bankChr1k(7, bank * 8 + 7);
 }
 
-template <>
-void Mapper::initMatching<MapperID::MAX>(MapperID id2)
-{
-    UNUSED(id2);
-}
-
-template <MapperID id>
-void Mapper::initMatching(MapperID id2)
-{
-    if (id == id2)
-        init<id>();
-    else
-        initMatching<MapperID((int)id + 1)>(id2);
-}
-
-template <MapperID id>
-void Mapper::handleReset()
+void Mapper::handleInit()
 {
 }
 
-template <MapperID id>
 void Mapper::handleTick()
 {
 }
 
-template <MapperID id>
 std::uint8_t Mapper::handleRead(std::uint16_t addr)
 {
     UNUSED(addr);
     return 0x00;
 }
 
-template <MapperID id>
 void Mapper::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     UNUSED(addr);
     UNUSED(value);
 }
 
-template <MapperID id>
 void Mapper::handleVideoRead(std::uint16_t addr)
 {
     UNUSED(addr);
 }
 
-template <MapperID id>
 std::uint8_t Mapper::handleNtRead(int nametable, std::uint16_t offset)
 {
     return _nametables[nametable][offset];
 }
 
-template <MapperID id>
 void Mapper::handleNtWrite(int nametable, std::uint16_t offset, std::uint8_t value)
 {
     _nametables[nametable][offset] = value;
 }
 
-template <MapperID id>
 std::uint8_t Mapper::handleChrRead(int bank, std::uint16_t offset)
 {
     return _chr[bank][offset];
 }
 
-template <MapperID id>
 void Mapper::handleChrWrite(int bank, std::uint16_t offset, std::uint8_t value)
 {
     if (_cart.segment(CART_CHR_RAM).base)

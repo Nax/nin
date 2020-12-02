@@ -24,35 +24,37 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIBNIN_MAPPER_MMC1_H
-#define LIBNIN_MAPPER_MMC1_H 1
+#ifndef LIBNIN_MAPPER_VARIANT_H
+#define LIBNIN_MAPPER_VARIANT_H 1
 
 #include <cstdint>
-#include <libnin/Mapper.h>
+#include <libnin/Mapper/DiskSystem.h>
+#include <libnin/Mapper/MMC1.h>
+#include <libnin/Mapper/MMC2.h>
+#include <libnin/Mapper/MMC3.h>
+#include <libnin/Mapper/MMC5.h>
+#include <libnin/NonCopyable.h>
+#include <nin/nin.h>
 
 namespace libnin
 {
 
-class MapperMMC1 : public Mapper
+union MapperVariant
 {
 public:
-    void handleInit();
-    void handleWrite(std::uint16_t addr, std::uint8_t value);
+    MapperVariant(Memory& memory, Cart& cart, Disk& disk, IRQ& irq)
+    : mapper{memory, cart, disk, irq}
+    {
+    }
 
-private:
-    void regWrite(std::uint16_t addr, std::uint8_t value);
-    void applyPrg();
-    void applyChr();
-    void applyMirror();
+    ~MapperVariant() {}
 
-    std::uint8_t _shift;
-    std::uint8_t _count;
-    std::uint8_t _mirroring : 2;
-    std::uint8_t _prgBankMode : 2;
-    std::uint8_t _chrBankMode : 1;
-    std::uint8_t _chrBank0 : 5;
-    std::uint8_t _chrBank1 : 5;
-    std::uint8_t _prgBank : 4;
+    Mapper           mapper;
+    MapperMMC1       mmc1;
+    MapperMMC2       mmc2;
+    MapperMMC3       mmc3;
+    MapperMMC5       mmc5;
+    MapperDiskSystem diskSystem;
 };
 
 } // namespace libnin
