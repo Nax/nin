@@ -49,17 +49,10 @@
 #include <libnin/Video.h>
 #include <nin/nin.h>
 
-#define RAM_SIZE  0x800
-#define VRAM_SIZE 0x800
-
 #define BITMAP_X 256
 #define BITMAP_Y 240
 
 #define DEBUG_LEVEL 0
-
-#define MIRRORING_HORIZONTAL 0
-#define MIRRORING_VERTICAL   1
-#define MIRRORING_QUAD       2
 
 #define CLOCK_RATE_NTSC 1789773
 

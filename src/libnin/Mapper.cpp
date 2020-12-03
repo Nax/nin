@@ -65,6 +65,7 @@ Mapper::Mapper(Memory& memory, Cart& cart, Disk& disk, IRQ& irq)
 , _cart{cart}
 , _disk{disk}
 , _irq{irq}
+, _mirrorMode{}
 , _prg{}
 , _prgWriteFlag{}
 , _chr{}
@@ -189,6 +190,8 @@ void Mapper::write(std::uint16_t addr, std::uint8_t value)
 
 void Mapper::mirror(int mirrorMode)
 {
+    _mirrorMode = mirrorMode;
+
     switch (mirrorMode)
     {
     case NIN_MIRROR_A:
@@ -214,6 +217,12 @@ void Mapper::mirror(int mirrorMode)
         _nametables[1] = _memory.vram + 0x000;
         _nametables[2] = _memory.vram + 0x400;
         _nametables[3] = _memory.vram + 0x400;
+        break;
+    case NIN_MIRROR_4:
+        _nametables[0] = _memory.vram + 0x000;
+        _nametables[1] = _memory.vram + 0x400;
+        _nametables[2] = _memory.vram + 0x800;
+        _nametables[3] = _memory.vram + 0xc00;
         break;
     }
 }

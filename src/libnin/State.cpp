@@ -90,7 +90,11 @@ static NinError loadRomNES(State& state, const RomHeader& header, std::FILE* f)
         return err;
 
     /* Load the header misc. info */
-    if (header.mirroring)
+    if (header.quadScreen)
+    {
+        state.mapper.mirror(NIN_MIRROR_4);
+    }
+    else if (header.mirroring)
         state.mapper.mirror(NIN_MIRROR_H);
     else
         state.mapper.mirror(NIN_MIRROR_V);

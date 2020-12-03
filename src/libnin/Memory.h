@@ -39,7 +39,7 @@ public:
     Memory();
 
     std::uint8_t ram[0x800];
-    std::uint8_t vram[0x800];
+    std::uint8_t vram[0x1000];
     std::uint8_t exvram[0x800];
     std::uint8_t palettes[0x20];
     std::uint8_t oam[0x100];

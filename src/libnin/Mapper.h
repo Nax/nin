@@ -36,6 +36,7 @@
 #define NIN_MIRROR_B 1
 #define NIN_MIRROR_H 2
 #define NIN_MIRROR_V 3
+#define NIN_MIRROR_4 4
 
 namespace libnin
 {
@@ -119,6 +120,7 @@ protected:
     HandlerChrRead   _handlerChrRead;
     HandlerChrWrite  _handlerChrWrite;
 
+    int           _mirrorMode;
     std::uint8_t* _prg[6];
     bool          _prgWriteFlag[6];
     std::uint8_t* _chr[8];

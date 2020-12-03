@@ -34,6 +34,7 @@ namespace libnin
 void MapperDXROM::handleInit()
 {
     _bankSelect = 0;
+
     bankPrg8k(2, CART_PRG_ROM, 0);
     bankPrg8k(3, CART_PRG_ROM, 0);
     bankPrg8k(4, CART_PRG_ROM, -2);

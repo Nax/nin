@@ -70,10 +70,13 @@ void MapperMMC3::handleWrite(std::uint16_t addr, std::uint8_t value)
         apply();
         break;
     case 0xa000:
-        if ((value & 0x01) == 0)
-            mirror(NIN_MIRROR_H);
-        else
-            mirror(NIN_MIRROR_V);
+        if (_mirrorMode != NIN_MIRROR_4)
+        {
+            if ((value & 0x01) == 0)
+                mirror(NIN_MIRROR_H);
+            else
+                mirror(NIN_MIRROR_V);
+        }
         break;
     case 0xc000:
         _irqScanlineReloadValue = value;
