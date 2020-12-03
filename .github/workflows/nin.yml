@@ -46,6 +46,8 @@ jobs:
         key: Qt-${{ env.QT_VERSION }}-${{ matrix.name }}
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
+      env:
+        MACOSX_DEPLOYMENT_TARGET: ''
       with:
         arch: ${{ matrix.qt_arch }}
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
