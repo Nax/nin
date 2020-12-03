@@ -35,7 +35,6 @@ jobs:
             cmake_opts: -DCMAKE_BUILD_TYPE=Release
     runs-on: ${{ matrix.os }}
     env:
-      MACOSX_DEPLOYMENT_TARGET: 10.9
       QT_VERSION: 5.9.9
     steps:
     - name: Cache Qt
@@ -46,8 +45,6 @@ jobs:
         key: Qt-${{ env.QT_VERSION }}-${{ matrix.name }}
     - name: Install Qt
       uses: jurplel/install-qt-action@v2
-      env:
-        MACOSX_DEPLOYMENT_TARGET: ''
       with:
         arch: ${{ matrix.qt_arch }}
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
