@@ -29,6 +29,7 @@
 #include <libnin/Mapper/AXROM.h>
 #include <libnin/Mapper/Action52.h>
 #include <libnin/Mapper/CNROM.h>
+#include <libnin/Mapper/CPROM.h>
 #include <libnin/Mapper/ColorDreams.h>
 #include <libnin/Mapper/DXROM.h>
 #include <libnin/Mapper/DiskSystem.h>
@@ -109,6 +110,9 @@ NinError Mapper::configure(int mapper, int submapper)
         break;
     case MapperID::CNROM:
         CONFIGURE_HANDLERS(MapperCNROM);
+        break;
+    case MapperID::CPROM:
+        CONFIGURE_HANDLERS(MapperCPROM);
         break;
     case MapperID::DxROM:
         CONFIGURE_HANDLERS(MapperDXROM);

@@ -56,6 +56,8 @@ MapperID libnin::getMapperID(int mapper, int submapper)
         return MapperID::MMC4;
     case 11:
         return MapperID::ColorDreams;
+    case 13:
+        return MapperID::CPROM;
     case 20:
         return MapperID::FDS;
     case 37:

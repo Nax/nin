@@ -51,10 +51,20 @@ static NinError loadRomNES(State& state, const RomHeader& header, std::FILE* f)
         nes2 = true;
 
     /* Get the length of every segment */
-    prgRomBankCount = header.prgRomSize * 2;
-    prgRamBankCount = 1;
-    chrRomBankCount = header.chrRomSize * 8;
-    chrRamBankCount = chrRomBankCount ? 0 : 8;
+    if (!nes2)
+    {
+        prgRomBankCount = header.prgRomSize * 2;
+        prgRamBankCount = 1;
+        chrRomBankCount = header.chrRomSize * 8;
+        chrRamBankCount = chrRomBankCount ? 0 : 8;
+    }
+    else
+    {
+        prgRomBankCount = (header.prgRomSize + 256 * header.nes2.prgRomSizeHi) * 2;
+        chrRomBankCount = (header.chrRomSize + 256 * header.nes2.chrRomSizeHi) * 8;
+        prgRamBankCount = header.nes2.prgRamSizeShift ? (1 << (header.nes2.prgRamSizeShift - 7)) : 0;
+        chrRamBankCount = header.nes2.chrRamSizeShift ? (1 << (header.nes2.chrRamSizeShift - 4)) : 0;
+    }
 
     /* Zero is an error for PRG but allowed for CHR */
     if (!prgRomBankCount)

@@ -24,41 +24,19 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIBNIN_MAPPER_ID_H
-#define LIBNIN_MAPPER_ID_H
+#include <libnin/Cart.h>
+#include <libnin/Mapper/CPROM.h>
+#include <libnin/Util.h>
 
 namespace libnin
 {
 
-enum class MapperID
+void MapperCPROM::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
-    Bad     = -2,
-    Unknown = -1,
-    NROM    = 0,
-    MMC1,
-    MMC2,
-    MMC3,
-    MMC3_Multi37,
-    MMC3_Multi47,
-    MMC4,
-    MMC5,
-    AxROM,
-    AxROM_Conflicts,
-    CNROM,
-    CPROM,
-    DxROM,
-    GxROM,
-    UxROM,
-    UxROM_NoConflicts,
-    UxROM_UN1ROM,
-    UxROM_UNROM180,
-    ColorDreams,
-    Action52,
-    FDS
-};
-
-MapperID getMapperID(int mapper, int submapper);
+    if (addr >= 0x8000)
+    {
+        bankChr4k(1, value & 0x03);
+    }
+}
 
 } // namespace libnin
-
-#endif
