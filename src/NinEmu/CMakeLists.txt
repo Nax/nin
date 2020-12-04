@@ -42,7 +42,7 @@ elseif(WIN32)
 endif()
 
 # Compilation
-add_executable(nin MACOSX_BUNDLE ${SOURCES})
+add_executable(nin MACOSX_BUNDLE WIN32 ${SOURCES})
 target_include_directories(nin PRIVATE "${CMAKE_SOURCE_DIR}/src")
 target_link_libraries(nin OpenGL::GL OpenAL::AL libnin Qt5::Core Qt5::Widgets Qt5::Gamepad Threads::Threads)
 

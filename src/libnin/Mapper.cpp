@@ -55,6 +55,7 @@
         _handlerChrWrite  = [](Mapper* m, int bank, std::uint16_t offset, std::uint8_t value) { ((T*)m)->handleChrWrite(bank, offset, value); };          \
     }
 
+#define OVERRIDE_HANDLER_INIT(T, name)  _handlerInit = [](Mapper* m) { ((T*)m)->name(); }
 #define OVERRIDE_HANDLER_WRITE(T, name) _handlerWrite = [](Mapper* m, std::uint16_t addr, std::uint8_t value) { ((T*)m)->name(addr, value); }
 
 namespace libnin
@@ -128,6 +129,7 @@ NinError Mapper::configure(int mapper, int submapper)
         CONFIGURE_HANDLERS(MapperMMC2);
         break;
     case MapperID::MMC3:
+    case MapperID::MMC3_Multi37:
         CONFIGURE_HANDLERS(MapperMMC3);
         break;
     case MapperID::MMC4:
@@ -161,6 +163,10 @@ NinError Mapper::configure(int mapper, int submapper)
         break;
     case MapperID::UxROM_UNROM180:
         OVERRIDE_HANDLER_WRITE(MapperUXROM, handleWrite_UNROM180);
+        break;
+    case MapperID::MMC3_Multi37:
+        OVERRIDE_HANDLER_INIT(MapperMMC3, handleInit_Multi37);
+        OVERRIDE_HANDLER_WRITE(MapperMMC3, handleWrite_Multi37);
         break;
     default:
         break;

@@ -37,11 +37,15 @@ class MapperMMC3 : public Mapper
 {
 public:
     void handleInit();
+    void handleInit_Multi37();
     void handleWrite(std::uint16_t addr, std::uint8_t value);
+    void handleWrite_Multi37(std::uint16_t addr, std::uint8_t value);
     void handleVideoRead(std::uint16_t addr);
 
 private:
     void apply();
+    void bankPrg(int slot, int index);
+    void bankChr(int slot, int index);
 
     std::uint8_t _bankSelect : 3;
     std::uint8_t _bank[8];
@@ -54,6 +58,11 @@ private:
     std::uint8_t  _irqScanlineReloadValue;
     std::uint16_t _irqScanlineFilterShifter;
     std::uint16_t _oldVmemAddr;
+
+    std::uint32_t _prgBankAnd;
+    std::uint32_t _prgBankOr;
+    std::uint32_t _chrBankAnd;
+    std::uint32_t _chrBankOr;
 };
 
 } // namespace libnin
