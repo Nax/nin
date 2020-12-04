@@ -130,6 +130,7 @@ NinError Mapper::configure(int mapper, int submapper)
         break;
     case MapperID::MMC3:
     case MapperID::MMC3_Multi37:
+    case MapperID::MMC3_Multi47:
         CONFIGURE_HANDLERS(MapperMMC3);
         break;
     case MapperID::MMC4:
@@ -167,6 +168,10 @@ NinError Mapper::configure(int mapper, int submapper)
     case MapperID::MMC3_Multi37:
         OVERRIDE_HANDLER_INIT(MapperMMC3, handleInit_Multi37);
         OVERRIDE_HANDLER_WRITE(MapperMMC3, handleWrite_Multi37);
+        break;
+    case MapperID::MMC3_Multi47:
+        OVERRIDE_HANDLER_INIT(MapperMMC3, handleInit_Multi47);
+        OVERRIDE_HANDLER_WRITE(MapperMMC3, handleWrite_Multi47);
         break;
     default:
         break;

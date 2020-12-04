@@ -71,6 +71,18 @@ void MapperMMC3::handleInit_Multi37()
     apply();
 }
 
+void MapperMMC3::handleInit_Multi47()
+{
+    handleInit();
+
+    _prgBankAnd = 0x0f;
+    _prgBankOr  = 0x00;
+    _chrBankAnd = 0x7f;
+    _chrBankOr  = 0x00;
+
+    apply();
+}
+
 void MapperMMC3::handleWrite(std::uint16_t addr, std::uint8_t value)
 {
     switch (addr & 0xe001)
@@ -143,6 +155,32 @@ void MapperMMC3::handleWrite_Multi37(std::uint16_t addr, std::uint8_t value)
             _prgBankOr  = 0x18;
             _chrBankAnd = 0x7f;
             _chrBankOr  = 0x00;
+            break;
+        }
+
+        apply();
+    }
+
+    handleWrite(addr, value);
+}
+
+void MapperMMC3::handleWrite_Multi47(std::uint16_t addr, std::uint8_t value)
+{
+    if ((addr & 0xe000) == 0x6000)
+    {
+        switch (value & 1)
+        {
+        case 0:
+            _prgBankAnd = 0x0f;
+            _prgBankOr  = 0x00;
+            _chrBankAnd = 0x7f;
+            _chrBankOr  = 0x00;
+            break;
+        case 1:
+            _prgBankAnd = 0x0f;
+            _prgBankOr  = 0x10;
+            _chrBankAnd = 0x7f;
+            _chrBankOr  = 0x80;
             break;
         }
 

@@ -38,8 +38,10 @@ class MapperMMC3 : public Mapper
 public:
     void handleInit();
     void handleInit_Multi37();
+    void handleInit_Multi47();
     void handleWrite(std::uint16_t addr, std::uint8_t value);
     void handleWrite_Multi37(std::uint16_t addr, std::uint8_t value);
+    void handleWrite_Multi47(std::uint16_t addr, std::uint8_t value);
     void handleVideoRead(std::uint16_t addr);
 
 private:

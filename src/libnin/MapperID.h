@@ -39,6 +39,7 @@ enum class MapperID
     MMC2,
     MMC3,
     MMC3_Multi37,
+    MMC3_Multi47,
     MMC4,
     MMC5,
     AxROM,
