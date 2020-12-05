@@ -33,6 +33,7 @@
 #include <libnin/Mapper/ColorDreams.h>
 #include <libnin/Mapper/DXROM.h>
 #include <libnin/Mapper/DiskSystem.h>
+#include <libnin/Mapper/Mapper15.h>
 #include <libnin/Mapper/GXROM.h>
 #include <libnin/Mapper/MMC1.h>
 #include <libnin/Mapper/MMC2.h>
@@ -148,6 +149,9 @@ NinError Mapper::configure(int mapper, int submapper)
         break;
     case MapperID::ColorDreams:
         CONFIGURE_HANDLERS(MapperColorDreams);
+        break;
+    case MapperID::Mapper15:
+        CONFIGURE_HANDLERS(Mapper15);
         break;
     case MapperID::FDS:
         CONFIGURE_HANDLERS(MapperDiskSystem);
