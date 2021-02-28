@@ -37,14 +37,16 @@ class MapperMMC3 : public Mapper
 {
 public:
     void handleInit();
+    void handleTick();
     void handleInit_Multi37();
     void handleInit_Multi47();
     void handleWrite(std::uint16_t addr, std::uint8_t value);
     void handleWrite_Multi37(std::uint16_t addr, std::uint8_t value);
     void handleWrite_Multi47(std::uint16_t addr, std::uint8_t value);
-    void handleVideoRead(std::uint16_t addr);
+    void handleVideoRead(std::uint16_t offset);
 
 private:
+    void scanlineTick();
     void apply();
     void bankPrg(int slot, int index);
     void bankChr(int slot, int index);
@@ -54,12 +56,13 @@ private:
     std::uint8_t _bankModePrgRom : 1;
     std::uint8_t _bankModeChrRom : 1;
 
-    std::uint8_t  _irqScanlineEnabled : 1;
-    std::uint8_t  _irqScanlineReload : 1;
-    std::uint8_t  _irqScanlineCounter;
-    std::uint8_t  _irqScanlineReloadValue;
-    std::uint16_t _irqScanlineFilterShifter;
-    std::uint16_t _oldVmemAddr;
+    std::uint8_t _irqScanlineEnabled : 1;
+    std::uint8_t _irqScanlineReload : 1;
+    std::uint8_t _irqScanlineCounter;
+    std::uint8_t _irqScanlineReloadValue;
+
+    bool          _a12 : 1;
+    std::uint16_t _a12Shift;
 
     std::uint32_t _prgBankAnd;
     std::uint32_t _prgBankOr;

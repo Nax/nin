@@ -39,6 +39,8 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 project(Nin VERSION "${VERSION}" LANGUAGES C CXX)
 
+option(CONSOLE "Enable the console under win32" NO)
+
 add_subdirectory(third_party)
 add_subdirectory(src)
 

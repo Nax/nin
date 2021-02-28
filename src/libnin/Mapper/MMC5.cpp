@@ -93,7 +93,7 @@ void MapperMMC5::handleTick()
     {
         _ppuIdleCount++;
         // TODO: Fix this hack
-        if (_ppuIdleCount == 100)
+        if (_ppuIdleCount == 3)
         {
             _inFrame = false;
         }

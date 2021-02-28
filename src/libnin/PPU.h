@@ -97,6 +97,7 @@ private:
 
     Handler handlePreScan0();
     Handler handlePreScan1();
+    Handler handlePreScan2();
     Handler handlePreScanReloadX();
     Handler handlePreScanReloadY();
     Handler handleScan();
@@ -108,7 +109,6 @@ private:
     Handler handleScanLoBG1();
     Handler handleScanHiBG0();
     Handler handleScanHiBG1();
-    Handler handleScanSpriteEval();
     Handler handleNextNT0();
     Handler handleNextNT1();
     Handler handleNextAT0();
@@ -122,8 +122,19 @@ private:
     Handler handleNextDummy2();
     Handler handleNextDummy3();
 
+    Handler handleSpriteNop();
+    Handler handleSpriteClear0();
+    Handler handleSpriteClear1();
+    Handler handleSpriteFetch0();
+    Handler handleSpriteFetch1();
+    Handler handleSpriteFetch2();
+    Handler handleSpriteFetch3();
+    Handler handleSpriteFetch4();
+    Handler handleSpriteFetch5();
+    Handler handleSpriteFetch6();
+    Handler handleSpriteFetch7();
+
     Handler wait(std::uint32_t cycles, Handler next);
-    Handler dummy();
 
     void fetchNT();
     void fetchAT();
@@ -131,7 +142,7 @@ private:
     void fetchHiBG();
 
     void spriteEvaluation();
-    void spriteFetch();
+    void loadSpriteAddr(int slot);
 
     void         emitPixel();
     std::uint8_t pixelBackground();
@@ -148,6 +159,10 @@ private:
 
     Handler _handler;
     Handler _handler2;
+    Handler _handlerSprite;
+
+    std::uint16_t _spriteFetchAddr;
+    std::uint8_t  _spriteFetchMask;
 
     std::uint16_t _v;
     std::uint16_t _t;
@@ -164,9 +179,15 @@ private:
     bool          _nmiRace3 : 1;
     bool          _nmiSup : 1;
 
-    Flags        _flags;
-    Sprite       _oam2[8];
+    Flags _flags;
+    union
+    {
+        Sprite       _oam2[8];
+        std::uint8_t _oam2Raw[64];
+    };
+
     std::uint8_t _oam2Count;
+    std::uint8_t _oamBuf;
 
     std::uint8_t _readBuf;
     std::uint8_t _latchNT;
@@ -188,6 +209,7 @@ private:
     std::uint32_t _clockVideo;
     std::uint8_t  _scanline;
     std::uint8_t  _step;
+    std::uint8_t  _stepSprite;
     std::uint8_t  _oamAddr;
 
     std::uint32_t _pixelBuffer;

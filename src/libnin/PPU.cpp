@@ -366,8 +366,9 @@ PPU::PPU(HardwareInfo& info, Memory& memory, NMI& nmi, BusVideo& busVideo, Mappe
 , _busVideo{busVideo}
 , _mapper{mapper}
 , _video{video}
-, _handler{(Handler)&PPU::handleScan}
+, _handler{&PPU::handleScan}
 , _handler2{}
+, _handlerSprite{&PPU::handleSpriteNop}
 , _v{}
 , _t{}
 , _x{}
@@ -434,8 +435,8 @@ std::uint8_t PPU::regRead(std::uint16_t reg)
     case 0x07: // PPUDATA
         if ((_v & 0x3f00) == 0x3f00)
         {
-            value    = _busVideo.read(_v);
             _readBuf = _busVideo.read(_v & 0x2fff);
+            value    = _busVideo.read(_v);
         }
         else
         {
@@ -443,6 +444,7 @@ std::uint8_t PPU::regRead(std::uint16_t reg)
             _readBuf = _busVideo.read(_v);
         }
         _v += _flags.incrementY ? 32 : 1;
+        _mapper.videoRead(_v);
         break;
     }
 
@@ -524,13 +526,14 @@ void PPU::regWrite(std::uint16_t reg, std::uint8_t value)
             _t &= 0xff00;
             _t |= (value & 0x00ff);
             _v = _t;
-            _mapper.videoRead(_v);
+            _busVideo.read(_t);
         }
         _w = !_w;
         break;
     case 0x07: // PPUDATA
         _busVideo.write(_v, value);
         _v += _flags.incrementY ? 32 : 1;
+        _mapper.videoRead(_v);
         break;
     }
 }
@@ -544,8 +547,10 @@ void PPU::tick(std::size_t cycles)
 {
     while (cycles--)
     {
-        _handler = (Handler)(this->*_handler)();
+        _handlerSprite = (Handler)(this->*_handlerSprite)();
+        _handler       = (Handler)(this->*_handler)();
         processPixel();
+        gDebugClock++;
     }
 }
 
@@ -607,7 +612,8 @@ PPU::Handler PPU::handleVBlank3()
 
 PPU::Handler PPU::handlePreScan0()
 {
-    _nmiRace3 = true;
+    gDebugClock = 0;
+    _nmiRace3   = true;
     return &PPU::handlePreScan1;
 }
 
@@ -625,17 +631,24 @@ PPU::Handler PPU::handlePreScan1()
         _shiftSpriteLo[i] = 0x00;
     }
     _step = 0;
-    return wait(257 - NMI_OFF, (Handler)&PPU::handlePreScanReloadX);
+    return wait(256 - NMI_OFF, &PPU::handlePreScan2);
+}
+
+PPU::Handler PPU::handlePreScan2()
+{
+    if (_flags.rendering)
+    {
+        _v             = copyX(_v, _t);
+        _stepSprite    = 0;
+        _handlerSprite = &PPU::handleSpriteFetch0;
+    }
+    return &PPU::handlePreScanReloadX;
 }
 
 PPU::Handler PPU::handlePreScanReloadX()
 {
-    if (_flags.rendering)
-    {
-        _v = copyX(_v, _t);
-    }
     _step = 0;
-    return wait(22, (Handler)&PPU::handlePreScanReloadY);
+    return wait(22, &PPU::handlePreScanReloadY);
 }
 
 PPU::Handler PPU::handlePreScanReloadY()
@@ -655,6 +668,10 @@ PPU::Handler PPU::handlePreScanReloadY()
 
 PPU::Handler PPU::handleScan()
 {
+    gDebugClock    = 0;
+    _stepSprite    = 0;
+    _handlerSprite = &PPU::handleSpriteClear0;
+
     _step = 0;
     return &PPU::handleScanNT0;
 }
@@ -662,52 +679,52 @@ PPU::Handler PPU::handleScan()
 PPU::Handler PPU::handleScanNT0()
 {
     emitPixel();
-    return (Handler)&PPU::handleScanNT1;
+    fetchNT();
+    return &PPU::handleScanNT1;
 }
 
 PPU::Handler PPU::handleScanNT1()
 {
     emitPixel();
-    fetchNT();
-    return (Handler)&PPU::handleScanAT0;
+    return &PPU::handleScanAT0;
 }
 
 PPU::Handler PPU::handleScanAT0()
 {
     emitPixel();
-    return (Handler)&PPU::handleScanAT1;
+    fetchAT();
+    return &PPU::handleScanAT1;
 }
 
 PPU::Handler PPU::handleScanAT1()
 {
     emitPixel();
-    fetchAT();
-    return (Handler)&PPU::handleScanLoBG0;
+    return &PPU::handleScanLoBG0;
 }
 
 PPU::Handler PPU::handleScanLoBG0()
 {
     emitPixel();
-    return (Handler)&PPU::handleScanLoBG1;
+    fetchLoBG();
+    return &PPU::handleScanLoBG1;
 }
 
 PPU::Handler PPU::handleScanLoBG1()
 {
     emitPixel();
-    fetchLoBG();
-    return (Handler)&PPU::handleScanHiBG0;
+    return &PPU::handleScanHiBG0;
 }
 
 PPU::Handler PPU::handleScanHiBG0()
 {
     emitPixel();
+    fetchHiBG();
     return (Handler)&PPU::handleScanHiBG1;
 }
 
 PPU::Handler PPU::handleScanHiBG1()
 {
     emitPixel();
-    fetchHiBG();
     shiftReload();
 
     /* Increment X */
@@ -727,54 +744,53 @@ PPU::Handler PPU::handleScanHiBG1()
         _v = incY(_v);
     }
     _step = 0;
-    return &PPU::handleScanSpriteEval;
-}
 
-PPU::Handler PPU::handleScanSpriteEval()
-{
     if (_flags.rendering)
     {
         spriteEvaluation();
-        spriteFetch();
+        _stepSprite    = 0;
+        _handlerSprite = &PPU::handleSpriteFetch0;
     }
-    return wait(63, &PPU::handleNextNT0);
+    return wait(64, &PPU::handleNextNT0);
 }
 
 PPU::Handler PPU::handleNextNT0()
 {
+    fetchNT();
     return &PPU::handleNextNT1;
 }
 
 PPU::Handler PPU::handleNextNT1()
 {
-    fetchNT();
     return &PPU::handleNextAT0;
 }
 
 PPU::Handler PPU::handleNextAT0()
 {
+    fetchAT();
     return &PPU::handleNextAT1;
 }
 
 PPU::Handler PPU::handleNextAT1()
 {
-    fetchAT();
+    fetchLoBG();
     return &PPU::handleNextLoBG0;
 }
 
 PPU::Handler PPU::handleNextLoBG0()
 {
+    fetchLoBG();
     return &PPU::handleNextLoBG1;
 }
 
 PPU::Handler PPU::handleNextLoBG1()
 {
-    fetchLoBG();
     return &PPU::handleNextHiBG0;
 }
 
 PPU::Handler PPU::handleNextHiBG0()
 {
+    fetchHiBG();
     return &PPU::handleNextHiBG1;
 }
 
@@ -782,11 +798,9 @@ PPU::Handler PPU::handleNextHiBG1()
 {
     if (_flags.rendering)
     {
-        fetchHiBG();
         _v = incX(_v);
         shiftReload();
     }
-
     if (_step)
         return &PPU::handleNextDummy0;
     _step = 1;
@@ -795,32 +809,31 @@ PPU::Handler PPU::handleNextHiBG1()
 
 PPU::Handler PPU::handleNextDummy0()
 {
+    fetchNT();
     return &PPU::handleNextDummy1;
 }
 
 PPU::Handler PPU::handleNextDummy1()
 {
-    fetchNT();
     return &PPU::handleNextDummy2;
 }
 
 PPU::Handler PPU::handleNextDummy2()
 {
+    fetchNT();
     _dummySkip = (_oddFrame && _flags.backgroundEnable);
     return &PPU::handleNextDummy3;
 }
 
 PPU::Handler PPU::handleNextDummy3()
 {
-    fetchNT();
-
     if (_prescan)
     {
         _prescan  = false;
         _scanline = 0;
         _step     = 0;
         _oddFrame = !_oddFrame;
-        return _dummySkip ? &PPU::handleScanNT0 : &PPU::handleScan;
+        return _dummySkip ? handleScan() : &PPU::handleScan;
     }
     if (_scanline + 1 < 240)
     {
@@ -831,28 +844,87 @@ PPU::Handler PPU::handleNextDummy3()
     return wait(339 + NMI_OFF, &PPU::handleVBlank0);
 }
 
+PPU::Handler PPU::handleSpriteNop()
+{
+    return &PPU::handleSpriteNop;
+}
+
+PPU::Handler PPU::handleSpriteClear0()
+{
+    return &PPU::handleSpriteClear1;
+}
+
+PPU::Handler PPU::handleSpriteClear1()
+{
+    _oam2Raw[_stepSprite] = 0xff;
+    _stepSprite++;
+
+    if (_stepSprite == 32)
+    {
+        return &PPU::handleSpriteNop;
+    }
+
+    return &PPU::handleSpriteClear0;
+}
+
+PPU::Handler PPU::handleSpriteFetch0()
+{
+    loadSpriteAddr(_stepSprite);
+    _spriteFetchMask              = (_stepSprite >= _oam2Count) ? 0x00 : 0xff;
+    _shiftSpriteX[_stepSprite]    = _oam2[_stepSprite].x & _spriteFetchMask;
+    _shiftSpriteAttr[_stepSprite] = _oam2[_stepSprite].raw[2] & _spriteFetchMask;
+    fetchNT();
+
+    return &PPU::handleSpriteFetch1;
+}
+
+PPU::Handler PPU::handleSpriteFetch1()
+{
+    return &PPU::handleSpriteFetch2;
+}
+
+PPU::Handler PPU::handleSpriteFetch2()
+{
+    fetchAT();
+    return &PPU::handleSpriteFetch3;
+}
+
+PPU::Handler PPU::handleSpriteFetch3()
+{
+    return &PPU::handleSpriteFetch4;
+}
+
+PPU::Handler PPU::handleSpriteFetch4()
+{
+    if (_flags.rendering)
+        _shiftSpriteLo[_stepSprite] = _busVideo.read(_spriteFetchAddr | 0x00) & _spriteFetchMask;
+    return &PPU::handleSpriteFetch5;
+}
+
+PPU::Handler PPU::handleSpriteFetch5()
+{
+    return &PPU::handleSpriteFetch6;
+}
+
+PPU::Handler PPU::handleSpriteFetch6()
+{
+    if (_flags.rendering)
+        _shiftSpriteHi[_stepSprite] = _busVideo.read(_spriteFetchAddr | 0x08) & _spriteFetchMask;
+    return &PPU::handleSpriteFetch7;
+}
+
+PPU::Handler PPU::handleSpriteFetch7()
+{
+    _stepSprite++;
+    return (_stepSprite == 8) ? &PPU::handleSpriteNop : &PPU::handleSpriteFetch0;
+}
+
 PPU::Handler PPU::wait(std::uint32_t cycles, Handler next)
 {
     _clock    = cycles - 1;
     _handler2 = next;
 
     return &PPU::handleWait;
-}
-
-PPU::Handler PPU::dummy()
-{
-    Handler h;
-
-    if (_oddFrame && (_flags.backgroundEnable))
-    {
-        h = &PPU::handleScanNT0;
-    }
-    else
-    {
-        h = &PPU::handleScan;
-    }
-    _oddFrame = !_oddFrame;
-    return h;
 }
 
 void PPU::fetchNT()
@@ -907,61 +979,39 @@ void PPU::spriteEvaluation()
     }
 }
 
-void PPU::spriteFetch()
+void PPU::loadSpriteAddr(int slot)
 {
     std::uint16_t y;
     std::uint16_t tile;
     std::uint16_t nametable;
-    std::uint16_t addr;
 
-    int i;
+    y         = _scanline - _oam2[slot].y;
+    tile      = _oam2[slot].tile;
+    nametable = 0;
 
-    for (i = 0; i < _oam2Count; ++i)
+    if (_oam2[slot].yFlip)
     {
-        y         = _scanline - _oam2[i].y;
-        tile      = _oam2[i].tile;
-        nametable = 0;
-
-        if (_oam2[i].yFlip)
-        {
-            if (_flags.largeSprites)
-                y = 15 - y;
-            else
-                y = 7 - y;
-        }
-        if (!_flags.largeSprites && _flags.altSpritePattern)
-        {
-            nametable = 0x1000;
-        }
-        if (_flags.largeSprites && tile & 0x01)
-        {
-            tile &= ~0x01;
-            nametable = 0x1000;
-        }
-        if (y > 7)
-        {
-            y &= 7;
-            tile++;
-        }
-
-        addr = nametable | (tile << 4) | y;
-
-        _shiftSpriteX[i]    = _oam2[i].x;
-        _shiftSpriteAttr[i] = _oam2[i].raw[2];
-        _shiftSpriteLo[i]   = _busVideo.read(addr | 0x00);
-        _shiftSpriteHi[i]   = _busVideo.read(addr | 0x08);
+        if (_flags.largeSprites)
+            y = 15 - y;
+        else
+            y = 7 - y;
+    }
+    if (!_flags.largeSprites && _flags.altSpritePattern)
+    {
+        nametable = 0x1000;
+    }
+    if (_flags.largeSprites && tile & 0x01)
+    {
+        tile &= ~0x01;
+        nametable = 0x1000;
+    }
+    if (y > 7)
+    {
+        y &= 7;
+        tile++;
     }
 
-    for (; i < 8; ++i)
-    {
-        _shiftSpriteX[i]    = 0;
-        _shiftSpriteAttr[i] = 0;
-        _shiftSpriteLo[i]   = 0;
-        _shiftSpriteHi[i]   = 0;
-
-        _mapper.videoRead(0x1000);
-        _mapper.videoRead(0x1000);
-    }
+    _spriteFetchAddr = nametable | (tile << 4) | y;
 }
 
 void PPU::emitPixel()

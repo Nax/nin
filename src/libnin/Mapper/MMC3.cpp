@@ -29,32 +29,34 @@
 #include <libnin/Mapper/MMC3.h>
 #include <libnin/Util.h>
 
+extern int gDebugClock;
+
 namespace libnin
 {
 
 void MapperMMC3::handleInit()
 {
-    _bankSelect               = 0;
-    _bank[0]                  = 0;
-    _bank[1]                  = 0;
-    _bank[2]                  = 0;
-    _bank[3]                  = 0;
-    _bank[4]                  = 0;
-    _bank[5]                  = 0;
-    _bank[6]                  = 0;
-    _bank[7]                  = 1;
-    _bankModePrgRom           = 0;
-    _bankModeChrRom           = 0;
-    _irqScanlineEnabled       = 0;
-    _irqScanlineReload        = 0;
-    _irqScanlineCounter       = 0;
-    _irqScanlineReloadValue   = 0;
-    _irqScanlineFilterShifter = 0;
-    _oldVmemAddr              = 0;
-    _prgBankAnd               = 0xffffffff;
-    _prgBankOr                = 0;
-    _chrBankAnd               = 0xffffffff;
-    _chrBankOr                = 0;
+    _bankSelect             = 0;
+    _bank[0]                = 0;
+    _bank[1]                = 0;
+    _bank[2]                = 0;
+    _bank[3]                = 0;
+    _bank[4]                = 0;
+    _bank[5]                = 0;
+    _bank[6]                = 0;
+    _bank[7]                = 1;
+    _bankModePrgRom         = 0;
+    _bankModeChrRom         = 0;
+    _irqScanlineEnabled     = 0;
+    _irqScanlineReload      = 0;
+    _irqScanlineCounter     = 0;
+    _irqScanlineReloadValue = 0;
+    _a12                    = false;
+    _a12Shift               = 0x00;
+    _prgBankAnd             = 0xffffffff;
+    _prgBankOr              = 0;
+    _chrBankAnd             = 0xffffffff;
+    _chrBankOr              = 0;
 
     apply();
 }
@@ -81,6 +83,11 @@ void MapperMMC3::handleInit_Multi47()
     _chrBankOr  = 0x00;
 
     apply();
+}
+
+void MapperMMC3::handleTick()
+{
+    _a12Shift = _a12Shift >> 1;
 }
 
 void MapperMMC3::handleWrite(std::uint16_t addr, std::uint8_t value)
@@ -192,30 +199,39 @@ void MapperMMC3::handleWrite_Multi47(std::uint16_t addr, std::uint8_t value)
 
 void MapperMMC3::handleVideoRead(std::uint16_t addr)
 {
-    if (addr >= 0x3f00)
+    bool addr_a12;
+
+    if ((addr & 0x3f00) == 0x3f00)
         return;
 
-    if (((_oldVmemAddr & 0x1000) == 0x0000) && ((addr & 0x1000) == 0x1000))
+    addr_a12 = !!(addr & 0x1000);
+    if (addr_a12 != _a12)
     {
-        if (!_irqScanlineFilterShifter)
-        {
-            if (_irqScanlineCounter == 0 && _irqScanlineEnabled)
-            {
-                _irq.set(IRQ_MAPPER1);
-            }
-            if (_irqScanlineCounter == 0 || _irqScanlineReload)
-            {
-                _irqScanlineCounter = _irqScanlineReloadValue;
-                _irqScanlineReload  = 0;
-            }
-            else
-                _irqScanlineCounter--;
-        }
-        _irqScanlineFilterShifter = 0x8000;
+        _a12 = addr_a12;
+        if (addr_a12 && !_a12Shift)
+            scanlineTick();
+        _a12Shift = 0x10;
     }
-    else
-        _irqScanlineFilterShifter >>= 1;
-    _oldVmemAddr = addr;
+}
+
+void MapperMMC3::scanlineTick()
+{
+    if (gDebugClock != 261 && gDebugClock != 260)
+        printf("PPU dot %d\n", gDebugClock);
+
+    if (_irqScanlineCounter == 0 || _irqScanlineReload)
+    {
+        _irqScanlineCounter = _irqScanlineReloadValue;
+        _irqScanlineReload  = 0;
+        if (!_irqScanlineCounter && _irqScanlineEnabled)
+            _irq.set(IRQ_MAPPER1);
+    }
+    else if (_irqScanlineCounter)
+    {
+        _irqScanlineCounter--;
+        if (!_irqScanlineCounter && _irqScanlineEnabled)
+            _irq.set(IRQ_MAPPER1);
+    }
 }
 
 void MapperMMC3::apply()
