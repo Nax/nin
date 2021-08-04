@@ -125,7 +125,7 @@ class Rulebook
     else
       handler = "instruction<#{"0x%03x" % step}>"
     end
-    "&CPU::#{handler}"
+    "&InterpreterCycle::#{handler}"
   end
 
   def emit_step(index)
@@ -133,7 +133,7 @@ class Rulebook
     tpl = nil
     next_step = ref_step(step[1]);
     tpl = ["Handler next = #{next_step};", *(step[0]), "return next;"].join(" ")
-    str = "template<> CPU::Handler CPU::instruction<#{"0x%03x" % index}>(void) { #{tpl} }\n"
+    str = "template<> InterpreterCycle::Handler InterpreterCycle::instruction<#{"0x%03x" % index}>(void) { #{tpl} }\n"
     str
   end
 
@@ -148,12 +148,12 @@ class Rulebook
 
   def emit_ops
     ops = @ops.keys.sort.map{|op| ref_step(@ops[op]) + ","}.each_slice(4).map{|x| x.join(" ")}.map{|x| "    " + x}.join("\n")
-    "const CPU::Handler CPU::kOps[] = {\n#{ops}\n};\n"
+    "const InterpreterCycle::Handler InterpreterCycle::kOps[] = {\n#{ops}\n};\n"
   end
 
   def emit_states
     states = (0..@steps.keys.max).to_a.map{|x| "#{ref_step(x)},"}.each_slice(4).map{|x| x.join(" ")}.map{|x| "    " + x}.join("\n")
-    "const CPU::Handler CPU::kStates[] = {\n#{states}\n};\n"
+    "const InterpreterCycle::Handler InterpreterCycle::kStates[] = {\n#{states}\n};\n"
   end
 
   def emit_file(path)
@@ -162,7 +162,7 @@ class Rulebook
     end
 
     File.open(path, "w") do |f|
-      f.write "#include <libnin/CPU_impl.h>\n"
+      f.write "#include <libnin/InterpreterCycle_impl.h>\n"
       f.write "#include <libnin/Memory.h>\n"
       f.write "\n"
       f.write "namespace libnin\n"

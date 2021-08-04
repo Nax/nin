@@ -60,19 +60,19 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
         *dst = state->disk.sideCount();
         break;
     case NIN_INFO_PC:
-        *dst = state->cpu.pc();
+        *dst = state->interpreterCycle.pc();
         break;
     case NIN_INFO_REG_A:
-        *dst = state->cpu.reg(REG_A);
+        *dst = state->interpreterCycle.reg(REG_A);
         break;
     case NIN_INFO_REG_X:
-        *dst = state->cpu.reg(REG_X);
+        *dst = state->interpreterCycle.reg(REG_X);
         break;
     case NIN_INFO_REG_Y:
-        *dst = state->cpu.reg(REG_Y);
+        *dst = state->interpreterCycle.reg(REG_Y);
         break;
     case NIN_INFO_REG_S:
-        *dst = state->cpu.reg(REG_S);
+        *dst = state->interpreterCycle.reg(REG_S);
         break;
     default:
         *dst = 0;
@@ -104,7 +104,7 @@ NIN_API int ninRunCycles(NinState* state, size_t cycles, size_t* cyc)
 {
     for (std::size_t i = 0; i < cycles; ++i)
     {
-        state->cpu.tick(1);
+        state->interpreterCycle.tick(1);
         state->ppu.tick(3);
         state->apu.tick(1);
         state->mapper.tick();
@@ -166,12 +166,12 @@ NIN_API int ninStepInstruction(NinState* state)
 {
     for (int i = 0; i < 8; ++i)
     {
-        state->cpu.tick(1);
+        state->interpreterCycle.tick(1);
         state->ppu.tick(3);
         state->apu.tick(1);
         state->mapper.tick();
 
-        if (state->cpu.dispatching())
+        if (state->interpreterCycle.dispatching())
             break;
     }
 

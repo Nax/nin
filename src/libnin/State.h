@@ -32,7 +32,7 @@
 #include <libnin/Audio.h>
 #include <libnin/BusMain.h>
 #include <libnin/BusVideo.h>
-#include <libnin/CPU.h>
+#include <libnin/InterpreterCycle.h>
 #include <libnin/Cart.h>
 #include <libnin/Disk.h>
 #include <libnin/HardwareInfo.h>
@@ -82,12 +82,12 @@ public:
         MapperVariant mapperVariant;
     };
 
-    BusVideo busVideo;
-    Audio    audio;
-    APU      apu;
-    PPU      ppu;
-    BusMain  busMain;
-    CPU      cpu;
+    BusVideo            busVideo;
+    Audio               audio;
+    APU                 apu;
+    PPU                 ppu;
+    BusMain             busMain;
+    InterpreterCycle    interpreterCycle;
 };
 
 } // namespace libnin

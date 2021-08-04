@@ -203,7 +203,7 @@ State::State()
 , apu{info, irq, mapper, audio}
 , ppu{info, memory, nmi, busVideo, mapper, video}
 , busMain{memory, cart, mapper, ppu, apu, input}
-, cpu{memory, irq, nmi, ppu, apu, busMain}
+, interpreterCycle{memory, irq, nmi, ppu, apu, busMain}
 {
 }
 

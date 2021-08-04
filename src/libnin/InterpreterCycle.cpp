@@ -26,14 +26,14 @@
 
 #include <libnin/APU.h>
 #include <libnin/BusMain.h>
-#include <libnin/CPU.h>
+#include <libnin/InterpreterCycle.h>
 #include <libnin/IRQ.h>
 #include <libnin/NMI.h>
 #include <libnin/PPU.h>
 
 using namespace libnin;
 
-CPU::CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
+InterpreterCycle::InterpreterCycle(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
 : _memory{memory}
 , _irq{irq}
 , _nmi{nmi}
@@ -53,7 +53,7 @@ CPU::CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
 {
 }
 
-std::size_t CPU::tick(std::size_t cycles)
+std::size_t InterpreterCycle::tick(std::size_t cycles)
 {
     Handler handler;
 
@@ -67,7 +67,7 @@ std::size_t CPU::tick(std::size_t cycles)
     return 0;
 }
 
-CPU::Handler CPU::dispatch()
+InterpreterCycle::Handler InterpreterCycle::dispatch()
 {
     Handler       handler;
     std::uint16_t op;
@@ -93,37 +93,37 @@ CPU::Handler CPU::dispatch()
     return (this->*handler)();
 }
 
-CPU::Handler CPU::kil()
+InterpreterCycle::Handler InterpreterCycle::kil()
 {
-    return &CPU::kil;
+    return &InterpreterCycle::kil;
 }
 
-CPU::Handler CPU::dma()
+InterpreterCycle::Handler InterpreterCycle::dma()
 {
     if (_odd)
-        return &CPU::dma;
-    return &CPU::dmaRead;
+        return &InterpreterCycle::dma;
+    return &InterpreterCycle::dmaRead;
 }
 
-CPU::Handler CPU::dmaRead()
+InterpreterCycle::Handler InterpreterCycle::dmaRead()
 {
     _dmaValue = read(_dmaAddr++);
-    return &CPU::dmaWrite;
+    return &InterpreterCycle::dmaWrite;
 }
 
-CPU::Handler CPU::dmaWrite()
+InterpreterCycle::Handler InterpreterCycle::dmaWrite()
 {
     _ppu.oamWrite(_dmaValue);
     _dmaCount++;
-    return _dmaCount ? Handler(&CPU::dmaRead) : _handler2;
+    return _dmaCount ? Handler(&InterpreterCycle::dmaRead) : _handler2;
 }
 
-std::uint8_t CPU::read(std::uint16_t addr)
+std::uint8_t InterpreterCycle::read(std::uint16_t addr)
 {
     return _bus.read(addr);
 }
 
-CPU::Handler CPU::write(std::uint16_t addr, std::uint8_t value, Handler next)
+InterpreterCycle::Handler InterpreterCycle::write(std::uint16_t addr, std::uint8_t value, Handler next)
 {
     switch (_bus.write(addr, value))
     {
@@ -131,14 +131,14 @@ CPU::Handler CPU::write(std::uint16_t addr, std::uint8_t value, Handler next)
         _handler2 = next;
         _dmaAddr  = ((std::uint16_t)value << 8);
         _dmaCount = 0;
-        return &CPU::dma;
+        return &InterpreterCycle::dma;
     default:
         break;
     }
     return next;
 }
 
-std::uint8_t CPU::adc(std::uint8_t a, std::uint8_t b)
+std::uint8_t InterpreterCycle::adc(std::uint8_t a, std::uint8_t b)
 {
     std::uint16_t sum;
     std::uint8_t  carryIn;

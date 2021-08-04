@@ -24,10 +24,10 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIBNIN_CPU_IMPL_H
-#define LIBNIN_CPU_IMPL_H 1
+#ifndef LIBNIN_INTERPRETER_CYCLE_IMPL_H
+#define LIBNIN_INTERPRETER_CYCLE_IMPL_H 1
 
-#include <libnin/CPU.h>
+#include <libnin/InterpreterCycle.h>
 #include <libnin/IRQ.h>
 #include <libnin/NMI.h>
 
@@ -83,7 +83,7 @@
     if (!_addrCarry) \
     {
 #define AddrCarryEnd       \
-    return &CPU::dispatch; \
+    return &InterpreterCycle::dispatch; \
     }
 #define AddrCarryFix   _addr += 0x100;
 #define AddrIndirectLo _addr = _addr | ((std::uint16_t)_memory.ram[_addr] << 8);
@@ -110,42 +110,42 @@
 #define BranchClearC           \
     if (_p & PFLAG_C)          \
     {                          \
-        return &CPU::dispatch; \
+        return &InterpreterCycle::dispatch; \
     }
 #define BranchClearN           \
     if (_p & PFLAG_N)          \
     {                          \
-        return &CPU::dispatch; \
+        return &InterpreterCycle::dispatch; \
     }
 #define BranchClearV           \
     if (_p & PFLAG_V)          \
     {                          \
-        return &CPU::dispatch; \
+        return &InterpreterCycle::dispatch; \
     }
 #define BranchClearZ           \
     if (_p & PFLAG_Z)          \
     {                          \
-        return &CPU::dispatch; \
+        return &InterpreterCycle::dispatch; \
     }
 #define BranchSetC             \
     if (!(_p & PFLAG_C))       \
     {                          \
-        return &CPU::dispatch; \
+        return &InterpreterCycle::dispatch; \
     }
 #define BranchSetN             \
     if (!(_p & PFLAG_N))       \
     {                          \
-        return &CPU::dispatch; \
+        return &InterpreterCycle::dispatch; \
     }
 #define BranchSetV             \
     if (!(_p & PFLAG_V))       \
     {                          \
-        return &CPU::dispatch; \
+        return &InterpreterCycle::dispatch; \
     }
 #define BranchSetZ             \
     if (!(_p & PFLAG_Z))       \
     {                          \
-        return &CPU::dispatch; \
+        return &InterpreterCycle::dispatch; \
     }
 
 #define BranchTake                                                      \
@@ -153,7 +153,7 @@
     _addr      = _pc + (std::int8_t)_addr;                              \
     _pc        = ((_pc & 0xff00) | (_addr & 0xff));
 #define BranchTake2                         \
-    if (!_addrCarry) return &CPU::dispatch; \
+    if (!_addrCarry) return &InterpreterCycle::dispatch; \
     _pc = _addr;
 
 #define PushPCL   _memory.ram[0x100 | _s] = (_pc & 0xff);
@@ -327,7 +327,7 @@
     _regs[_selDst] = read(_addr);              \
     flagNZ(_regs[_selDst]);                    \
     _addr += ((std::uint16_t)_addrCarry << 8); \
-    if (!_addrCarry) return (&CPU::dispatch);
+    if (!_addrCarry) return (&InterpreterCycle::dispatch);
 #define ReadRegZero                      \
     _regs[_selDst] = _memory.ram[_addr]; \
     flagNZ(_regs[_selDst]);
@@ -339,7 +339,7 @@
     _a = _x = read(_addr);                     \
     flagNZ(_a);                                \
     _addr += ((std::uint16_t)_addrCarry << 8); \
-    if (!_addrCarry) return (&CPU::dispatch);
+    if (!_addrCarry) return (&InterpreterCycle::dispatch);
 #define ReadRegZero_AX            \
     _a = _x = _memory.ram[_addr]; \
     flagNZ(_a);
@@ -351,7 +351,7 @@
     _a = _x = _s = read(_addr) & _s;           \
     flagNZ(_s);                                \
     _addr += ((std::uint16_t)_addrCarry << 8); \
-    if (!_addrCarry) return (&CPU::dispatch);
+    if (!_addrCarry) return (&InterpreterCycle::dispatch);
 
 #define CarryFix _addr += ((std::uint16_t)_addrCarry << 8);
 
@@ -376,7 +376,7 @@
 #define ReadAddr read(_addr);
 #define ReadAddrCarry \
     read(_addr);      \
-    if (!_addrCarry) return (&CPU::dispatch);
+    if (!_addrCarry) return (&InterpreterCycle::dispatch);
 
 #define SwitchPC _pc = (_addr | ((std::uint16_t)read(_pc) << 8));
 

@@ -24,8 +24,8 @@
  *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
-#ifndef LIBNIN_CPU_H
-#define LIBNIN_CPU_H 1
+#ifndef LIBNIN_INTERPRETER_CYCLE_H
+#define LIBNIN_INTERPRETER_CYCLE_H 1
 
 #include <cstddef>
 #include <cstdint>
@@ -57,12 +57,12 @@ class NMI;
 class PPU;
 class APU;
 class BusMain;
-class CPU : private NonCopyable
+class InterpreterCycle : private NonCopyable
 {
 public:
-    CPU(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
+    InterpreterCycle(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
 
-    bool dispatching() const { return _handler == &CPU::dispatch; }
+    bool dispatching() const { return _handler == &InterpreterCycle::dispatch; }
 
     std::uint8_t  reg(int r) const { return _regs[r]; }
     std::uint16_t pc() const { return _pc; }
@@ -70,7 +70,7 @@ public:
     std::size_t tick(std::size_t cycles);
 
 private:
-    using Handler = MemberStateHelper<CPU>;
+    using Handler = MemberStateHelper<InterpreterCycle>;
 
     template <int> Handler instruction(void);
 
