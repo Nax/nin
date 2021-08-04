@@ -60,19 +60,19 @@ NIN_API void ninInfoQueryInteger(NinState* state, NinInt32* dst, NinInfo info)
         *dst = state->disk.sideCount();
         break;
     case NIN_INFO_PC:
-        *dst = state->interpreterCycle.pc();
+        *dst = state->cpu.pc;
         break;
     case NIN_INFO_REG_A:
-        *dst = state->interpreterCycle.reg(REG_A);
+        *dst = state->cpu.a;
         break;
     case NIN_INFO_REG_X:
-        *dst = state->interpreterCycle.reg(REG_X);
+        *dst = state->cpu.x;
         break;
     case NIN_INFO_REG_Y:
-        *dst = state->interpreterCycle.reg(REG_Y);
+        *dst = state->cpu.y;
         break;
     case NIN_INFO_REG_S:
-        *dst = state->interpreterCycle.reg(REG_S);
+        *dst = state->cpu.s;
         break;
     default:
         *dst = 0;

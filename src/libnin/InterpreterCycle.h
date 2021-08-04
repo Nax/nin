@@ -31,22 +31,7 @@
 #include <cstdint>
 #include <libnin/MemberStateHelper.h>
 #include <libnin/NonCopyable.h>
-
-#define PFLAG_C 0x01
-#define PFLAG_Z 0x02
-#define PFLAG_I 0x04
-#define PFLAG_D 0x08
-#define PFLAG_B 0x10
-#define PFLAG_1 0x20
-#define PFLAG_V 0x40
-#define PFLAG_N 0x80
-
-#define PFLAG_MASK (~(PFLAG_B | PFLAG_1))
-
-#define REG_A 0x00
-#define REG_X 0x01
-#define REG_Y 0x02
-#define REG_S 0x03
+#include <libnin/CPU.h>
 
 namespace libnin
 {
@@ -60,13 +45,9 @@ class BusMain;
 class InterpreterCycle : private NonCopyable
 {
 public:
-    InterpreterCycle(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
+    InterpreterCycle(CPU& cpu, Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus);
 
     bool dispatching() const { return _handler == &InterpreterCycle::dispatch; }
-
-    std::uint8_t  reg(int r) const { return _regs[r]; }
-    std::uint16_t pc() const { return _pc; }
-
     std::size_t tick(std::size_t cycles);
 
 private:
@@ -86,14 +67,15 @@ private:
 
     void flagNZ(std::uint8_t value)
     {
-        _p &= ~(PFLAG_N | PFLAG_Z);
-        _p |= (value & 0xff ? 0 : PFLAG_Z);
-        _p |= (value & 0x80 ? PFLAG_N : 0);
+        _cpu.p &= ~(PFLAG_N | PFLAG_Z);
+        _cpu.p |= (value & 0xff ? 0 : PFLAG_Z);
+        _cpu.p |= (value & 0x80 ? PFLAG_N : 0);
     }
 
     static const Handler kOps[];
     static const Handler kStates[];
 
+    CPU&     _cpu;
     Memory&  _memory;
     IRQ&     _irq;
     NMI&     _nmi;
@@ -103,26 +85,12 @@ private:
 
     Handler       _handler;
     Handler       _handler2;
-    std::size_t   _cyc;
-    std::uint16_t _pc;
     std::uint16_t _addr;
-    union
-    {
-        std::uint8_t _regs[4];
-        struct
-        {
-            std::uint8_t _a;
-            std::uint8_t _x;
-            std::uint8_t _y;
-            std::uint8_t _s;
-        };
-    };
+
     std::uint8_t  _rmw;
     std::uint8_t  _addrCarry;
     std::uint8_t  _selSrc;
     std::uint8_t  _selDst;
-    std::uint8_t  _p;
-    std::uint8_t  _p2;
     std::uint16_t _dmaAddr;
     std::uint8_t  _dmaCount;
     std::uint8_t  _dmaValue;

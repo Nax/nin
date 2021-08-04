@@ -32,12 +32,13 @@
 #include <libnin/Audio.h>
 #include <libnin/BusMain.h>
 #include <libnin/BusVideo.h>
-#include <libnin/InterpreterCycle.h>
 #include <libnin/Cart.h>
+#include <libnin/CPU.h>
 #include <libnin/Disk.h>
 #include <libnin/HardwareInfo.h>
-#include <libnin/IRQ.h>
 #include <libnin/Input.h>
+#include <libnin/InterpreterCycle.h>
+#include <libnin/IRQ.h>
 #include <libnin/Mapper.h>
 #include <libnin/MapperVariant.h>
 #include <libnin/Memory.h>
@@ -67,15 +68,16 @@ public:
 
     static State* create(NinError& err, const char* path);
 
-    Memory       memory;
-    HardwareInfo info;
-    Cart         cart;
-    Disk         disk;
-    Save         save;
-    Input        input;
-    IRQ          irq;
-    NMI          nmi;
-    Video        video;
+    CPU             cpu;
+    Memory          memory;
+    HardwareInfo    info;
+    Cart            cart;
+    Disk            disk;
+    Save            save;
+    Input           input;
+    IRQ             irq;
+    NMI             nmi;
+    Video           video;
     union
     {
         Mapper        mapper;

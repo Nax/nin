@@ -33,19 +33,16 @@
 
 using namespace libnin;
 
-InterpreterCycle::InterpreterCycle(Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
-: _memory{memory}
+InterpreterCycle::InterpreterCycle(CPU& cpu, Memory& memory, IRQ& irq, NMI& nmi, PPU& ppu, APU& apu, BusMain& bus)
+: _cpu{cpu}
+, _memory{memory}
 , _irq{irq}
 , _nmi{nmi}
 , _ppu{ppu}
 , _apu{apu}
 , _bus{bus}
 , _handler{kOps[0x100]}
-, _pc{}
 , _addr{}
-, _regs{}
-, _p{PFLAG_I}
-, _p2{}
 , _nmiPending{}
 , _irqPending{}
 , _odd{}
@@ -87,7 +84,7 @@ InterpreterCycle::Handler InterpreterCycle::dispatch()
     }
     else
     {
-        op = read(_pc++);
+        op = read(_cpu.pc++);
     }
     handler = kOps[op];
     return (this->*handler)();
@@ -143,14 +140,14 @@ std::uint8_t InterpreterCycle::adc(std::uint8_t a, std::uint8_t b)
     std::uint16_t sum;
     std::uint8_t  carryIn;
 
-    carryIn = (_p & PFLAG_C) ? 1 : 0;
+    carryIn = (_cpu.p & PFLAG_C) ? 1 : 0;
     sum     = (std::uint16_t)a + (std::uint16_t)b + (std::uint16_t)carryIn;
 
-    _p &= ~(PFLAG_C | PFLAG_V | PFLAG_N | PFLAG_Z);
-    if (sum & 0x100) _p |= PFLAG_C;
-    if ((sum & 0xff) == 0) _p |= PFLAG_Z;
-    if ((a ^ sum) & (b ^ sum) & 0x80) _p |= PFLAG_V;
-    if (sum & 0x80) _p |= PFLAG_N;
+    _cpu.p &= ~(PFLAG_C | PFLAG_V | PFLAG_N | PFLAG_Z);
+    if (sum & 0x100) _cpu.p |= PFLAG_C;
+    if ((sum & 0xff) == 0) _cpu.p |= PFLAG_Z;
+    if ((a ^ sum) & (b ^ sum) & 0x80) _cpu.p |= PFLAG_V;
+    if (sum & 0x80) _cpu.p |= PFLAG_N;
 
     return (sum & 0xff);
 }

@@ -188,7 +188,8 @@ static NinError loadRom(State& state, const char* path)
 }
 
 State::State()
-: memory{}
+: cpu{}
+, memory{}
 , info{}
 , cart{}
 , disk{}
@@ -203,7 +204,7 @@ State::State()
 , apu{info, irq, mapper, audio}
 , ppu{info, memory, nmi, busVideo, mapper, video}
 , busMain{memory, cart, mapper, ppu, apu, input}
-, interpreterCycle{memory, irq, nmi, ppu, apu, busMain}
+, interpreterCycle{cpu, memory, irq, nmi, ppu, apu, busMain}
 {
 }
 
