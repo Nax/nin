@@ -13,3 +13,6 @@ indent_size = 2
 
 [*.rb]
 indent_size = 2
+
+[*.py]
+indent_size = 2
