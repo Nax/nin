@@ -1,3 +1,2 @@
-*           text=auto
 db.inc      linguist-language=C linguist-vendored
 dirent.h    linguist-language=C linguist-vendored
