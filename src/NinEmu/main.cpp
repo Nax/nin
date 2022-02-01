@@ -1,48 +1,13 @@
-/*
- * Nin, a Nintendo Entertainment System Emulator.
- * 
- * Copyright (c) 2018-2022 Maxime Bacoux
- * All rights reserved.
- * 
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * Version 2, as published by the Free Software Foundation.
- * 
- * Alternatively, this program can be licensed under a commercial license
- * upon request.
- * 
- * When using the program under the GNU General Public License Version 2 license,
- * the following apply:
- * 
- *  1. This program is distributed in the hope that it will be useful,
- *     but WITHOUT ANY WARRANTY; without even the implied warranty of
- *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *     GNU General Public License for more details.
- * 
- *  2. You should have received a copy of the GNU General Public License
- *     along with this program; if not, write to the Free Software
- *     Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
- */
+#include <EmuShell/Main.h>
+#include <EmuShell/Core/Application.h>
+#include <EmuShell/Widgets/Window.h>
 
-#if defined(_MSC_VER)
-#include <intrin.h>
-#else
-#include <x86intrin.h>
-#endif
-
-#include <NinEmu/Window/MainWindow.h>
-#include <QApplication>
+using namespace EmuShell;
 
 int main(int argc, char** argv)
 {
-    _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
-
-    QApplication app(argc, argv);
-    QApplication::setApplicationName("Nin");
-    QApplication::setOrganizationName("NotAndXor");
-
-    MainWindow mainWindow;
-
-    mainWindow.show();
-    return app.exec();
+    Application app;
+    Window win;
+    win.show();
+    return app.run();
 }
