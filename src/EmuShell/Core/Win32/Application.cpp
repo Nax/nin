@@ -81,3 +81,11 @@ void EmuShell::dispatchSync(DispatchCallback cb, void* arg)
         ReleaseMutex(sSyncDispatchMutex);
     }
 }
+
+void EmuShell::quit(int code)
+{
+    dispatch([](void* arg){
+        int c = (int)(intptr_t)arg;
+        PostQuitMessage(c);
+    }, (void*)(intptr_t)code);
+}

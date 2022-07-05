@@ -32,7 +32,7 @@ void registerWinClass()
     wndClass.hInstance = (HINSTANCE)&__ImageBase;
     wndClass.hIcon = nullptr;
     wndClass.hCursor = LoadCursor(nullptr, IDC_ARROW);
-    wndClass.hbrBackground = nullptr;
+    wndClass.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
     wndClass.lpszMenuName = nullptr;
     wndClass.lpszClassName = TEXT("EmuShellWindow");
     wndClass.hIconSm = nullptr;
@@ -99,5 +99,14 @@ void Window::hide()
     {
         int id = (int)(intptr_t)arg;
         ShowWindow(sWindow[id], 0);
+    }, (void*)(intptr_t)_id);
+}
+
+void Window::close()
+{
+    EmuShell::dispatchSync([] (void* arg)
+    {
+        int id = (int)(intptr_t)arg;
+        DestroyWindow(sWindow[id]);
     }, (void*)(intptr_t)_id);
 }

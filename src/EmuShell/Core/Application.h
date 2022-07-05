@@ -24,6 +24,8 @@ using DispatchCallback = void (*)(void*);
 void dispatch(DispatchCallback cb, void* arg);
 void dispatchSync(DispatchCallback cb, void* arg);
 
+void quit(int code = 0);
+
 }
 
 #endif
